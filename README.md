@@ -26,13 +26,24 @@ Use CSV files matching the templates in `data/`:
 - `prospects-template.csv`: top prospect list and player profile fields
 - `stats-template.csv`: current season and recent-form stats
 - `depth-chart-template.csv`: organization opportunity and MLB-pathway inputs
-- `card-market.csv`: Bowman 1st Auto sales comps, buy zones, market signal, and eBay sold-search links
+- `card-market.csv`: eBay sold-comp output for Bowman Chrome Prospect Auto CPA cards
 
 The app merges rows by `player_id`.
 
 ## Card market data
 
-`data/card-market.csv` powers the Card Market Edge board, each player card's buy-zone panel, and the exported score CSV. These are manual/imported comps unless a live market-data job is wired in. Treat rows marked `Seed comp` as placeholders that need verification before making buy/sell decisions.
+`data/card-market.csv` powers the Card Market Edge board, each player card's buy-zone panel, and the exported score CSV. It should be generated from eBay sold-comp data, not manually seeded guesses.
+
+The card target is the Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv` when the generated initials are not enough.
+
+Generate eBay sold comps with:
+
+```sh
+cd mlb-prospects
+EBAY_ACCESS_TOKEN=your_oauth_token node scripts/update-ebay-comps.mjs
+```
+
+The updater searches eBay sold item sales for the CPA code, player name, `Chrome`, `Prospect`, and `Auto`, filters out bad title matches, then writes only players with returned sold comps. If no real eBay sold comps are returned, the script does not write a price for that player.
 
 The current fields are:
 
@@ -49,8 +60,9 @@ The current fields are:
 - `market_note`
 - `data_source`
 - `source_url`
+- `last_updated`
 
-For reliable live data, export sold/completed Bowman auto comps into this CSV from a trusted source such as Sports Card Investor, Card Ladder, Market Movers, or an eBay API job that writes the same columns.
+The script uses eBay API access rather than public sold-page scraping. Public eBay sold-search pages are frequently blocked or rate-limited in automated environments and should not be treated as a reliable data source.
 
 ## Enrich data
 

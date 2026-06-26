@@ -150,7 +150,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/player-enrichment.csv"),
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
-    loadOptionalCsv("./data/card-market.csv?v=20260626-2"),
+    loadOptionalCsv("./data/card-market.csv?v=20260626-3"),
   ]);
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
   state.stats = mergeRowsByPlayerId(stats, savantStats);
@@ -366,7 +366,7 @@ function renderMarketBoard(rows) {
     .sort((a, b) => marketScore(b) - marketScore(a) || b.callup_score - a.callup_score);
   elements.marketCount.textContent = `${state.cardMarket.length} tracked`;
   if (!tracked.length) {
-    elements.marketBoard.innerHTML = `<p class="muted">Add Bowman 1st Auto rows to data/card-market.csv to activate market signals.</p>`;
+    elements.marketBoard.innerHTML = `<p class="muted">Run scripts/update-ebay-comps.mjs with eBay API access to load CPA Chrome Prospect Auto sold comps.</p>`;
     return;
   }
 
@@ -515,7 +515,7 @@ function marketPanel(player) {
           <h3>Card Market</h3>
           <span>Awaiting comps</span>
         </div>
-        <p class="muted">No Bowman 1st Auto market row is loaded yet for ${escapeHtml(player.player_name)}. Add eBay sold/completed sales data to data/card-market.csv to activate buy-zone analysis.</p>
+        <p class="muted">No eBay CPA Chrome Prospect Auto sold-comps row is loaded yet for ${escapeHtml(player.player_name)}. Run scripts/update-ebay-comps.mjs with eBay API access to activate buy-zone analysis.</p>
       </section>
     `;
   }
