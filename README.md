@@ -1,6 +1,6 @@
-# MLB Prospects Call-Up Tracker
+# OnDeck Prospect
 
-Local dashboard for importing prospect data, scoring MLB call-up potential, and reviewing player-card insights before a promotion happens.
+Dark prospect forecasting dashboard for MLB Top 100 call-up signals, performance trends, organization pathway reads, and Bowman 1st Auto market edge.
 
 ## Run locally
 
@@ -26,8 +26,26 @@ Use CSV files matching the templates in `data/`:
 - `prospects-template.csv`: top prospect list and player profile fields
 - `stats-template.csv`: current season and recent-form stats
 - `depth-chart-template.csv`: organization opportunity and MLB-pathway inputs
+- `card-market.csv`: Bowman 1st Auto sales comps, buy zones, market signal, and eBay sold-search links
 
 The app merges rows by `player_id`.
+
+## Card market data
+
+`data/card-market.csv` powers the Card Market Edge board, each player card's buy-zone panel, and the exported score CSV. The current fields are:
+
+- `card_name`
+- `last_sale`
+- `avg_7`, `avg_30`, `avg_90`
+- `sales_30`
+- `active_listings`
+- `sell_through`
+- `buy_low`, `buy_high`
+- `market_signal`
+- `market_note`
+- `source_url`
+
+For live eBay data, export sold/completed Bowman 1st Auto comps into this CSV or wire an eBay API job to write the same columns.
 
 ## Enrich data
 

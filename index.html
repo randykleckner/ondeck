@@ -3,23 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MLB Prospects Call-Up Tracker</title>
+    <title>OnDeck Prospect | Call-Up Signals & Card Market Edge</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <header class="app-header">
-      <div>
-        <p class="eyebrow">Prospect Intelligence</p>
-        <h1>Prospect Edge Watch</h1>
+      <div class="brand-mark">
+        <strong>OnDeck</strong>
+        <span>Prospect</span>
       </div>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#prospects">Prospects</a>
+        <a href="#signals">Call-Up Signals</a>
+        <a href="#card-market">Card Market</a>
+        <a href="#break-board">Break Board</a>
+      </nav>
       <div class="header-actions">
-        <button id="load-top100" class="button primary" type="button">Load MLB Top 100</button>
-        <button id="load-sample" class="button" type="button">Load Demo</button>
+        <button id="load-top100" class="button primary" type="button">Refresh Board</button>
         <button id="export-csv" class="button" type="button">Export Scores</button>
       </div>
     </header>
 
-    <main class="app-shell">
+    <main id="dashboard" class="app-shell">
+      <section class="hero-panel" aria-label="OnDeck Prospect hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Data. Signals. Edge.</p>
+          <h1>See the next call-up before the market does.</h1>
+          <p>
+            OnDeck Prospect combines MLB Top 100 movement, call-up pathways,
+            current performance, and Bowman 1st Auto market signals into one
+            collector-focused dashboard.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#prospects">Explore Dashboard</a>
+            <a class="button ghost" href="#card-market">View Card Edge</a>
+          </div>
+        </div>
+        <div class="future-vision" aria-hidden="true">
+          <div class="energy-orb">
+            <div class="orb-player"></div>
+            <div class="orb-field"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="toolbar" aria-label="Data imports and filters">
         <div class="filter-grid">
           <label>
@@ -68,7 +96,7 @@
         </article>
       </section>
 
-      <section class="edge-board" aria-label="Market edge highlights">
+      <section id="signals" class="edge-board" aria-label="Market edge highlights">
         <article>
           <span>Biggest rank riser</span>
           <strong id="edge-riser">-</strong>
@@ -81,9 +109,24 @@
           <span>Break exposure edge</span>
           <strong id="edge-break">-</strong>
         </article>
+        <article>
+          <span>Best card buy zone</span>
+          <strong id="edge-card">-</strong>
+        </article>
       </section>
 
-      <section class="team-board" aria-label="Top 100 prospects by team">
+      <section id="card-market" class="market-board" aria-label="Bowman first auto market board">
+        <div class="panel-heading">
+          <div>
+            <h2>Card Market Edge</h2>
+            <p>Bowman 1st Auto comps, buy zones, and sell-through pressure</p>
+          </div>
+          <span id="market-count">0 tracked</span>
+        </div>
+        <div id="market-board" class="market-grid"></div>
+      </section>
+
+      <section id="break-board" class="team-board" aria-label="Top 100 prospects by team">
         <div class="panel-heading">
           <div>
             <h2>Break Value Board</h2>
@@ -94,7 +137,7 @@
         <div id="team-board" class="team-grid"></div>
       </section>
 
-      <section class="content-grid">
+      <section id="prospects" class="content-grid">
         <div class="table-panel">
           <div class="panel-heading">
             <h2>Player Edge Watchlist</h2>
@@ -109,6 +152,7 @@
                   <th>Pos</th>
                   <th>Level</th>
                   <th>Trend</th>
+                  <th>Card Signal</th>
                   <th>Chance</th>
                 </tr>
               </thead>
@@ -125,6 +169,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260626-25"></script>
+    <script type="module" src="./src/app.js?v=20260626-26"></script>
   </body>
 </html>

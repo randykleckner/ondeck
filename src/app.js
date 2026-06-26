@@ -1,11 +1,11 @@
 import { parseCsv, toCsv } from "./lib/csv.js";
 import { mergeProspectData } from "./lib/scoring.js?v=20260626-6";
-import { sampleDepthCharts, sampleProspects, sampleStats } from "./data/sampleData.js";
 
 const state = {
   prospects: [],
   stats: [],
   depthCharts: [],
+  cardMarket: [],
   scored: [],
   calledUp: [],
   selectedId: null,
@@ -51,7 +51,6 @@ const TEAM_IDS = new Map([
 
 const elements = {
   loadTop100: document.querySelector("#load-top100"),
-  loadSample: document.querySelector("#load-sample"),
   exportCsv: document.querySelector("#export-csv"),
   search: document.querySelector("#search"),
   orgFilter: document.querySelector("#org-filter"),
@@ -67,21 +66,16 @@ const elements = {
   edgeRiser: document.querySelector("#edge-riser"),
   edgePath: document.querySelector("#edge-path"),
   edgeBreak: document.querySelector("#edge-break"),
+  edgeCard: document.querySelector("#edge-card"),
   rowCount: document.querySelector("#row-count"),
   teamBoard: document.querySelector("#team-board"),
   teamBoardCount: document.querySelector("#team-board-count"),
+  marketBoard: document.querySelector("#market-board"),
+  marketCount: document.querySelector("#market-count"),
 };
 
 elements.loadTop100.addEventListener("click", () => {
   loadTop100Prospects();
-});
-
-elements.loadSample.addEventListener("click", () => {
-  state.prospects = sampleProspects;
-  state.stats = sampleStats;
-  state.depthCharts = sampleDepthCharts;
-  state.selectedId = null;
-  refreshScoredData();
 });
 
 elements.exportCsv.addEventListener("click", () => {
@@ -97,6 +91,11 @@ elements.exportCsv.addEventListener("click", () => {
     performance_score: player.performance_score,
     opportunity_score: player.opportunity_score,
     readiness_score: player.readiness_score,
+    card_signal: player.market_signal ?? "",
+    card_last_sale: player.last_sale ?? "",
+    card_avg_30: player.avg_30 ?? "",
+    sell_through: player.sell_through ?? "",
+    buy_zone: buyZone(player),
   }));
   download("prospect-callup-scores.csv", toCsv(records));
 });
@@ -130,17 +129,19 @@ async function loadTop100Prospects() {
     throw new Error(`Could not load MLB Top 100 seed data: ${response.status}`);
   }
   state.prospects = parseCsv(await response.text());
-  const [stats, savantStats, depthCharts, enrichment, news, rankHistory] = await Promise.all([
+  const [stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket] = await Promise.all([
     loadOptionalCsv("./data/current-stats.csv?v=20260626-2"),
     loadOptionalCsv("./data/savant-stats.csv?v=20260626-1"),
     loadOptionalCsv("./data/depth-chart-current.csv"),
     loadOptionalCsv("./data/player-enrichment.csv"),
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
+    loadOptionalCsv("./data/card-market.csv?v=20260626-1"),
   ]);
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
   state.stats = mergeRowsByPlayerId(stats, savantStats);
   state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
+  state.cardMarket = cardMarket;
   state.selectedId = null;
   state.filters.org = "all";
   refreshScoredData();
@@ -192,7 +193,7 @@ function mergeNonBlank(base, overlay) {
 }
 
 function refreshScoredData() {
-  const allScored = mergeProspectData(state.prospects, state.stats, state.depthCharts).sort((a, b) => b.callup_score - a.callup_score);
+  const allScored = applyCardMarket(mergeProspectData(state.prospects, state.stats, state.depthCharts)).sort((a, b) => b.callup_score - a.callup_score);
   state.calledUp = allScored.filter(isCalledUp);
   state.scored = allScored.filter((player) => !isCalledUp(player));
   if (!state.selectedId && state.scored.length) {
@@ -217,6 +218,7 @@ function render() {
   const rows = getFilteredRows();
   renderSummary(rows);
   renderTeamBoard();
+  renderMarketBoard(rows);
   renderRows(rows);
   const selected = rows.find((player) => String(player.player_id) === String(state.selectedId)) ?? rows[0];
   renderCard(selected);
@@ -248,9 +250,16 @@ function renderEdgeBoard() {
   const riser = bestRankRiser();
   const path = bestPathTarget();
   const breakOrg = bestBreakExposureOrg();
+  const card = bestCardTarget();
   elements.edgeRiser.textContent = riser ? `${riser.player_name} +${rankMovement(riser)}` : "-";
   elements.edgePath.textContent = path ? `${path.player_name} ${path.callup_score}%` : "-";
   elements.edgeBreak.textContent = breakOrg ? `${breakOrg.name} ${breakOrg.count}` : "-";
+  elements.edgeCard.textContent = card ? `${card.player_name} ${card.market_signal}` : "-";
+}
+
+function applyCardMarket(players) {
+  const byId = new Map(state.cardMarket.map((row) => [String(row.player_id), row]));
+  return players.map((player) => ({ ...player, ...(byId.get(String(player.player_id)) ?? {}) }));
 }
 
 function renderTeamBoard() {
@@ -297,6 +306,42 @@ function renderTeamBoard() {
   });
 }
 
+function renderMarketBoard(rows) {
+  const tracked = rows
+    .filter((player) => player.market_signal)
+    .sort((a, b) => marketScore(b) - marketScore(a) || b.callup_score - a.callup_score)
+    .slice(0, 4);
+  elements.marketCount.textContent = `${state.cardMarket.length} tracked`;
+  if (!tracked.length) {
+    elements.marketBoard.innerHTML = `<p class="muted">Add Bowman 1st Auto rows to data/card-market.csv to activate market signals.</p>`;
+    return;
+  }
+
+  elements.marketBoard.innerHTML = tracked
+    .map((player) => `
+      <article class="market-card">
+        <div>
+          <span class="market-label">${escapeHtml(player.market_signal)}</span>
+          <h3>${escapeHtml(player.player_name)}</h3>
+          <p>${escapeHtml(player.card_name ?? "Bowman 1st Auto")}</p>
+        </div>
+        <div class="market-price">
+          <strong>${currency(player.last_sale)}</strong>
+          <span>Last sale</span>
+        </div>
+        <div class="sparkline" aria-hidden="true">
+          ${sparkline(player)}
+        </div>
+        <dl>
+          <div><dt>30D Avg</dt><dd>${currency(player.avg_30)}</dd></div>
+          <div><dt>Sell-through</dt><dd>${percent(player.sell_through)}</dd></div>
+          <div><dt>Buy Zone</dt><dd>${escapeHtml(buyZone(player))}</dd></div>
+        </dl>
+      </article>
+    `)
+    .join("");
+}
+
 function buildOrgExposure() {
   const byOrg = new Map();
   for (const player of state.prospects) {
@@ -316,7 +361,7 @@ function buildOrgExposure() {
 
 function renderRows(rows) {
   if (!rows.length) {
-    elements.rows.innerHTML = `<tr><td colspan="6" class="muted">No prospects match the current filters.</td></tr>`;
+    elements.rows.innerHTML = `<tr><td colspan="7" class="muted">No prospects match the current filters.</td></tr>`;
     return;
   }
 
@@ -335,6 +380,7 @@ function renderRows(rows) {
           <td>${escapeHtml(player.position ?? "-")}</td>
           <td>${escapeHtml(player.level ?? "-")}</td>
           <td>${rankTrend(player)}</td>
+          <td>${marketBadge(player)}</td>
           <td><span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}%</span></td>
         </tr>
       `;
@@ -377,8 +423,59 @@ function renderCard(player) {
     <ul class="insight-list">
       ${player.insights.map((insight) => `<li>${escapeHtml(insight)}</li>`).join("")}
     </ul>
+    ${marketPanel(player)}
     ${newsPanel(player)}
   `;
+}
+
+function marketPanel(player) {
+  if (!player.market_signal) {
+    return `
+      <section class="card-market-panel">
+        <div class="panel-heading compact">
+          <h3>Card Market</h3>
+          <span>Awaiting comps</span>
+        </div>
+        <p class="muted">No Bowman 1st Auto market row is loaded yet for ${escapeHtml(player.player_name)}. Add eBay sold/completed sales data to data/card-market.csv to activate buy-zone analysis.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="card-market-panel">
+      <div class="panel-heading compact">
+        <h3>Card Market</h3>
+        <span>${escapeHtml(player.market_signal)}</span>
+      </div>
+      <div class="card-market-grid">
+        <div>
+          <span>Last Sale</span>
+          <strong>${currency(player.last_sale)}</strong>
+        </div>
+        <div>
+          <span>30D Avg</span>
+          <strong>${currency(player.avg_30)}</strong>
+        </div>
+        <div>
+          <span>Sell-through</span>
+          <strong>${percent(player.sell_through)}</strong>
+        </div>
+        <div>
+          <span>Buy Zone</span>
+          <strong>${escapeHtml(buyZone(player))}</strong>
+        </div>
+      </div>
+      <p>${escapeHtml(player.market_note ?? "")}</p>
+      ${player.source_url ? `<a href="${escapeHtml(player.source_url)}" target="_blank" rel="noreferrer">Open eBay sold search</a>` : ""}
+    </section>
+  `;
+}
+
+function marketBadge(player) {
+  if (!player.market_signal) {
+    return `<span class="muted">-</span>`;
+  }
+  return `<span class="market-badge">${escapeHtml(player.market_signal)}</span>`;
 }
 
 function rankTrend(player) {
@@ -489,6 +586,62 @@ function bestPathTarget() {
 
 function bestBreakExposureOrg() {
   return buildOrgExposure()[0];
+}
+
+function bestCardTarget() {
+  return state.scored
+    .filter((player) => player.market_signal)
+    .sort((a, b) => marketScore(b) - marketScore(a) || b.callup_score - a.callup_score)[0];
+}
+
+function marketScore(player) {
+  if (!player.market_signal) return 0;
+  const signal = String(player.market_signal).toLowerCase();
+  const signalScore = signal.includes("strong") ? 35 : signal.includes("buy") ? 25 : signal.includes("watch") ? 12 : 5;
+  const last = numericMoney(player.last_sale);
+  const avg30 = numericMoney(player.avg_30);
+  const discount = Number.isFinite(last) && Number.isFinite(avg30) && avg30 > 0 ? Math.max(-15, Math.min(25, ((avg30 - last) / avg30) * 100)) : 0;
+  return signalScore + Number(player.sell_through || 0) * 0.7 + discount + Number(player.callup_score || 0) * 0.15;
+}
+
+function buyZone(player) {
+  if (player.buy_low || player.buy_high) {
+    return [player.buy_low, player.buy_high].filter(Boolean).join(" - ");
+  }
+  return "-";
+}
+
+function currency(value) {
+  const numeric = numericMoney(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return `$${numeric.toFixed(numeric >= 100 ? 0 : 2)}`;
+}
+
+function percent(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return `${Math.round(numeric)}%`;
+}
+
+function numericMoney(value) {
+  const numeric = Number(String(value ?? "").replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(numeric) ? numeric : NaN;
+}
+
+function sparkline(player) {
+  const values = [player.avg_90, player.avg_30, player.avg_7, player.last_sale].map(numericMoney).filter(Number.isFinite);
+  if (values.length < 2) return "";
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const points = values
+    .map((value, index) => {
+      const x = (index / (values.length - 1)) * 100;
+      const y = 42 - ((value - min) / range) * 34;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return `<svg viewBox="0 0 100 46" role="img" aria-label="Price trend"><polyline points="${points}" /></svg>`;
 }
 
 function scoreClass(score) {
