@@ -359,18 +359,44 @@ function renderTeamBoard() {
 }
 
 function renderMarketBoard(rows) {
-  const tracked = rows
+  const tracked = state.scored
     .filter((player) => player.market_signal)
-    .sort((a, b) => marketScore(b) - marketScore(a) || b.callup_score - a.callup_score)
-    .slice(0, 4);
+    .sort((a, b) => marketScore(b) - marketScore(a) || b.callup_score - a.callup_score);
   elements.marketCount.textContent = `${state.cardMarket.length} tracked`;
   if (!tracked.length) {
     elements.marketBoard.innerHTML = `<p class="muted">Add Bowman 1st Auto rows to data/card-market.csv to activate market signals.</p>`;
     return;
   }
 
-  elements.marketBoard.innerHTML = tracked
-    .map((player) => `
+  const cardMarkup = tracked
+    .map((player) => marketCardMarkup(player))
+    .join("");
+
+  elements.marketBoard.innerHTML = `
+    <div class="market-track">
+      ${cardMarkup}
+      ${tracked.length > 2 ? cardMarkup : ""}
+    </div>
+  `;
+
+  elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
+    const activate = () => {
+      state.selectedId = card.dataset.playerId;
+      render();
+      document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    card.addEventListener("click", activate);
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        activate();
+      }
+    });
+  });
+}
+
+function marketCardMarkup(player) {
+  return `
       <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}">
         <div>
           <span class="market-label">${escapeHtml(player.market_signal)}</span>
@@ -390,23 +416,7 @@ function renderMarketBoard(rows) {
           <div><dt>Buy Zone</dt><dd>${escapeHtml(buyZone(player))}</dd></div>
         </dl>
       </article>
-    `)
-    .join("");
-
-  elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
-    const activate = () => {
-      state.selectedId = card.dataset.playerId;
-      render();
-      document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-    card.addEventListener("click", activate);
-    card.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        activate();
-      }
-    });
-  });
+    `;
 }
 
 function buildOrgExposure() {
