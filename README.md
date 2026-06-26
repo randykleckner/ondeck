@@ -32,10 +32,14 @@ The app merges rows by `player_id`.
 
 ## Card market data
 
-`data/card-market.csv` powers the Card Market Edge board, each player card's buy-zone panel, and the exported score CSV. The current fields are:
+`data/card-market.csv` powers the Card Market Edge board, each player card's buy-zone panel, and the exported score CSV. These are manual/imported comps unless a live market-data job is wired in. Treat rows marked `Seed comp` as placeholders that need verification before making buy/sell decisions.
+
+The current fields are:
 
 - `card_name`
+- `card_code`
 - `last_sale`
+- `last_sale_date`
 - `avg_7`, `avg_30`, `avg_90`
 - `sales_30`
 - `active_listings`
@@ -43,9 +47,10 @@ The app merges rows by `player_id`.
 - `buy_low`, `buy_high`
 - `market_signal`
 - `market_note`
+- `data_source`
 - `source_url`
 
-For live eBay data, export sold/completed Bowman 1st Auto comps into this CSV or wire an eBay API job to write the same columns.
+For reliable live data, export sold/completed Bowman auto comps into this CSV from a trusted source such as Sports Card Investor, Card Ladder, Market Movers, or an eBay API job that writes the same columns.
 
 ## Enrich data
 

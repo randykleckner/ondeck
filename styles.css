@@ -530,7 +530,7 @@ input[type="range"] {
 }
 
 .card-market-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .market-card div,
@@ -850,6 +850,12 @@ tbody tr {
   margin: 0;
   color: #d8def6;
   line-height: 1.45;
+}
+
+.card-market-panel .market-source {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .card-market-panel a,

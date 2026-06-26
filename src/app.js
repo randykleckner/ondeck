@@ -94,7 +94,9 @@ elements.exportCsv.addEventListener("click", () => {
     readiness_score: player.readiness_score,
     card_signal: player.market_signal ?? "",
     card_last_sale: player.last_sale ?? "",
+    card_last_sale_date: player.last_sale_date ?? "",
     card_avg_30: player.avg_30 ?? "",
+    card_data_source: player.data_source ?? "",
     sell_through: player.sell_through ?? "",
     buy_zone: buyZone(player),
   }));
@@ -148,7 +150,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/player-enrichment.csv"),
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
-    loadOptionalCsv("./data/card-market.csv?v=20260626-1"),
+    loadOptionalCsv("./data/card-market.csv?v=20260626-2"),
   ]);
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
   state.stats = mergeRowsByPlayerId(stats, savantStats);
@@ -401,11 +403,11 @@ function marketCardMarkup(player) {
         <div>
           <span class="market-label">${escapeHtml(player.market_signal)}</span>
           <h3>${escapeHtml(player.player_name)}</h3>
-          <p>${escapeHtml(player.card_name ?? "Bowman 1st Auto")}</p>
+          <p>${escapeHtml(cardDescription(player))}</p>
         </div>
         <div class="market-price">
           <strong>${currency(player.last_sale)}</strong>
-          <span>Last sale</span>
+          <span>${escapeHtml(player.last_sale_date ? `Last sold ${formatShortDate(player.last_sale_date)}` : "Last sale")}</span>
         </div>
         <div class="sparkline" aria-hidden="true">
           ${sparkline(player)}
@@ -530,6 +532,10 @@ function marketPanel(player) {
           <strong>${currency(player.last_sale)}</strong>
         </div>
         <div>
+          <span>Last Sold</span>
+          <strong>${escapeHtml(formatShortDate(player.last_sale_date) || "-")}</strong>
+        </div>
+        <div>
           <span>30D Avg</span>
           <strong>${currency(player.avg_30)}</strong>
         </div>
@@ -541,7 +547,12 @@ function marketPanel(player) {
           <span>Buy Zone</span>
           <strong>${escapeHtml(buyZone(player))}</strong>
         </div>
+        <div>
+          <span>Source</span>
+          <strong>${escapeHtml(player.data_source ?? "Manual comp")}</strong>
+        </div>
       </div>
+      <p class="market-source">${escapeHtml(cardDescription(player))}</p>
       <p>${escapeHtml(player.market_note ?? "")}</p>
       <div class="market-reasons">
         <h4>Why this signal</h4>
@@ -554,13 +565,24 @@ function marketPanel(player) {
   `;
 }
 
+function cardDescription(player) {
+  return [player.card_name, player.card_code].filter(Boolean).join(" · ") || "Bowman 1st Auto";
+}
+
+function formatShortDate(value) {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "2-digit" });
+}
+
 function marketReasonBullets(player) {
   const reasons = [];
   const last = numericMoney(player.last_sale);
   const avg30 = numericMoney(player.avg_30);
   const avg90 = numericMoney(player.avg_90);
   const movement = rankMovement(player);
-  const sellThrough = Number(player.sell_through);
+  const sellThrough = player.sell_through === "" || player.sell_through == null ? NaN : Number(player.sell_through);
 
   if (Number.isFinite(last) && Number.isFinite(avg30) && avg30 > 0) {
     const diff = ((last - avg30) / avg30) * 100;
@@ -747,6 +769,7 @@ function currency(value) {
 }
 
 function percent(value) {
+  if (value === "" || value == null) return "-";
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return "-";
   return `${Math.round(numeric)}%`;
