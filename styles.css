@@ -637,13 +637,24 @@ tbody tr.selected {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 0.85fr);
+  grid-template-columns: minmax(360px, 0.85fr) minmax(0, 1.55fr);
   gap: 18px;
   align-items: start;
 }
 
-.table-panel,
 .card-panel {
+  position: sticky;
+  top: 104px;
+  max-height: calc(100vh - 124px);
+  order: 1;
+  overflow: auto;
+}
+
+.table-panel {
+  order: 2;
+}
+
+.table-panel {
   overflow: hidden;
 }
 
@@ -904,6 +915,18 @@ tbody tr {
   .app-header,
   .content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .table-panel {
+    order: 1;
+  }
+
+  .card-panel {
+    position: static;
+    top: auto;
+    max-height: none;
+    order: 2;
+    overflow: hidden;
   }
 
   .main-nav {
