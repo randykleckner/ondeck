@@ -925,8 +925,52 @@ tbody tr {
 }
 
 @media (max-width: 680px) {
+  body {
+    background:
+      radial-gradient(circle at 100% 0%, rgba(117, 62, 255, 0.2), transparent 22rem),
+      linear-gradient(180deg, #070914 0%, #03050d 100%);
+  }
+
+  body::before {
+    background-size: 34px 34px;
+  }
+
   .app-header {
+    position: static;
+    gap: 14px;
     align-items: stretch;
+    padding: 16px;
+  }
+
+  .brand-mark strong {
+    font-size: 1.45rem;
+  }
+
+  .brand-mark span {
+    font-size: 0.6rem;
+    letter-spacing: 0.34em;
+  }
+
+  .main-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .main-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .main-nav a {
+    flex: 0 0 auto;
+    border: 1px solid rgba(151, 170, 255, 0.18);
+    border-radius: 999px;
+    padding: 7px 10px;
+    background: rgba(9, 14, 33, 0.58);
+    font-size: 0.78rem;
   }
 
   .header-actions,
@@ -936,6 +980,74 @@ tbody tr {
 
   .button {
     flex: 1;
+    min-height: 40px;
+    padding-inline: 12px;
+    font-size: 0.88rem;
+  }
+
+  .app-shell {
+    padding: 0 12px 34px;
+  }
+
+  .hero-panel {
+    min-height: 500px;
+    border-radius: 12px;
+    background:
+      linear-gradient(180deg, rgba(5, 7, 17, 0.82) 0%, rgba(5, 7, 17, 0.74) 38%, rgba(5, 7, 17, 0.96) 100%),
+      url("./assets/ondeck-hero.png") 68% center / cover no-repeat;
+  }
+
+  .hero-panel::after {
+    background:
+      radial-gradient(circle at 72% 28%, rgba(82, 240, 255, 0.16), transparent 12rem),
+      linear-gradient(180deg, transparent 54%, rgba(5, 7, 17, 0.98));
+  }
+
+  .hero-copy {
+    align-content: end;
+    max-width: none;
+    padding: 22px;
+  }
+
+  .eyebrow {
+    margin-bottom: 10px;
+    font-size: 0.72rem;
+  }
+
+  h1 {
+    font-size: clamp(2.3rem, 13vw, 3.2rem);
+    line-height: 0.94;
+  }
+
+  .hero-copy p:not(.eyebrow) {
+    max-width: none;
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .toolbar,
+  .market-board,
+  .team-board,
+  .table-panel,
+  .card-panel,
+  .edge-board article,
+  .summary-grid article {
+    border-radius: 10px;
+  }
+
+  .toolbar {
+    padding: 14px;
+  }
+
+  .filter-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .legend {
+    display: grid;
+    gap: 8px;
+    font-size: 0.76rem;
   }
 
   .summary-grid,
@@ -945,8 +1057,164 @@ tbody tr {
     grid-template-columns: 1fr;
   }
 
-  h1 {
-    font-size: 2.55rem;
+  .summary-grid,
+  .edge-board {
+    gap: 10px;
+  }
+
+  .summary-grid article,
+  .edge-board article {
+    padding: 14px;
+  }
+
+  .summary-grid strong {
+    font-size: 1.45rem;
+  }
+
+  .panel-heading {
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+  }
+
+  .panel-heading p {
+    font-size: 0.76rem;
+  }
+
+  .market-grid {
+    padding-block: 12px;
+  }
+
+  .market-grid::before,
+  .market-grid::after {
+    width: 34px;
+  }
+
+  .market-track {
+    gap: 10px;
+    padding-inline: 12px;
+    animation-duration: 54s;
+  }
+
+  .market-card {
+    flex-basis: min(82vw, 300px);
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .market-price strong {
+    font-size: 1.65rem;
+  }
+
+  .team-grid {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .content-grid {
+    gap: 14px;
+  }
+
+  .table-wrap {
+    overflow: visible;
+  }
+
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td {
+    display: block;
+  }
+
+  table {
+    min-width: 0;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  tbody tr {
+    display: grid;
+    gap: 8px;
+    border: 1px solid rgba(151, 170, 255, 0.16);
+    border-radius: 10px;
+    padding: 12px;
+    background: rgba(4, 7, 18, 0.58);
+  }
+
+  tbody tr.selected {
+    border-color: rgba(82, 240, 255, 0.44);
+  }
+
+  td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 0;
+    padding: 0;
+    color: #e9edff;
+    font-size: 0.86rem;
+  }
+
+  td::before {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  td:nth-child(1) {
+    display: block;
+  }
+
+  td:nth-child(1)::before {
+    content: "";
+  }
+
+  td:nth-child(2)::before {
+    content: "Org";
+  }
+
+  td:nth-child(3)::before {
+    content: "Pos";
+  }
+
+  td:nth-child(4)::before {
+    content: "Level";
+  }
+
+  td:nth-child(5)::before {
+    content: "Trend";
+  }
+
+  td:nth-child(6)::before {
+    content: "Card";
+  }
+
+  td:nth-child(7)::before {
+    content: "Call-Up";
+  }
+
+  .player-name strong {
+    font-size: 1rem;
+  }
+
+  .score-pill {
+    min-width: auto;
+    min-height: 28px;
+    font-size: 0.82rem;
   }
 
   .card-title {
@@ -955,5 +1223,27 @@ tbody tr {
 
   .card-title .score-pill {
     width: fit-content;
+  }
+
+  .player-card {
+    padding: 16px;
+  }
+
+  .card-title h3 {
+    font-size: 1.34rem;
+  }
+
+  .bar-row {
+    grid-template-columns: 74px minmax(0, 1fr) 34px;
+    gap: 8px;
+    font-size: 0.76rem;
+  }
+
+  .insight-list {
+    padding-left: 16px;
+  }
+
+  .card-market-panel {
+    padding: 12px;
   }
 }
