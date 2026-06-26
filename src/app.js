@@ -72,6 +72,7 @@ const elements = {
   teamBoardCount: document.querySelector("#team-board-count"),
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
+  edgeActions: document.querySelectorAll(".edge-card-action"),
 };
 
 elements.loadTop100.addEventListener("click", () => {
@@ -117,6 +118,17 @@ elements.scoreFilter.addEventListener("input", (event) => {
   elements.scoreFilterValue.textContent = event.target.value;
   state.selectedId = null;
   render();
+});
+
+elements.edgeActions.forEach((card) => {
+  const activate = () => activateEdgeCard(card.dataset.edge);
+  card.addEventListener("click", activate);
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activate();
+    }
+  });
 });
 
 refreshScoredData();
@@ -255,6 +267,46 @@ function renderEdgeBoard() {
   elements.edgePath.textContent = path ? `${path.player_name} ${path.callup_score}%` : "-";
   elements.edgeBreak.textContent = breakOrg ? `${breakOrg.name} ${breakOrg.count}` : "-";
   elements.edgeCard.textContent = card ? `${card.player_name} ${card.market_signal}` : "-";
+  setEdgeCardTarget("riser", riser?.player_id);
+  setEdgeCardTarget("path", path?.player_id);
+  setEdgeCardTarget("break", breakOrg?.name);
+  setEdgeCardTarget("card", card?.player_id);
+}
+
+function setEdgeCardTarget(edge, value) {
+  const card = [...elements.edgeActions].find((item) => item.dataset.edge === edge);
+  if (!card) return;
+  if (value) {
+    card.dataset.target = value;
+    card.removeAttribute("aria-disabled");
+  } else {
+    delete card.dataset.target;
+    card.setAttribute("aria-disabled", "true");
+  }
+}
+
+function activateEdgeCard(edge) {
+  const card = [...elements.edgeActions].find((item) => item.dataset.edge === edge);
+  const target = card?.dataset.target;
+  if (!target) return;
+
+  if (edge === "break") {
+    state.filters.org = target;
+    elements.orgFilter.value = target;
+    state.selectedId = null;
+  } else {
+    state.filters.search = "";
+    state.filters.org = "all";
+    state.filters.minScore = 0;
+    elements.search.value = "";
+    elements.orgFilter.value = "all";
+    elements.scoreFilter.value = "0";
+    elements.scoreFilterValue.textContent = "0";
+    state.selectedId = target;
+  }
+
+  render();
+  document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function applyCardMarket(players) {
@@ -319,7 +371,7 @@ function renderMarketBoard(rows) {
 
   elements.marketBoard.innerHTML = tracked
     .map((player) => `
-      <article class="market-card">
+      <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}">
         <div>
           <span class="market-label">${escapeHtml(player.market_signal)}</span>
           <h3>${escapeHtml(player.player_name)}</h3>
@@ -340,6 +392,21 @@ function renderMarketBoard(rows) {
       </article>
     `)
     .join("");
+
+  elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
+    const activate = () => {
+      state.selectedId = card.dataset.playerId;
+      render();
+      document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    card.addEventListener("click", activate);
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        activate();
+      }
+    });
+  });
 }
 
 function buildOrgExposure() {
@@ -410,7 +477,7 @@ function renderCard(player) {
         <h3>${escapeHtml(player.player_name)}</h3>
         <p class="muted">Rank ${escapeHtml(player.prospect_rank ?? "-")} · Age ${escapeHtml(player.age ?? "-")} · ETA ${escapeHtml(player.eta ?? "-")}</p>
       </div>
-    <span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}%</span>
+    <span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}% call-up chance</span>
     </div>
 
     <div class="breakdown">
@@ -466,9 +533,61 @@ function marketPanel(player) {
         </div>
       </div>
       <p>${escapeHtml(player.market_note ?? "")}</p>
+      <div class="market-reasons">
+        <h4>Why this signal</h4>
+        <ul>
+          ${marketReasonBullets(player).map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}
+        </ul>
+      </div>
       ${player.source_url ? `<a href="${escapeHtml(player.source_url)}" target="_blank" rel="noreferrer">Open eBay sold search</a>` : ""}
     </section>
   `;
+}
+
+function marketReasonBullets(player) {
+  const reasons = [];
+  const last = numericMoney(player.last_sale);
+  const avg30 = numericMoney(player.avg_30);
+  const avg90 = numericMoney(player.avg_90);
+  const movement = rankMovement(player);
+  const sellThrough = Number(player.sell_through);
+
+  if (Number.isFinite(last) && Number.isFinite(avg30) && avg30 > 0) {
+    const diff = ((last - avg30) / avg30) * 100;
+    if (diff < -3) {
+      reasons.push(`Latest comp is ${Math.abs(Math.round(diff))}% below the 30-day average, so the entry price is discounted versus recent market.`);
+    } else if (diff > 3) {
+      reasons.push(`Latest comp is ${Math.round(diff)}% above the 30-day average, so this is momentum buying rather than a discount.`);
+    } else {
+      reasons.push("Latest comp is close to the 30-day average, which keeps the buy zone tied to recent market reality.");
+    }
+  }
+
+  if (Number.isFinite(last) && Number.isFinite(avg90) && avg90 > 0) {
+    const diff90 = ((last - avg90) / avg90) * 100;
+    if (diff90 < -8) {
+      reasons.push(`Price is still ${Math.abs(Math.round(diff90))}% under the 90-day average, leaving rebound room if the player gets a fresh catalyst.`);
+    } else if (diff90 > 8) {
+      reasons.push(`Price is ${Math.round(diff90)}% above the 90-day average, so some of the upside may already be priced in.`);
+    }
+  }
+
+  if (Number.isFinite(sellThrough)) {
+    reasons.push(`${Math.round(sellThrough)}% sell-through shows ${sellThrough >= 35 ? "healthy demand against current listings" : "demand is present but not yet urgent"}.`);
+  }
+
+  if (movement != null) {
+    if (movement < 0) {
+      reasons.push(`Top 100 rank is down ${Math.abs(movement)} spots, so the buy case needs the current stats and discount to outweigh ranking pressure.`);
+    } else if (movement > 0) {
+      reasons.push(`Top 100 rank is up ${movement} spots, adding prospect-hype momentum to the card signal.`);
+    } else {
+      reasons.push("Top 100 rank is flat, so the card signal leans more on price, stats, and call-up path.");
+    }
+  }
+
+  reasons.push(`${player.callup_score}% call-up chance keeps the card case tied to promotion upside, not just raw card comps.`);
+  return reasons;
 }
 
 function marketBadge(player) {

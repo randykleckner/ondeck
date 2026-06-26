@@ -156,8 +156,7 @@ a {
 
 .hero-panel {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(320px, 0.85fr) minmax(360px, 1.15fr);
+  display: block;
   min-height: clamp(560px, 76vh, 760px);
   overflow: hidden;
   border: 1px solid rgba(151, 170, 255, 0.2);
@@ -183,7 +182,8 @@ a {
   z-index: 1;
   display: grid;
   align-content: center;
-  max-width: 720px;
+  max-width: 680px;
+  min-height: inherit;
   padding: clamp(28px, 5vw, 70px);
 }
 
@@ -204,18 +204,22 @@ p {
 }
 
 h1 {
-  max-width: 720px;
+  display: grid;
+  gap: 0;
+  max-width: 670px;
   margin-bottom: 18px;
-  font-size: clamp(3rem, 6.7vw, 6.4rem);
+  font-size: clamp(2.75rem, 5.5vw, 5.65rem);
   font-weight: 950;
   letter-spacing: 0;
-  line-height: 0.88;
+  line-height: 0.92;
   text-transform: uppercase;
-  text-wrap: balance;
 }
 
-h1::first-line {
-  color: #fff;
+h1 span:nth-child(2) {
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .hero-copy p:not(.eyebrow) {
@@ -230,28 +234,6 @@ h2 {
   font-size: 1.02rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.future-vision {
-  position: relative;
-  z-index: 1;
-}
-
-.energy-orb {
-  position: absolute;
-  right: 10%;
-  top: 16%;
-  width: min(40vw, 520px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1px solid rgba(156, 199, 255, 0.42);
-  background:
-    radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.75), transparent 4%),
-    radial-gradient(circle at 52% 48%, rgba(82, 240, 255, 0.2), transparent 42%),
-    radial-gradient(circle, rgba(155, 92, 255, 0.24), transparent 65%);
-  box-shadow:
-    inset 0 0 44px rgba(82, 240, 255, 0.26),
-    0 0 70px rgba(155, 92, 255, 0.28);
 }
 
 .toolbar,
@@ -332,6 +314,52 @@ input[type="range"] {
   margin-bottom: 18px;
 }
 
+.edge-card-action {
+  position: relative;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.edge-card-action::after {
+  content: "View";
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  color: var(--cyan);
+  font-size: 0.72rem;
+  font-weight: 950;
+  opacity: 0;
+  text-transform: uppercase;
+  transition: opacity 160ms ease;
+}
+
+.edge-card-action:hover,
+.edge-card-action:focus-visible,
+.market-card:hover,
+.market-card:focus-visible {
+  border-color: rgba(82, 240, 255, 0.55);
+  background: rgba(10, 19, 43, 0.86);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.edge-card-action:hover::after,
+.edge-card-action:focus-visible::after {
+  opacity: 1;
+}
+
+.edge-card-action[aria-disabled="true"] {
+  cursor: default;
+}
+
+.edge-card-action[aria-disabled="true"]::after {
+  display: none;
+}
+
 .edge-board strong {
   display: block;
   margin-top: 8px;
@@ -393,6 +421,13 @@ input[type="range"] {
   display: grid;
   gap: 13px;
   padding: 15px;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .market-label,
@@ -613,6 +648,7 @@ tbody tr {
   border-radius: 999px;
   padding: 4px 10px;
   font-weight: 950;
+  white-space: nowrap;
 }
 
 .score-high {
@@ -668,6 +704,10 @@ tbody tr {
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 16px;
+}
+
+.card-title .score-pill {
+  min-width: 132px;
 }
 
 .card-title h3 {
@@ -757,6 +797,31 @@ tbody tr {
   font-weight: 900;
 }
 
+.market-reasons {
+  display: grid;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.market-reasons h4 {
+  margin: 0;
+  color: var(--cyan);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.market-reasons ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.market-reasons li {
+  margin-bottom: 6px;
+  color: #d8def6;
+  line-height: 1.42;
+}
+
 .news-panel {
   margin-top: 18px;
   padding-top: 16px;
@@ -787,7 +852,6 @@ tbody tr {
 
 @media (max-width: 1180px) {
   .app-header,
-  .hero-panel,
   .content-grid {
     grid-template-columns: 1fr;
   }
@@ -796,14 +860,10 @@ tbody tr {
     justify-content: start;
   }
 
-  .future-vision {
-    min-height: 260px;
-  }
-
-  .energy-orb {
-    right: 7%;
-    top: 0;
-    width: min(64vw, 420px);
+  .hero-panel {
+    background:
+      linear-gradient(90deg, rgba(5, 7, 17, 0.97) 0%, rgba(5, 7, 17, 0.78) 54%, rgba(5, 7, 17, 0.42) 100%),
+      url("./assets/ondeck-hero.png") center right / cover no-repeat;
   }
 }
 
@@ -836,6 +896,14 @@ tbody tr {
   }
 
   h1 {
-    font-size: 2.7rem;
+    font-size: 2.55rem;
+  }
+
+  .card-title {
+    display: grid;
+  }
+
+  .card-title .score-pill {
+    width: fit-content;
   }
 }

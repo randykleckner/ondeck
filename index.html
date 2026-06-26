@@ -29,7 +29,11 @@
       <section class="hero-panel" aria-label="OnDeck Prospect hero">
         <div class="hero-copy">
           <p class="eyebrow">Data. Signals. Edge.</p>
-          <h1>See the next call-up before the market does.</h1>
+          <h1>
+            <span>See the next</span>
+            <span>call-up before</span>
+            <span>the market does.</span>
+          </h1>
           <p>
             OnDeck Prospect combines MLB Top 100 movement, call-up pathways,
             current performance, and Bowman 1st Auto market signals into one
@@ -38,12 +42,6 @@
           <div class="hero-actions">
             <a class="button primary" href="#prospects">Explore Dashboard</a>
             <a class="button ghost" href="#card-market">View Card Edge</a>
-          </div>
-        </div>
-        <div class="future-vision" aria-hidden="true">
-          <div class="energy-orb">
-            <div class="orb-player"></div>
-            <div class="orb-field"></div>
           </div>
         </div>
       </section>
@@ -97,19 +95,19 @@
       </section>
 
       <section id="signals" class="edge-board" aria-label="Market edge highlights">
-        <article>
+        <article class="edge-card-action" role="button" tabindex="0" data-edge="riser">
           <span>Biggest rank riser</span>
           <strong id="edge-riser">-</strong>
         </article>
-        <article>
+        <article class="edge-card-action" role="button" tabindex="0" data-edge="path">
           <span>Cleanest call-up path</span>
           <strong id="edge-path">-</strong>
         </article>
-        <article>
+        <article class="edge-card-action" role="button" tabindex="0" data-edge="break">
           <span>Break exposure edge</span>
           <strong id="edge-break">-</strong>
         </article>
-        <article>
+        <article class="edge-card-action" role="button" tabindex="0" data-edge="card">
           <span>Best card buy zone</span>
           <strong id="edge-card">-</strong>
         </article>
@@ -153,7 +151,7 @@
                   <th>Level</th>
                   <th>Trend</th>
                   <th>Card Signal</th>
-                  <th>Chance</th>
+                  <th>Call-Up Chance</th>
                 </tr>
               </thead>
               <tbody id="prospect-rows"></tbody>
@@ -169,6 +167,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260626-26"></script>
+    <script type="module" src="./src/app.js?v=20260626-27"></script>
   </body>
 </html>
