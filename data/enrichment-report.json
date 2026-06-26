@@ -1,0 +1,16 @@
+{
+  "season": 2026,
+  "source": "MLB Stats API",
+  "stats_source_url": "https://www.mlb.com/prospects/stats/top-prospects",
+  "last_updated": "2026-06-26",
+  "enriched": 99,
+  "stats_rows": 95,
+  "depth_rows": 99,
+  "errors": [
+    {
+      "player_id": "mlb-top100-36",
+      "player_name": "Travis Sykora",
+      "message": "No MLBAM person match"
+    }
+  ]
+}

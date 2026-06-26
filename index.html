@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MLB Prospects Call-Up Tracker</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Prospect Intelligence</p>
+        <h1>Prospect Edge Watch</h1>
+      </div>
+      <div class="header-actions">
+        <button id="load-top100" class="button primary" type="button">Load MLB Top 100</button>
+        <button id="load-sample" class="button" type="button">Load Demo</button>
+        <button id="export-csv" class="button" type="button">Export Scores</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="toolbar" aria-label="Data imports and filters">
+        <div class="filter-grid">
+          <label>
+            Search
+            <input id="search" type="search" placeholder="Player or org" />
+          </label>
+          <label>
+            Organization
+            <select id="org-filter">
+              <option value="all">All orgs</option>
+            </select>
+          </label>
+          <label>
+            Minimum Score
+            <input id="score-filter" type="range" min="0" max="100" value="0" />
+            <strong id="score-filter-value">0</strong>
+          </label>
+        </div>
+        <div class="legend" aria-label="Call-up score legend">
+          <span><i class="legend-dot score-high"></i> Green: 60%+ call-up chance</span>
+          <span><i class="legend-dot score-medium"></i> Yellow: 50-59% call-up chance</span>
+          <span><i class="legend-dot score-low"></i> Red: 49% or below</span>
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="Call-up summary">
+        <article>
+          <span>Pre-call-up targets</span>
+          <strong id="total-count">0</strong>
+        </article>
+        <article>
+          <span>Called-up removed</span>
+          <strong id="called-up-count">0</strong>
+        </article>
+        <article>
+          <span>60%+ call-up edges</span>
+          <strong id="alert-count">0</strong>
+        </article>
+        <article>
+          <span>Avg call-up edge</span>
+          <strong id="avg-score">0</strong>
+        </article>
+        <article>
+          <span>Best path org</span>
+          <strong id="best-org">-</strong>
+        </article>
+      </section>
+
+      <section class="edge-board" aria-label="Market edge highlights">
+        <article>
+          <span>Biggest rank riser</span>
+          <strong id="edge-riser">-</strong>
+        </article>
+        <article>
+          <span>Cleanest call-up path</span>
+          <strong id="edge-path">-</strong>
+        </article>
+        <article>
+          <span>Break exposure edge</span>
+          <strong id="edge-break">-</strong>
+        </article>
+      </section>
+
+      <section class="team-board" aria-label="Top 100 prospects by team">
+        <div class="panel-heading">
+          <div>
+            <h2>Break Value Board</h2>
+            <p>Top 100 exposure by organization</p>
+          </div>
+          <span id="team-board-count">0 orgs</span>
+        </div>
+        <div id="team-board" class="team-grid"></div>
+      </section>
+
+      <section class="content-grid">
+        <div class="table-panel">
+          <div class="panel-heading">
+            <h2>Player Edge Watchlist</h2>
+            <span id="row-count">0 players</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Org</th>
+                  <th>Pos</th>
+                  <th>Level</th>
+                  <th>Trend</th>
+                  <th>Chance</th>
+                </tr>
+              </thead>
+              <tbody id="prospect-rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="card-panel" aria-label="Selected prospect card">
+          <div id="player-card" class="player-card empty">
+            <p>Select a player to review their call-up case.</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js?v=20260626-25"></script>
+  </body>
+</html>

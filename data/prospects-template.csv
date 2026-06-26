@@ -1,0 +1,2 @@
+player_id,player_name,org,position,age,level,prospect_rank,bats,throws,on_40man,eta
+101,Example Hitter,Sample Org,OF,22,AAA,18,R,R,true,2026

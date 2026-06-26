@@ -1,0 +1,100 @@
+player_id,mlbam_id,player_name,current_team,current_team_id,org_id,current_level,called_up,mlb_debut_date,on_40man,data_source,stats_source_url,last_updated
+mlb-top100-1,815908,Jesús Made,Biloxi Shuckers,5015,158,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-2,815888,Leo De Vries,Midland RockHounds,237,133,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-3,815825,Seth Hernandez,Greensboro Grasshoppers,477,134,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-4,816113,Eli Willits,Wilmington Blue Rocks,426,120,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-5,806068,Colt Emerson,Seattle Mariners,136,136,MLB,true,2026-05-17,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-6,807739,Kade Anderson,Arkansas Travelers,574,136,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-7,703601,Max Clark,Toledo Mud Hens,512,116,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-8,800543,Josue De Paula,Tulsa Drillers,260,119,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-9,806964,Sebastian Walcott,Frisco RoughRiders,540,140,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-10,808265,Franklin Arias,Portland Sea Dogs,546,111,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-11,805805,Walker Jenkins,St. Paul Saints,1960,142,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-12,806258,Thomas White,Jacksonville Jumbo Shrimp,564,146,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-13,815352,Caleb Bonemer,Birmingham Barons,247,145,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-14,805795,Aidan Miller,Lehigh Valley IronPigs,1410,143,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-15,815787,Ethan Holliday,Fresno Grizzlies,259,115,A,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-16,821270,Luis Peña,Wisconsin Timber Rattlers,572,158,ROK,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-17,814307,Zyhir Hope,Tulsa Drillers,260,119,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-18,806146,George Lombard Jr.,Scranton/Wilkes-Barre RailRiders,531,147,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-19,815549,Ryan Sloan,Arkansas Travelers,574,136,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-20,824604,Liam Doyle,Springfield Cardinals,440,138,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-21,695731,Braden Montgomery,Chicago White Sox,145,145,MLB,true,2026-06-09,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-22,823787,Rainiel Rodriguez,Springfield Cardinals,440,138,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-23,806957,Alfredo Duno,Dayton Dragons,459,113,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-24,702273,Noah Schultz,Charlotte Knights,494,145,MLB,true,2026-04-14,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-25,702281,Robby Snelling,Miami Marlins,146,146,MLB,true,2026-05-08,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-26,701364,Jamie Arnold,Midland RockHounds,237,133,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-27,703155,Lazaro Montes,Arkansas Travelers,574,136,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-28,829034,Josuar Gonzalez,ACL Giants,408,137,ROK,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-29,828098,JoJo Parker,Dunedin Blue Jays,424,141,A,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-30,814439,Ryan Waldschmidt,Reno Aces,2310,109,MLB,true,2026-05-08,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-31,804109,Aiva Arquette,Pensacola Blue Wahoos,4124,146,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-32,804636,Jonah Tong,Syracuse Mets,552,121,MLB,true,2025-08-29,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-33,821273,Edward Florentino,Greensboro Grasshoppers,477,134,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-34,808234,Eduardo Quintero,Great Lakes Loons,456,119,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-35,701785,Kaelen Culpepper,St. Paul Saints,1960,142,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-37,695611,Gage Jump,Athletics,133,133,MLB,true,2026-05-26,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-38,701527,Mike Sirota,Tulsa Drillers,260,119,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-39,815394,Theo Gillen,Montgomery Biscuits,421,139,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-40,806953,Eduardo Tait,Cedar Rapids Kernels,492,142,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-41,800614,Bryce Rainer,West Michigan Whitecaps,582,116,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-42,694197,Angel Genao,Columbus Clippers,445,114,AAA,false,,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-43,703197,Michael Arroyo,Arkansas Travelers,574,136,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-44,807284,Cam Caminiti,Rome Emperors,432,144,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-45,696146,Hagen Smith,Charlotte Knights,494,145,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-46,803285,Tyler Bremner,Tri-City Dust Devils,460,108,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-47,806956,Ethan Salas,San Antonio Missions,510,135,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-48,815814,Billy Carlson,Kannapolis Cannon Ballers,487,145,A,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-49,691181,Emmanuel Rodriguez,St. Paul Saints,1960,142,AAA,false,,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-50,805810,Blake Mitchell,Quad Cities River Bandits,565,118,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-51,805796,Arjun Nimmala,FCL Blue Jays,1390,141,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-52,815896,Emil Morales,Great Lakes Loons,456,119,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-53,836582,Luis Hernández,ACL Giants,408,137,ROK,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-54,806252,Ralphy Velazquez,Columbus Clippers,445,114,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-55,702518,Jett Williams,Nashville Sounds,556,158,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-56,702275,JR Ritchie,Gwinnett Stripers,431,144,MLB,true,2026-04-23,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-57,703186,Jarlin Susana,Harrisburg Senators,547,120,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-58,695684,Elmer Rodríguez,Scranton/Wilkes-Barre RailRiders,531,147,MLB,true,2026-04-29,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-59,815929,Jhonny Level,Eugene Emeralds,461,137,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-60,829162,Steele Hall,ACL Reds,3430,113,ROK,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-61,806198,Cooper Pratt,Milwaukee Brewers,158,158,MLB,true,2026-06-16,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-62,800522,Josue Briceño,Erie SeaWolves,106,116,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-63,695491,Joshua Báez,Memphis Redbirds,235,138,AAA,false,,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-64,825582,Nate George,Frederick Keys,493,110,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-65,828076,Dax Kilby,Tampa Tarpons,587,147,ROK,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-66,805906,Gage Wood,Reading Fightin Phils,522,143,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-67,809254,Anthony Eyanson,Portland Sea Dogs,546,111,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-68,694876,Cooper Ingle,Columbus Clippers,445,114,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-69,806071,Jonny Farmelo,Everett AquaSox,403,136,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-70,809707,Charlie Condon,Albuquerque Isotopes,342,115,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-71,801739,Carlos Lagrange,Scranton/Wilkes-Barre RailRiders,531,147,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-72,807291,Caden Scarborough,Hub City Spartanburgers,6324,140,ROK,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-73,830402,Kendry Chourio,Quad Cities River Bandits,565,118,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-74,829037,Kevin Alvarez,Fayetteville Woodpeckers,3712,117,A,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-75,689981,River Ryan,Oklahoma City Comets,238,119,AAA,true,2024-07-22,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-76,821041,Roldy Brito,Fresno Grizzlies,259,115,A,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-77,815617,Kayson Cunningham,Hillsboro Hops,419,109,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-78,800473,Jefferson Rojas,Knoxville Smokies,553,112,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-79,811315,Brody Hopkins,Durham Bulls,234,139,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-80,699393,Pedro Ramírez,Chicago Cubs,112,112,MLB,true,2026-05-23,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-81,804817,Kyson Witherspoon,Greenville Drive,428,111,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-82,701388,Jurrangelo Cijntje,Springfield Cardinals,440,138,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-83,694393,Jaxon Wiggins,South Bend Cubs,550,112,ROK,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-84,807083,Nathan Flewelling,Bowling Green Hot Rods,2498,139,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-85,826723,Ronny Cruz,Wilmington Blue Rocks,426,120,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-86,828244,Kruz Schoolcraft,Lake Elsinore Storm,103,135,A,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-87,702610,Ike Irish,Frederick Keys,493,110,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-88,827734,Wei-En Lin,Las Vegas Aviators,400,133,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-89,800325,Luis Lara,Nashville Sounds,556,158,AAA,false,,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-90,815843,Josh Hammond,Columbia Fireflies,3705,118,A,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-91,821100,Justin Gonzales,Greenville Drive,428,111,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-92,804560,Charles Davalan,Great Lakes Loons,456,119,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-93,815832,Xavier Neyens,Fayetteville Woodpeckers,3712,117,A,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-94,695490,Edwin Arroyo,Cincinnati Reds,113,113,MLB,true,2026-06-01,true,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-95,803849,Devin Fitz-Gerald,Harrisburg Senators,547,120,AA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-96,806958,Felnin Celesten,Everett AquaSox,403,136,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-97,814409,Seaver King,Rochester Red Wings,534,120,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-98,703596,Karson Milbrandt,Jacksonville Jumbo Shrimp,564,146,AAA,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-99,815824,Josiah Hartshorn,South Bend Cubs,550,112,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26
+mlb-top100-100,807080,Eric Hartman,Rome Emperors,432,144,A+,false,,false,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2026-06-26

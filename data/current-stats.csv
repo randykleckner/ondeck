@@ -1,0 +1,96 @@
+player_id,games,pa,avg,obp,slg,ops,hr,sb,bb_rate,k_rate,last_14_ops,last_30_ops,last_60_ops,stat_level,stat_team,data_source,source_url,era,whip,k_per_9,bb_per_9,last_14_era,last_30_era,last_60_era
+mlb-top100-1,64,291,.283,.357,.442,.799,7,22,10.3,15.5,1.007,.787,.753,AA,Biloxi Shuckers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-2,65,296,.281,.374,.423,.797,9,28,11.5,19.9,.980,.865,.780,AA,Midland RockHounds,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-3,7,,,,,,,,,,,,,A+,Greensboro Grasshoppers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,3.07,1.23,13.19,5.52,0.00,2.91,3.07
+mlb-top100-4,12,59,.250,.390,.625,1.015,5,6,15.3,18.6,.821,1.015,1.015,A+,Wilmington Blue Rocks,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-5,32,112,.206,.277,.451,.728,6,1,7.1,32.1,.529,.703,.728,MLB,Seattle Mariners,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-6,12,,,,,,,,,,,,,AA,Arkansas Travelers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,1.02,0.65,13.14,1.17,0.00,0.00,1.26
+mlb-top100-7,68,315,.264,.346,.394,.740,6,16,10.5,15.2,.893,.752,.690,AAA,Toledo Mud Hens,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-8,68,322,.315,.416,.546,.962,13,19,14.6,12.7,.929,1.064,.981,AA,Tulsa Drillers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-10,60,264,.325,.402,.580,.982,14,5,9.8,13.3,.984,.854,.870,AA,Portland Sea Dogs,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-11,26,115,.258,.400,.409,.809,2,5,17.4,16.5,1.500,1.500,1.395,AAA,St. Paul Saints,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-12,5,,,,,,,,,,,,,AAA,Jacksonville Jumbo Shrimp,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.34,1.45,12.05,4.34,,,6.75
+mlb-top100-13,9,39,.219,.359,.219,.578,0,0,17.9,25.6,.578,.578,.578,AA,Birmingham Barons,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-15,33,152,.262,.395,.557,.952,9,1,15.1,28.3,,,1.169,A,Fresno Grizzlies,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-16,3,12,.444,.583,.778,1.361,0,2,16.7,16.7,,,1.361,ROK,ACL Brewers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-17,67,303,.269,.340,.466,.806,13,11,9.9,27.1,.497,.799,.817,AA,Tulsa Drillers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-18,42,197,.231,.381,.385,.766,4,8,17.8,21.3,1.442,1.007,.766,AAA,Scranton/Wilkes-Barre RailRiders,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-19,12,,,,,,,,,,,,,AA,Arkansas Travelers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.35,1.26,10.97,2.09,1.64,3.10,3.86
+mlb-top100-20,12,,,,,,,,,,,,,AA,Springfield Cardinals,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,6.08,1.61,12.17,5.13,8.31,5.50,5.05
+mlb-top100-21,14,53,.250,.302,.479,.781,2,0,7.5,26.4,.632,.781,.781,MLB,Chicago White Sox,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-22,32,146,.260,.363,.415,.778,5,5,11.6,26,1.083,.915,.778,AA,Springfield Cardinals,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-23,62,283,.260,.382,.506,.888,15,1,15.5,27.6,.784,.815,.964,A+,Dayton Dragons,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-24,8,,,,,,,,,,,,,MLB,Chicago White Sox,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,5.82,1.34,7.68,5.12,,,7.33
+mlb-top100-25,1,,,,,,,,,,,,,MLB,Miami Marlins,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,5.40,1.80,3.60,7.20,,,5.40
+mlb-top100-26,14,,,,,,,,,,,,,AA,Midland RockHounds,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.24,1.59,9.39,4.37,3.31,3.90,4.81
+mlb-top100-27,70,297,.236,.343,.555,.898,23,5,12.5,29.6,.837,1.054,.974,AA,Arkansas Travelers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-28,16,59,.417,.525,.646,1.171,1,4,18.6,20.3,1.000,1.000,1.171,ROK,ACL Giants,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-29,61,277,.246,.383,.438,.821,8,19,16.6,24.9,1.215,.939,.804,A,Dunedin Blue Jays,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-30,33,122,.259,.314,.357,.671,0,5,6.6,32.8,.536,.519,.671,MLB,Arizona Diamondbacks,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-31,26,116,.215,.276,.411,.687,6,6,6.9,18.1,.808,.676,.687,AA,Pensacola Blue Wahoos,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-32,3,,,,,,,,,,,,,MLB,New York Mets,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,3.60,1.50,6.30,6.30,,5.14,3.60
+mlb-top100-33,40,180,.192,.333,.342,.675,7,4,16.1,28.9,.739,.622,.675,A+,Greensboro Grasshoppers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-34,60,271,.283,.391,.391,.782,3,29,14,22.5,.782,.884,.915,A+,Great Lakes Loons,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-35,61,289,.273,.377,.498,.875,14,15,12.8,17.3,1.357,1.041,.983,AAA,St. Paul Saints,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-37,6,,,,,,,,,,,,,MLB,Athletics,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2.04,0.96,8.92,2.55,1.59,1.19,2.04
+mlb-top100-38,31,146,.327,.479,.549,1.028,5,2,21.2,21.9,.942,1.065,1.028,AA,Tulsa Drillers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-39,2,9,.222,.222,.222,.444,0,0,0,0,.444,.444,.444,AA,Montgomery Biscuits,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-40,63,277,.227,.296,.453,.749,14,0,7.9,23.5,1.039,.791,.685,A+,Cedar Rapids Kernels,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-41,46,201,.276,.383,.459,.842,6,10,14.4,33.8,1.247,1.000,.893,A+,West Michigan Whitecaps,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-42,43,171,.265,.333,.444,.777,5,3,8.8,18.7,.904,.745,.777,AAA,Columbus Clippers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-43,56,252,.271,.349,.430,.779,8,10,8.3,16.7,.819,.902,.815,AA,Arkansas Travelers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-44,13,,,,,,,,,,,,,A+,Rome Emperors,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.71,1.36,9.42,4.40,4.50,3.21,4.93
+mlb-top100-45,14,,,,,,,,,,,,,AAA,Charlotte Knights,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.67,1.40,13.33,6.23,14.54,4.91,5.89
+mlb-top100-46,9,,,,,,,,,,,,,A+,Tri-City Dust Devils,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,2.57,1.21,12.86,2.89,6.35,4.50,4.76
+mlb-top100-47,55,233,.281,.349,.433,.782,7,13,9.9,15,.629,.573,.755,AA,San Antonio Missions,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-48,39,177,.257,.386,.340,.726,0,8,15.3,25.4,,,.736,A,Kannapolis Cannon Ballers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-49,25,108,.247,.417,.506,.923,6,3,21.3,28.7,,,1.367,AAA,St. Paul Saints,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-50,64,281,.216,.420,.431,.851,12,15,25.3,34.9,.767,.841,.843,A+,Quad Cities River Bandits,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-51,18,72,.308,.375,.369,.744,0,3,9.7,22.2,,1.167,.744,AA,New Hampshire Fisher Cats,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-52,29,129,.211,.295,.404,.699,6,3,10.1,27.1,.732,.686,.699,A+,Great Lakes Loons,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-53,36,152,.284,.362,.552,.914,6,4,9.9,17.1,.661,.757,.914,ROK,ACL Giants,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-54,27,116,.252,.336,.369,.705,1,0,8.6,26.7,.702,.650,.705,AAA,Columbus Clippers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-55,72,325,.221,.329,.377,.706,9,16,12.9,22.8,.688,.590,.743,AAA,Nashville Sounds,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-56,8,,,,,,,,,,,,,MLB,Atlanta Braves,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.87,1.43,8.19,5.53,5.40,5.40,5.35
+mlb-top100-58,4,,,,,,,,,,,,,MLB,New York Yankees,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.76,1.76,5.29,5.82,6.75,6.75,4.76
+mlb-top100-59,20,95,.303,.347,.438,.785,1,5,3.2,16.8,.663,.785,.785,A+,Eugene Emeralds,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-60,39,186,.307,.416,.567,.983,8,16,15.1,24.7,1.029,.873,.983,ROK,ACL Reds,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-61,9,31,.259,.323,.259,.582,0,4,9.7,19.4,.582,.582,.582,MLB,Milwaukee Brewers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-63,69,312,.273,.343,.626,.969,26,13,7.1,29.8,1.295,1.176,1.031,AAA,Memphis Redbirds,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-64,20,94,.293,.372,.366,.738,1,15,10.6,19.1,,,.499,A+,Frederick Keys,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-65,1,2,.000,.000,.000,.000,0,0,0,50,,.000,.000,ROK,FCL Yankees,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-66,6,,,,,,,,,,,,,AA,Reading Fightin Phils,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,3.92,1.26,12.63,3.05,5.40,4.08,3.92
+mlb-top100-67,6,,,,,,,,,,,,,AA,Portland Sea Dogs,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,1.46,1.14,10.22,4.74,0.00,0.00,1.46
+mlb-top100-68,51,221,.284,.416,.551,.967,12,1,18.6,22.6,.870,.793,.844,AAA,Columbus Clippers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-69,67,320,.261,.388,.466,.854,10,21,16.3,25.6,.917,.959,.897,A+,Everett AquaSox,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-70,68,316,.275,.408,.537,.945,15,5,15.2,22.8,1.404,1.218,.973,AAA,Albuquerque Isotopes,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-71,17,,,,,,,,,,,,,AAA,Scranton/Wilkes-Barre RailRiders,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,3.88,1.28,11.78,4.45,2.57,1.86,3.98
+mlb-top100-72,2,,,,,,,,,,,,,ROK,ACL Rangers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,6.75,2.25,9.00,2.25,,,6.75
+mlb-top100-73,1,,,,,,,,,,,,,A+,Quad Cities River Bandits,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,9.64,1.50,19.29,0.00,9.64,9.64,9.64
+mlb-top100-74,52,233,.262,.322,.429,.751,6,8,6.9,17.6,.938,.771,.741,A,Fayetteville Woodpeckers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-75,8,,,,,,,,,,,,,AAA,Oklahoma City Comets,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.46,1.29,10.65,1.98,16.62,5.75,4.30
+mlb-top100-76,67,321,.313,.356,.473,.829,6,15,6.2,17.1,.738,.628,.842,A,Fresno Grizzlies,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-77,12,54,.265,.315,.408,.723,1,4,7.4,20.4,.904,.723,.723,A+,Hillsboro Hops,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-78,61,260,.291,.358,.513,.871,13,10,9.2,17.3,1.050,1.011,.873,AA,Knoxville Smokies,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-79,15,,,,,,,,,,,,,AAA,Durham Bulls,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,5.13,1.73,10.56,9.05,17.36,8.10,6.62
+mlb-top100-80,20,53,.265,.308,.388,.696,1,2,5.7,15.1,.808,.676,.696,MLB,Chicago Cubs,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-81,12,,,,,,,,,,,,,A+,Greenville Drive,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,5.12,1.45,9.53,4.76,5.40,3.10,4.75
+mlb-top100-82,14,,,,,,,,,,,,,AA,Springfield Cardinals,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,5.07,1.39,10.96,4.93,5.06,4.88,4.70
+mlb-top100-83,1,,,,,,,,,,,,,ROK,ACL Cubs,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,4.50,2.00,9.00,4.50,4.50,4.50,4.50
+mlb-top100-84,62,284,.260,.384,.472,.856,12,4,14.8,25,.924,.741,.773,A+,Bowling Green Hot Rods,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-85,51,226,.225,.279,.340,.619,5,7,5.8,27,.545,.617,.545,A+,Wilmington Blue Rocks,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-86,12,,,,,,,,,,,,,A,Lake Elsinore Storm,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,6.81,1.84,10.44,6.35,6.30,5.30,4.73
+mlb-top100-87,59,256,.257,.375,.467,.842,10,15,13.3,22.7,.939,.870,.799,A+,Frederick Keys,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-88,2,,,,,,,,,,,,,AAA,Las Vegas Aviators,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,43.20,6.00,5.40,21.60,27.00,43.20,43.20
+mlb-top100-89,70,310,.323,.434,.455,.889,7,20,15.5,13.5,.656,.733,.821,AAA,Nashville Sounds,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-90,66,293,.288,.349,.420,.769,4,17,8.9,21.5,.759,.667,.710,A,Columbia Fireflies,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-91,57,272,.265,.368,.444,.812,10,5,11.4,18,.986,.685,.824,A+,Greenville Drive,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-92,64,291,.264,.385,.431,.816,8,14,13.1,11.7,.581,.615,.779,A+,Great Lakes Loons,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-93,56,248,.242,.431,.430,.861,10,14,23,31.9,1.109,.829,.886,A,Fayetteville Woodpeckers,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-94,20,61,.236,.295,.273,.568,0,0,4.9,23,.609,.568,.568,MLB,Cincinnati Reds,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-95,14,59,.109,.169,.164,.333,1,0,5.1,32.2,.315,.333,.333,AA,Harrisburg Senators,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-96,65,291,.320,.412,.530,.942,11,17,12.4,19.9,1.213,.962,1.017,A+,Everett AquaSox,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-97,28,125,.296,.344,.487,.831,5,3,4,20.8,.834,.751,.831,AAA,Rochester Red Wings,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-98,3,,,,,,,,,,,,,AAA,Jacksonville Jumbo Shrimp,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,1.20,1.27,9.00,6.60,2.00,1.20,1.20
+mlb-top100-99,27,117,.344,.410,.698,1.108,9,3,9.4,19.7,.881,1.098,1.108,A+,South Bend Cubs,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
+mlb-top100-100,66,298,.297,.359,.560,.919,18,29,8.4,22.8,.643,.791,.847,A+,Rome Emperors,MLB Stats API,https://www.mlb.com/prospects/stats/top-prospects,,,,,,,
