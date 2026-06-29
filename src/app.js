@@ -51,6 +51,17 @@ const TEAM_IDS = new Map([
   ["Washington Nationals", 120],
 ]);
 
+const FIELD_POSITIONS = [
+  { key: "C", label: "C", title: "Catcher" },
+  { key: "1B", label: "1B", title: "First Base" },
+  { key: "2B", label: "2B", title: "Second Base" },
+  { key: "3B", label: "3B", title: "Third Base" },
+  { key: "SS", label: "SS", title: "Shortstop" },
+  { key: "OF", label: "OF", title: "Outfield" },
+  { key: "SP", label: "SP", title: "Starting Pitching" },
+  { key: "RP", label: "RP", title: "Bullpen" },
+];
+
 const elements = {
   loadTop100: document.querySelector("#load-top100"),
   exportCsv: document.querySelector("#export-csv"),
@@ -337,8 +348,8 @@ function renderWarRoom() {
     return;
   }
 
-  const lanes = buildDepthChartColumns(players);
-  elements.warRoomBoard.innerHTML = lanes.map((lane) => depthChartColumnMarkup(lane)).join("");
+  const board = buildPositionBoard(players);
+  elements.warRoomBoard.innerHTML = positionWarRoomMarkup(board);
   elements.warRoomBoard.querySelectorAll(".war-prospect[data-player-id]").forEach((card) => {
     card.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -346,6 +357,16 @@ function renderWarRoom() {
       state.selectedId = card.dataset.playerId;
       render();
       document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  elements.warRoomBoard.querySelectorAll(".current-player-chip").forEach((chip) => {
+    chip.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const expanded = chip.getAttribute("aria-expanded") === "true";
+      elements.warRoomBoard.querySelectorAll(".current-player-chip[aria-expanded='true']").forEach((openChip) => {
+        if (openChip !== chip) openChip.setAttribute("aria-expanded", "false");
+      });
+      chip.setAttribute("aria-expanded", String(!expanded));
     });
   });
 }
@@ -398,71 +419,117 @@ function warRoomSummaryMarkup(players, calledUp) {
   `;
 }
 
-function buildDepthChartColumns(players) {
-  const byRole = new Map();
+function buildPositionBoard(players) {
+  const byPosition = new Map(FIELD_POSITIONS.map((position) => [position.key, {
+    ...position,
+    players: [],
+    blockers: [],
+    injuries: 0,
+    need: 0,
+    blockerCount: 0,
+    servicePressure: "low",
+  }]));
+
   for (const player of players) {
-    const role = depthChartGroup(player.position);
-    const lane = byRole.get(role) ?? { role, players: [], blockers: [], injuries: 0, need: 0 };
+    const key = fieldPositionKey(player.position);
+    const lane = byPosition.get(key) ?? byPosition.get("OF");
     lane.players.push(player);
     blockerNames(player).forEach((name) => {
       if (!lane.blockers.includes(name)) lane.blockers.push(name);
     });
     if (String(player.injury_opening).toLowerCase() === "true") lane.injuries += 1;
     lane.need = Math.max(lane.need, Number(player.mlb_team_need) || 0);
-    byRole.set(role, lane);
+    lane.blockerCount = Math.max(lane.blockerCount, Number(player.mlb_blockers) || lane.blockers.length);
+    lane.servicePressure = servicePressureRank(player.service_time_pressure) > servicePressureRank(lane.servicePressure)
+      ? player.service_time_pressure
+      : lane.servicePressure;
   }
-  return [...byRole.values()].sort((a, b) => b.players[0].callup_score - a.players[0].callup_score || laneSort(a.role) - laneSort(b.role));
+
+  return FIELD_POSITIONS.map((position) => {
+    const lane = byPosition.get(position.key);
+    lane.players.sort((a, b) => b.callup_score - a.callup_score || Number(a.prospect_rank) - Number(b.prospect_rank));
+    return lane;
+  });
 }
 
-function depthChartColumnMarkup(lane) {
-  const blockers = lane.blockers.slice(0, 6);
+function positionWarRoomMarkup(board) {
+  const active = board.filter((lane) => lane.players.length);
+  const bestLane = active.slice().sort((a, b) => b.players[0].callup_score - a.players[0].callup_score)[0];
+  return `
+    <div class="field-war-room">
+      <div class="field-diamond" aria-label="Baseball field depth chart">
+        ${board.map((lane) => fieldPositionMarkup(lane)).join("")}
+        <div class="field-grass" aria-hidden="true"></div>
+        <div class="field-infield" aria-hidden="true"></div>
+        <div class="field-mound" aria-hidden="true"></div>
+      </div>
+      <aside class="position-callouts">
+        <div class="panel-heading compact">
+          <h3>Path Read</h3>
+          <span>${escapeHtml(active.length)} active spots</span>
+        </div>
+        ${bestLane ? `<p><strong>${escapeHtml(bestLane.players[0].player_name)}</strong> has the hottest lane at ${escapeHtml(bestLane.players[0].callup_score)}%. ${escapeHtml(pathRead(bestLane))}</p>` : "<p>No active positional prospect lanes are loaded for this team.</p>"}
+        <div class="flag-legend">
+          <span><i></i> Click MLB starter or backup chips for the current red-flag read.</span>
+          <span>Contract, injury history, and slump feeds can plug into these callouts once loaded.</span>
+        </div>
+      </aside>
+    </div>
+  `;
+}
+
+function fieldPositionMarkup(lane) {
   const top = lane.players[0];
+  const blockers = lane.blockers.slice(0, 2);
+  const starter = blockers[0];
+  const backup = blockers[1];
   const pressure = rosterPressure(lane);
   return `
-    <article class="depth-column">
-      <div class="depth-column-head">
-        <div>
-          <span>${escapeHtml(lane.role)}</span>
-          <h3>${escapeHtml(top.player_name)}</h3>
-        </div>
+    <article class="field-position ${escapeHtml(positionClassName(lane.key))} ${top ? "has-prospect" : "empty-position"}">
+      <header>
+        <span>${escapeHtml(lane.label)}</span>
         <strong>${escapeHtml(pressure)}</strong>
+      </header>
+      <div class="current-stack">
+        ${starter ? currentPlayerChip(starter, "Starter", lane, 0) : `<span class="empty-chip">Starter not loaded</span>`}
+        ${backup ? currentPlayerChip(backup, "Backup", lane, 1) : `<span class="empty-chip">Backup not loaded</span>`}
       </div>
-      <div class="depth-path">
-        <span style="width: ${Math.max(8, Number(top.opportunity_score) || 0)}%"></span>
-      </div>
-      <div class="depth-tier">
-        <div class="depth-tier-label">
-          <span>MLB depth chart</span>
-          <b>${blockers.length || Number(top.mlb_blockers) || 0} blockers</b>
-        </div>
-        <ol class="depth-list depth-list-mlb">
-          ${blockers.length ? blockers.map((name, index) => depthBlockerMarkup(name, index)).join("") : `<li><span class="depth-rank">--</span><strong>No named blockers loaded</strong><em>Depth feed needs detail</em></li>`}
-        </ol>
-      </div>
-      <div class="depth-arrow" aria-hidden="true">
-        <span></span>
-      </div>
-      <div class="depth-tier">
-        <div class="depth-tier-label">
-          <span>Prospects up next</span>
-          <b>${escapeHtml(pathRead(lane))}</b>
-        </div>
-        <div class="war-prospects">
-          ${lane.players.map((player, index) => warProspectMarkup(player, index)).join("")}
-        </div>
+      <div class="prospect-bubbles">
+        ${lane.players.length ? lane.players.slice(0, 2).map((player, index) => warProspectMarkup(player, index)).join("") : `<span class="empty-prospect">No Top 100 path</span>`}
       </div>
     </article>
   `;
 }
 
-function depthBlockerMarkup(name, index) {
+function currentPlayerChip(name, role, lane, index) {
+  const flags = currentPlayerFlags(lane, index);
   return `
-    <li>
-      <span class="depth-rank">${index + 1}</span>
-      <strong>${escapeHtml(name)}</strong>
-      <em>MLB roster</em>
-    </li>
+    <button class="current-player-chip ${flags.length ? "has-flag" : ""}" type="button" aria-expanded="false">
+      <span>
+        <b>${escapeHtml(name)}</b>
+        <em>${escapeHtml(role)}</em>
+      </span>
+      ${flags.length ? `<i aria-label="Red flag"></i>` : ""}
+      <small>${flags.map((flag) => `<strong>${escapeHtml(flag.label)}</strong>${escapeHtml(flag.detail)}`).join("")}</small>
+    </button>
   `;
+}
+
+function currentPlayerFlags(lane, index) {
+  const flags = [];
+  if (lane.injuries) {
+    flags.push({ label: "Injury churn", detail: "The current depth feed flags an injured 40-man option at this position." });
+  }
+  if (lane.blockerCount >= 5) {
+    flags.push({ label: "Crowded room", detail: `${lane.blockerCount} blockers are loaded, so this path may require trade, injury, or performance churn.` });
+  }
+  if (lane.need <= 3 && lane.players.length) {
+    flags.push({ label: "Light team need", detail: "The team-need score is low, so performance alone may not force a fast call-up." });
+  }
+  if (String(lane.servicePressure).toLowerCase() === "high" && index === 0) {
+    flags.push({ label: "Roster timing", detail: "Service-time or 40-man timing pressure is still marked high for this lane." });
+  }
+  return flags.slice(0, 3);
 }
 
 function warProspectMarkup(player, index = 0) {
@@ -488,6 +555,7 @@ function pathRead(lane) {
 
 function rosterPressure(lane) {
   const top = lane.players[0];
+  if (!top) return "No path";
   if (top.callup_score >= 60) return "Hot path";
   if (lane.injuries) return "Churn watch";
   if (lane.need >= 7) return "Need watch";
@@ -507,6 +575,39 @@ function depthChartGroup(position) {
   if (value.includes("C")) return "Catcher";
   if (value.includes("OF")) return "Outfield";
   return "Infield";
+}
+
+function fieldPositionKey(position) {
+  const value = String(position ?? "").toUpperCase();
+  if (value.includes("RP") || value.includes("CP")) return "RP";
+  if (value.includes("P")) return "SP";
+  if (value.includes("C")) return "C";
+  if (value.includes("1B")) return "1B";
+  if (value.includes("2B")) return "2B";
+  if (value.includes("3B")) return "3B";
+  if (value.includes("SS")) return "SS";
+  return "OF";
+}
+
+function positionClassName(key) {
+  return {
+    C: "pos-c",
+    "1B": "pos-first",
+    "2B": "pos-second",
+    "3B": "pos-third",
+    SS: "pos-short",
+    OF: "pos-outfield",
+    SP: "pos-starter",
+    RP: "pos-bullpen",
+  }[key] ?? "pos-outfield";
+}
+
+function servicePressureRank(value) {
+  const key = String(value ?? "").toLowerCase();
+  if (key === "high") return 3;
+  if (key === "medium") return 2;
+  if (key === "low") return 1;
+  return 0;
 }
 
 function laneSort(role) {

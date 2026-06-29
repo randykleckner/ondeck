@@ -722,13 +722,283 @@ tbody tr.selected {
 
 .war-room-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 16px;
   padding: 14px;
   background:
     linear-gradient(rgba(151, 170, 255, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(151, 170, 255, 0.035) 1px, transparent 1px);
   background-size: 28px 28px;
+}
+
+.field-war-room {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 0.34fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.field-diamond {
+  position: relative;
+  min-height: 920px;
+  overflow: hidden;
+  border: 1px solid rgba(82, 240, 255, 0.2);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(82, 240, 255, 0.14), transparent 17rem),
+    radial-gradient(circle at 50% 62%, rgba(66, 225, 139, 0.14), transparent 28rem),
+    linear-gradient(180deg, rgba(8, 25, 34, 0.94), rgba(4, 8, 19, 0.94));
+}
+
+.field-grass,
+.field-infield,
+.field-mound {
+  position: absolute;
+  pointer-events: none;
+}
+
+.field-grass {
+  inset: 7%;
+  border: 1px solid rgba(66, 225, 139, 0.18);
+  border-radius: 50% 50% 44% 44%;
+  background:
+    radial-gradient(circle at 50% 58%, rgba(66, 225, 139, 0.18), transparent 22rem),
+    linear-gradient(135deg, rgba(66, 225, 139, 0.08), rgba(82, 240, 255, 0.03));
+}
+
+.field-infield {
+  left: 50%;
+  top: 45%;
+  width: 230px;
+  height: 230px;
+  border: 1px solid rgba(238, 198, 111, 0.42);
+  border-radius: 10px;
+  background: rgba(238, 198, 111, 0.1);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.field-mound {
+  left: 50%;
+  top: 45%;
+  width: 64px;
+  height: 64px;
+  border: 1px solid rgba(238, 198, 111, 0.5);
+  border-radius: 999px;
+  background: rgba(238, 198, 111, 0.16);
+  transform: translate(-50%, -50%);
+}
+
+.field-position {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 9px;
+  width: clamp(148px, 19vw, 190px);
+  padding: 9px;
+  border: 1px solid rgba(151, 170, 255, 0.22);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(82, 240, 255, 0.12), transparent 10rem),
+    rgba(5, 8, 20, 0.82);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
+}
+
+.field-position.has-prospect {
+  border-color: rgba(82, 240, 255, 0.34);
+}
+
+.field-position.empty-position {
+  opacity: 0.68;
+}
+
+.field-position header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.field-position header span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 30px;
+  border-radius: 8px;
+  color: #06101b;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.field-position header strong {
+  color: var(--cyan);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.pos-c {
+  left: 50%;
+  bottom: 3%;
+  transform: translateX(-50%);
+}
+
+.pos-first {
+  right: 5%;
+  top: 50%;
+}
+
+.pos-second {
+  right: 2%;
+  top: 27%;
+}
+
+.pos-third {
+  left: 5%;
+  top: 50%;
+}
+
+.pos-short {
+  left: 2%;
+  top: 27%;
+}
+
+.pos-outfield {
+  left: 50%;
+  top: 3%;
+  transform: translateX(-50%);
+}
+
+.pos-starter {
+  left: 50%;
+  top: 43%;
+  transform: translateX(-50%);
+}
+
+.pos-bullpen {
+  right: 5%;
+  bottom: 5%;
+}
+
+.current-stack,
+.prospect-bubbles {
+  display: grid;
+  gap: 7px;
+}
+
+.current-player-chip {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px;
+  border: 1px solid rgba(151, 170, 255, 0.16);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(9, 14, 33, 0.82);
+  text-align: left;
+  cursor: pointer;
+}
+
+.current-player-chip b,
+.current-player-chip em {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-player-chip b {
+  color: white;
+  font-size: 0.82rem;
+}
+
+.current-player-chip em {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.current-player-chip i,
+.flag-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--red);
+  box-shadow: 0 0 12px rgba(255, 71, 117, 0.62);
+}
+
+.current-player-chip small {
+  grid-column: 1 / -1;
+  display: none;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(255, 71, 117, 0.2);
+  border-radius: 8px;
+  color: #f4d8e0;
+  background: rgba(255, 71, 117, 0.08);
+  font-size: 0.72rem;
+  line-height: 1.38;
+}
+
+.current-player-chip[aria-expanded="true"] small {
+  display: grid;
+}
+
+.current-player-chip small strong {
+  display: block;
+  color: #fff;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.empty-chip,
+.empty-prospect {
+  display: block;
+  padding: 7px;
+  border: 1px dashed rgba(151, 170, 255, 0.2);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.position-callouts {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(151, 170, 255, 0.22);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(117, 62, 255, 0.14), transparent 12rem),
+    rgba(5, 8, 20, 0.74);
+}
+
+.position-callouts p,
+.flag-legend {
+  margin: 0;
+  color: #d8def6;
+  font-size: 0.84rem;
+  line-height: 1.48;
+}
+
+.flag-legend {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.flag-legend span:first-child {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .depth-column {
@@ -972,6 +1242,37 @@ tbody tr.selected {
   font-size: 0.68rem;
   font-weight: 950;
   text-transform: uppercase;
+}
+
+.field-position .war-prospect {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 4px 7px;
+  padding: 7px;
+  background:
+    linear-gradient(90deg, rgba(82, 240, 255, 0.08), rgba(117, 62, 255, 0.08)),
+    rgba(6, 12, 28, 0.82);
+}
+
+.field-position .war-prospect i {
+  width: 22px;
+  height: 22px;
+  font-size: 0.7rem;
+}
+
+.field-position .war-prospect strong {
+  font-size: 0.8rem;
+}
+
+.field-position .war-prospect em {
+  font-size: 0.68rem;
+}
+
+.field-position .war-prospect b {
+  font-size: 0.86rem;
+}
+
+.field-position .war-prospect small {
+  display: none;
 }
 
 .content-grid {
@@ -1331,6 +1632,10 @@ tbody tr {
   .edge-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .field-war-room {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 680px) {
@@ -1468,6 +1773,25 @@ tbody tr {
 
   .war-room-board {
     grid-template-columns: 1fr;
+  }
+
+  .field-diamond {
+    display: grid;
+    gap: 10px;
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .field-grass,
+  .field-infield,
+  .field-mound {
+    display: none;
+  }
+
+  .field-position {
+    position: static;
+    width: 100%;
+    transform: none;
   }
 
   .war-room-summary {
