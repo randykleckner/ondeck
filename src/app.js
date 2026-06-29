@@ -526,7 +526,7 @@ function marketPanel(player) {
           <h3>Card Market</h3>
           <span>Awaiting comps</span>
         </div>
-        <p class="muted">No eBay CPA Chrome Prospect Auto sold-comps row is loaded yet for ${escapeHtml(player.player_name)}. Run scripts/update-ebay-comps.mjs with eBay API access to activate buy-zone analysis.</p>
+        <p class="muted">No CPA Chrome Prospect Auto sold-comps row is loaded yet for ${escapeHtml(player.player_name)}. Run scripts/update-ebay-comps.mjs with eBay API access, or CARD_COMP_SOURCE=web for best-effort public scrape comps, to activate buy-zone analysis.</p>
       </section>
     `;
   }

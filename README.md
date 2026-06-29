@@ -36,14 +36,28 @@ The homepage card-market section is a top-10 next call-up board. `data/card-mark
 
 The card target is the Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv` when the generated initials are not enough.
 
-Generate eBay sold comps with:
+Generate cleaner eBay sold comps with API access:
 
 ```sh
 cd mlb-prospects
 EBAY_ACCESS_TOKEN=your_oauth_token node scripts/update-ebay-comps.mjs
 ```
 
-The updater searches eBay sold item sales for the CPA code, player name, `Chrome`, `Prospect`, and `Auto`, filters out bad title matches, then writes only players with returned sold comps. If no real eBay sold comps are returned, the script does not write a price for that player.
+Or run a best-effort public web scrape when you do not have an API token:
+
+```sh
+cd mlb-prospects
+CARD_COMP_SOURCE=web node scripts/update-ebay-comps.mjs
+```
+
+For a smaller scrape test:
+
+```sh
+cd mlb-prospects
+CARD_COMP_SOURCE=web CARD_COMP_TARGET_IDS=mlb-top100-1 node scripts/update-ebay-comps.mjs
+```
+
+The updater searches eBay sold item sales for the CPA code, player name, `Chrome`, `Prospect`, and `Auto`, filters out bad title matches, then writes only players with returned sold comps. If no real sold comps are returned, the script does not write a price for that player.
 
 The current fields are:
 
@@ -62,7 +76,7 @@ The current fields are:
 - `source_url`
 - `last_updated`
 
-The script uses eBay API access rather than public sold-page scraping. Public eBay sold-search pages are frequently blocked or rate-limited in automated environments and should not be treated as a reliable data source.
+`CARD_COMP_SOURCE=auto` is the default. It uses the API when `EBAY_ACCESS_TOKEN` is present and falls back to public web scraping when it is not. Public eBay sold-search pages are frequently blocked or rate-limited in automated environments, so scraped rows are useful directional comps but should not be treated as perfect market data.
 
 ## Enrich data
 
