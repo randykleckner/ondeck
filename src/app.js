@@ -371,9 +371,9 @@ function renderWarRoom() {
   const org = state.selectedOrg ?? bestBreakExposureOrg()?.name;
   if (!org) {
     elements.warRoomTitle.textContent = "Select a team";
-    elements.warRoomSubtitle.textContent = "Click a team on the Break Value Board to map prospect paths against MLB roster blockers.";
+    elements.warRoomSubtitle.textContent = "Click a team on the Break Value Board to map the depth chart, MLB blockers, and prospect call-up paths.";
     elements.warRoomSummary.innerHTML = "";
-    elements.warRoomBoard.innerHTML = `<p class="muted">Pick a team above to open its roster-path board.</p>`;
+    elements.warRoomBoard.innerHTML = `<p class="muted">Pick a team above to open its depth-chart board.</p>`;
     elements.warRoomLogo.innerHTML = "";
     return;
   }
@@ -397,8 +397,8 @@ function renderWarRoom() {
     return;
   }
 
-  const lanes = buildWarRoomLanes(players);
-  elements.warRoomBoard.innerHTML = lanes.map((lane) => warRoomLaneMarkup(lane)).join("");
+  const lanes = buildDepthChartColumns(players);
+  elements.warRoomBoard.innerHTML = lanes.map((lane) => depthChartColumnMarkup(lane)).join("");
   elements.warRoomBoard.querySelectorAll(".war-prospect[data-player-id]").forEach((card) => {
     card.addEventListener("click", () => {
       clearListFilters();
@@ -418,17 +418,19 @@ function warRoomSummaryMarkup(players, calledUp) {
     <div><span>60%+ paths</span><strong>${green}</strong></div>
     <div><span>On 40-man</span><strong>${onForty}</strong></div>
     <div><span>Already up</span><strong>${calledUp.length}</strong></div>
-    <div><span>Cleanest lane</span><strong>${escapeHtml(bestPath ? roleGroup(bestPath.position) : "-")}</strong></div>
+    <div><span>Cleanest lane</span><strong>${escapeHtml(bestPath ? depthChartGroup(bestPath.position) : "-")}</strong></div>
   `;
 }
 
-function buildWarRoomLanes(players) {
+function buildDepthChartColumns(players) {
   const byRole = new Map();
   for (const player of players) {
-    const role = roleGroup(player.position);
-    const lane = byRole.get(role) ?? { role, players: [], blockers: new Set(), injuries: 0, need: 0 };
+    const role = depthChartGroup(player.position);
+    const lane = byRole.get(role) ?? { role, players: [], blockers: [], injuries: 0, need: 0 };
     lane.players.push(player);
-    blockerNames(player).forEach((name) => lane.blockers.add(name));
+    blockerNames(player).forEach((name) => {
+      if (!lane.blockers.includes(name)) lane.blockers.push(name);
+    });
     if (String(player.injury_opening).toLowerCase() === "true") lane.injuries += 1;
     lane.need = Math.max(lane.need, Number(player.mlb_team_need) || 0);
     byRole.set(role, lane);
@@ -436,40 +438,61 @@ function buildWarRoomLanes(players) {
   return [...byRole.values()].sort((a, b) => b.players[0].callup_score - a.players[0].callup_score || laneSort(a.role) - laneSort(b.role));
 }
 
-function warRoomLaneMarkup(lane) {
-  const blockers = [...lane.blockers].slice(0, 7);
+function depthChartColumnMarkup(lane) {
+  const blockers = lane.blockers.slice(0, 6);
   const top = lane.players[0];
+  const pressure = rosterPressure(lane);
   return `
-    <article class="war-lane">
-      <div class="war-lane-head">
+    <article class="depth-column">
+      <div class="depth-column-head">
         <div>
-          <span>${escapeHtml(lane.role)} lane</span>
+          <span>${escapeHtml(lane.role)}</span>
           <h3>${escapeHtml(top.player_name)}</h3>
         </div>
-        <strong class="score-pill ${scoreClass(top.callup_score)}">${top.callup_score}%</strong>
+        <strong>${escapeHtml(pressure)}</strong>
       </div>
-      <div class="war-depth">
-        <div>
-          <span>MLB blockers</span>
-          <ul>
-            ${blockers.length ? blockers.map((name) => `<li>${escapeHtml(name)}</li>`).join("") : "<li>No named blockers loaded</li>"}
-          </ul>
-        </div>
-        <div>
-          <span>Path read</span>
-          <p>${escapeHtml(pathRead(lane))}</p>
-        </div>
+      <div class="depth-path">
+        <span style="width: ${Math.max(8, Number(top.opportunity_score) || 0)}%"></span>
       </div>
-      <div class="war-prospects">
-        ${lane.players.map((player) => warProspectMarkup(player)).join("")}
+      <div class="depth-tier">
+        <div class="depth-tier-label">
+          <span>MLB depth chart</span>
+          <b>${blockers.length || Number(top.mlb_blockers) || 0} blockers</b>
+        </div>
+        <ol class="depth-list depth-list-mlb">
+          ${blockers.length ? blockers.map((name, index) => depthBlockerMarkup(name, index)).join("") : `<li><span class="depth-rank">--</span><strong>No named blockers loaded</strong><em>Depth feed needs detail</em></li>`}
+        </ol>
+      </div>
+      <div class="depth-arrow" aria-hidden="true">
+        <span></span>
+      </div>
+      <div class="depth-tier">
+        <div class="depth-tier-label">
+          <span>Prospects up next</span>
+          <b>${escapeHtml(pathRead(lane))}</b>
+        </div>
+        <div class="war-prospects">
+          ${lane.players.map((player, index) => warProspectMarkup(player, index)).join("")}
+        </div>
       </div>
     </article>
   `;
 }
 
-function warProspectMarkup(player) {
+function depthBlockerMarkup(name, index) {
+  return `
+    <li>
+      <span class="depth-rank">${index + 1}</span>
+      <strong>${escapeHtml(name)}</strong>
+      <em>MLB roster</em>
+    </li>
+  `;
+}
+
+function warProspectMarkup(player, index = 0) {
   return `
     <button class="war-prospect" type="button" data-player-id="${escapeHtml(player.player_id)}">
+      <i>${index + 1}</i>
       <span>
         <strong>#${escapeHtml(player.prospect_rank)} ${escapeHtml(player.player_name)}</strong>
         <em>${escapeHtml(player.level ?? "-")} · ${escapeHtml(player.position ?? "-")} · ETA ${escapeHtml(player.eta ?? "-")}</em>
@@ -481,10 +504,18 @@ function warProspectMarkup(player) {
 }
 
 function pathRead(lane) {
-  const blockerCount = lane.blockers.size || Number(lane.players[0]?.mlb_blockers) || 0;
+  const blockerCount = lane.blockers.length || Number(lane.players[0]?.mlb_blockers) || 0;
   const needText = lane.need >= 7 ? "strong team need" : lane.need >= 4 ? "moderate team need" : "light team need";
   const injuryText = lane.injuries ? "injury churn is creating a possible opening" : "no injury opening is flagged";
   return `${blockerCount} blocker${blockerCount === 1 ? "" : "s"} loaded, ${needText}, and ${injuryText}.`;
+}
+
+function rosterPressure(lane) {
+  const top = lane.players[0];
+  if (top.callup_score >= 60) return "Hot path";
+  if (lane.injuries) return "Churn watch";
+  if (lane.need >= 7) return "Need watch";
+  return "Blocked";
 }
 
 function blockerNames(player) {
@@ -494,7 +525,7 @@ function blockerNames(player) {
   return match[1].split(",").map((name) => name.trim()).filter(Boolean);
 }
 
-function roleGroup(position) {
+function depthChartGroup(position) {
   const value = String(position ?? "").toUpperCase();
   if (value.includes("P")) return "Pitching";
   if (value.includes("C")) return "Catcher";

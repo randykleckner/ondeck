@@ -32,7 +32,7 @@ The app merges rows by `player_id`.
 
 ## Team war room
 
-Click any team on the Break Value Board to open its Team War Room. The war room groups that organization's active Top 100 prospects by role, shows named MLB blockers from the depth-chart feed, highlights injury/opening context, and lets you click a prospect lane card to jump into that player's full profile.
+Click any team on the Break Value Board to open its Team War Room. The war room renders a depth-chart board by role, stacks named MLB blockers above the prospects up next, highlights injury/opening context, and lets you click a prospect card to jump into that player's full profile.
 
 ## Card market data
 
