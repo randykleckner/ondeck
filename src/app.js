@@ -384,6 +384,7 @@ function renderMarketBoard() {
 
   elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
     const activate = () => {
+      clearListFilters();
       state.selectedId = card.dataset.playerId;
       render();
       document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -396,6 +397,16 @@ function renderMarketBoard() {
       }
     });
   });
+}
+
+function clearListFilters() {
+  state.filters.search = "";
+  state.filters.org = "all";
+  state.filters.minScore = 0;
+  elements.search.value = "";
+  elements.orgFilter.value = "all";
+  elements.scoreFilter.value = "0";
+  elements.scoreFilterValue.textContent = "0";
 }
 
 function callupCardMarkup(player) {

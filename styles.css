@@ -236,7 +236,6 @@ h2 {
   text-transform: uppercase;
 }
 
-.toolbar,
 .table-panel,
 .card-panel,
 .team-board,
@@ -250,11 +249,12 @@ h2 {
   backdrop-filter: blur(18px);
 }
 
-.toolbar {
+.list-controls {
   display: grid;
   gap: 18px;
-  margin-top: 18px;
-  padding: 18px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(4, 7, 18, 0.28);
 }
 
 label {
@@ -1054,7 +1054,6 @@ tbody tr {
     line-height: 1.45;
   }
 
-  .toolbar,
   .market-board,
   .team-board,
   .table-panel,
@@ -1064,7 +1063,7 @@ tbody tr {
     border-radius: 10px;
   }
 
-  .toolbar {
+  .list-controls {
     padding: 14px;
   }
 
