@@ -364,7 +364,7 @@ function renderWarRoom() {
       document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
-  elements.warRoomBoard.querySelectorAll(".current-player-chip").forEach((chip) => {
+  elements.warRoomBoard.querySelectorAll(".current-player-chip.has-flag").forEach((chip) => {
     chip.addEventListener("click", (event) => {
       event.stopPropagation();
       const expanded = chip.getAttribute("aria-expanded") === "true";
@@ -552,26 +552,14 @@ function currentPlayerChip(name, role, lane, index) {
         <em>${escapeHtml(role)}</em>
       </span>
       ${flags.length ? `<i aria-label="Red flag"></i>` : ""}
-      <small>${flags.map((flag) => `<span><strong>${escapeHtml(flag.label)}</strong>${escapeHtml(flag.detail)}</span>`).join("")}</small>
+      ${flags.length ? `<small>${flags.map((flag) => `<span><strong>${escapeHtml(flag.label)}</strong>${escapeHtml(flag.detail)}</span>`).join("")}</small>` : ""}
     </button>
   `;
 }
 
 function currentPlayerFlags(name, lane, index) {
-  const flags = [];
-  if (lane.injuries) {
-    flags.push({ label: "Injury opening", detail: `${name} sits in a lane where the current depth feed flags an injured 40-man option.` });
-  }
-  if (lane.blockerCount >= 5) {
-    flags.push({ label: "Crowded room", detail: `${name} is one of ${lane.blockerCount} loaded blockers between this prospect group and MLB playing time.` });
-  }
-  if (lane.need <= 3 && lane.players.length) {
-    flags.push({ label: "Low urgency", detail: `${name}'s lane has a low team-need score, so a call-up may require more than prospect performance.` });
-  }
-  if (String(lane.servicePressure).toLowerCase() === "high" && index === 0) {
-    flags.push({ label: "Roster timing", detail: `${name} is the lead blocker in a lane where service-time or 40-man timing pressure is marked high.` });
-  }
-  return flags.slice(0, 3);
+  const playerSpecificNotes = [];
+  return playerSpecificNotes;
 }
 
 function warProspectMarkup(player, index = 0) {
