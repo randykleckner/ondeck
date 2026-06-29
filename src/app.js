@@ -177,7 +177,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
     loadOptionalCsv("./data/card-market.csv?v=20260626-3"),
-    loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-1"),
+    loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
   ]);
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
   state.stats = mergeRowsByPlayerId(stats, savantStats);
@@ -561,7 +561,7 @@ function currentPlayerChip(name, role) {
     <button class="current-player-chip ${flags.length ? "has-flag" : ""}" type="button" aria-expanded="false">
       ${content}
       ${flags.length ? `<i aria-label="Red flag"></i>` : ""}
-      ${flags.length ? `<small>${flags.map((flag) => `<span><strong>${escapeHtml(flag.label)}</strong>${escapeHtml(flag.detail)}</span>`).join("")}</small>` : ""}
+        ${flags.length ? `<small>${flags.map((flag) => `<span><strong>${escapeHtml(flag.label)}:</strong> ${escapeHtml(flag.detail)}</span>`).join("")}</small>` : ""}
     </button>
   `;
 }
