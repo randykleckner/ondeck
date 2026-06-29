@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnDeck Prospect | Call-Up Signals & Card Market Edge</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260629-6" />
+    <link rel="stylesheet" href="./styles.css?v=20260629-7" />
   </head>
   <body>
     <header class="app-header">
@@ -14,12 +14,12 @@
         <span>Prospect</span>
       </div>
       <nav class="main-nav" aria-label="Primary navigation">
-        <a href="#dashboard">Dashboard</a>
-        <a href="#prospects">Prospects</a>
-        <a href="#signals">Call-Up Signals</a>
-        <a href="#card-market">Next Up</a>
-        <a href="#break-board">Break Board</a>
-        <a href="#war-room">War Room</a>
+        <a href="#dashboard" data-route="dashboard">Dashboard</a>
+        <a href="#prospects" data-route="dashboard">Prospects</a>
+        <a href="#signals" data-route="dashboard">Call-Up Signals</a>
+        <a href="#card-market" data-route="dashboard">Next Up</a>
+        <a href="#break-board" data-route="break">Break Board</a>
+        <a href="#war-room" data-route="war">War Room</a>
       </nav>
       <div class="header-actions">
         <button id="load-top100" class="button primary" type="button">Refresh Board</button>
@@ -101,7 +101,7 @@
         <div id="market-board" class="market-grid"></div>
       </section>
 
-      <section id="break-board" class="team-board" aria-label="Top 100 prospects by team">
+      <section id="break-board" class="team-board secondary-tool" data-tool="break" aria-label="Top 100 prospects by team">
         <div class="panel-heading">
           <div>
             <h2>Break Value Board</h2>
@@ -112,7 +112,7 @@
         <div id="team-board" class="team-grid"></div>
       </section>
 
-      <section id="war-room" class="war-room" aria-label="Team prospect war room">
+      <section id="war-room" class="war-room secondary-tool" data-tool="war" aria-label="Team prospect war room">
         <div class="war-room-hero">
           <div class="war-room-team">
             <span id="war-room-logo" class="team-logo-wrap war-room-logo"></span>
@@ -185,6 +185,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260629-5"></script>
+    <script type="module" src="./src/app.js?v=20260629-8"></script>
   </body>
 </html>

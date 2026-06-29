@@ -119,7 +119,8 @@ a {
   font-weight: 700;
 }
 
-.main-nav a:hover {
+.main-nav a:hover,
+.main-nav a.active {
   color: var(--cyan);
 }
 
@@ -373,6 +374,14 @@ input[type="range"] {
 .war-room {
   margin-bottom: 18px;
   overflow: hidden;
+}
+
+.secondary-tool {
+  display: none;
+}
+
+.secondary-tool.active-tool {
+  display: block;
 }
 
 .panel-heading {
@@ -1087,6 +1096,29 @@ tbody tr {
 .card-kicker {
   color: var(--cyan);
   font-weight: 900;
+}
+
+.profile-war-room {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 13px;
+  border: 1px solid rgba(82, 240, 255, 0.2);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(82, 240, 255, 0.12), transparent 11rem),
+    rgba(5, 8, 20, 0.52);
+}
+
+.profile-war-room p {
+  margin: 0;
+  color: #d9e2ff;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.profile-war-action {
+  width: fit-content;
 }
 
 .card-title {

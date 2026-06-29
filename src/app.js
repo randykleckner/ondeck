@@ -10,6 +10,7 @@ const state = {
   calledUp: [],
   selectedId: null,
   selectedOrg: null,
+  activeTool: "dashboard",
   filters: {
     search: "",
     org: "all",
@@ -80,6 +81,8 @@ const elements = {
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
   edgeActions: document.querySelectorAll(".edge-card-action"),
+  navLinks: document.querySelectorAll(".main-nav a"),
+  secondaryTools: document.querySelectorAll(".secondary-tool"),
 };
 
 elements.loadTop100.addEventListener("click", () => {
@@ -140,9 +143,18 @@ elements.edgeActions.forEach((card) => {
   });
 });
 
+window.addEventListener("hashchange", () => {
+  syncRouteFromHash();
+});
+
+window.addEventListener("popstate", () => {
+  syncRouteFromHash();
+});
+
 refreshScoredData();
 
 loadTop100Prospects();
+syncRouteFromHash();
 
 async function loadTop100Prospects() {
   const response = await fetch("./data/mlb-top100-2026.csv");
@@ -244,6 +256,7 @@ function render() {
   renderRows(rows);
   const selected = rows.find((player) => String(player.player_id) === String(state.selectedId)) ?? rows[0];
   renderCard(selected);
+  syncToolVisibility();
 }
 
 function getFilteredRows() {
@@ -314,7 +327,11 @@ function activateEdgeCard(edge) {
   }
 
   render();
-  document.querySelector(edge === "break" ? "#war-room" : "#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (edge === "break") {
+    openTool("war", "#war-room");
+  } else {
+    document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function applyCardMarket(players) {
@@ -358,7 +375,7 @@ function renderTeamBoard() {
     card.addEventListener("click", () => {
       openTeamWarRoom(card.dataset.org);
       render();
-      document.querySelector("#war-room")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      openTool("war", "#war-room");
     });
   });
 }
@@ -406,6 +423,41 @@ function renderWarRoom() {
       render();
       document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  });
+}
+
+function syncRouteFromHash() {
+  if (location.hash === "#break-board") {
+    openTool("break", "#break-board", false);
+  } else if (location.hash === "#war-room") {
+    openTool("war", "#war-room", false);
+  } else {
+    state.activeTool = "dashboard";
+    syncToolVisibility();
+  }
+}
+
+function openTool(tool, selector, updateHash = true) {
+  state.activeTool = tool;
+  syncToolVisibility();
+  if (updateHash && location.hash !== selector) {
+    history.pushState(null, "", selector);
+  }
+  document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function syncToolVisibility() {
+  elements.secondaryTools.forEach((section) => {
+    const active = section.dataset.tool === state.activeTool;
+    section.classList.toggle("active-tool", active);
+  });
+  elements.navLinks.forEach((link) => {
+    const route = link.dataset.route;
+    const href = link.getAttribute("href");
+    const active = state.activeTool === "dashboard"
+      ? route === "dashboard" && (href === location.hash || (href === "#dashboard" && !location.hash))
+      : route === state.activeTool;
+    link.classList.toggle("active", active);
   });
 }
 
@@ -690,8 +742,41 @@ function renderCard(player) {
     <ul class="insight-list">
       ${player.insights.map((insight) => `<li>${escapeHtml(insight)}</li>`).join("")}
     </ul>
+    ${teamPathPanel(player)}
     ${newsPanel(player)}
     ${marketPanel(player)}
+  `;
+
+  elements.playerCard.querySelector("[data-open-war-room]")?.addEventListener("click", () => {
+    openTeamWarRoom(player.org);
+    render();
+    openTool("war", "#war-room");
+  });
+}
+
+function teamPathPanel(player) {
+  const role = depthChartGroup(player.position);
+  const blockers = blockerNames(player).slice(0, 4);
+  const blockerText = blockers.length ? blockers.join(", ") : "No named blockers loaded";
+  const lane = {
+    role,
+    players: [player],
+    blockers,
+    injuries: String(player.injury_opening).toLowerCase() === "true" ? 1 : 0,
+    need: Number(player.mlb_team_need) || 0,
+  };
+  return `
+    <section class="profile-war-room">
+      <div class="panel-heading compact">
+        <h3>Team War Room</h3>
+        <span>${escapeHtml(role)}</span>
+      </div>
+      <p>${escapeHtml(pathRead(lane))}</p>
+      <p class="muted">MLB blockers: ${escapeHtml(blockerText)}</p>
+      <button class="button ghost profile-war-action" type="button" data-open-war-room="${escapeHtml(player.org ?? "")}">
+        Open ${escapeHtml(player.org ?? "team")} war room
+      </button>
+    </section>
   `;
 }
 
