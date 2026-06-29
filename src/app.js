@@ -9,6 +9,7 @@ const state = {
   scored: [],
   calledUp: [],
   selectedId: null,
+  selectedOrg: null,
   filters: {
     search: "",
     org: "all",
@@ -70,6 +71,12 @@ const elements = {
   rowCount: document.querySelector("#row-count"),
   teamBoard: document.querySelector("#team-board"),
   teamBoardCount: document.querySelector("#team-board-count"),
+  warRoom: document.querySelector("#war-room"),
+  warRoomLogo: document.querySelector("#war-room-logo"),
+  warRoomTitle: document.querySelector("#war-room-title"),
+  warRoomSubtitle: document.querySelector("#war-room-subtitle"),
+  warRoomSummary: document.querySelector("#war-room-summary"),
+  warRoomBoard: document.querySelector("#war-room-board"),
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
   edgeActions: document.querySelectorAll(".edge-card-action"),
@@ -232,6 +239,7 @@ function render() {
   const rows = getFilteredRows();
   renderSummary(rows);
   renderTeamBoard();
+  renderWarRoom();
   renderMarketBoard(rows);
   renderRows(rows);
   const selected = rows.find((player) => String(player.player_id) === String(state.selectedId)) ?? rows[0];
@@ -293,9 +301,7 @@ function activateEdgeCard(edge) {
   if (!target) return;
 
   if (edge === "break") {
-    state.filters.org = target;
-    elements.orgFilter.value = target;
-    state.selectedId = null;
+    openTeamWarRoom(target);
   } else {
     state.filters.search = "";
     state.filters.org = "all";
@@ -308,7 +314,7 @@ function activateEdgeCard(edge) {
   }
 
   render();
-  document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelector(edge === "break" ? "#war-room" : "#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function applyCardMarket(players) {
@@ -350,14 +356,154 @@ function renderTeamBoard() {
 
   elements.teamBoard.querySelectorAll(".team-card").forEach((card) => {
     card.addEventListener("click", () => {
-      state.filters.org = card.dataset.org;
-      if ([...elements.orgFilter.options].some((option) => option.value === state.filters.org)) {
-        elements.orgFilter.value = state.filters.org;
-      }
-      state.selectedId = null;
+      openTeamWarRoom(card.dataset.org);
       render();
+      document.querySelector("#war-room")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
+}
+
+function openTeamWarRoom(org) {
+  state.selectedOrg = org;
+}
+
+function renderWarRoom() {
+  const org = state.selectedOrg ?? bestBreakExposureOrg()?.name;
+  if (!org) {
+    elements.warRoomTitle.textContent = "Select a team";
+    elements.warRoomSubtitle.textContent = "Click a team on the Break Value Board to map prospect paths against MLB roster blockers.";
+    elements.warRoomSummary.innerHTML = "";
+    elements.warRoomBoard.innerHTML = `<p class="muted">Pick a team above to open its roster-path board.</p>`;
+    elements.warRoomLogo.innerHTML = "";
+    return;
+  }
+
+  state.selectedOrg = org;
+  const players = state.scored
+    .filter((player) => player.org === org)
+    .sort((a, b) => b.callup_score - a.callup_score || Number(a.prospect_rank) - Number(b.prospect_rank));
+  const calledUp = state.calledUp.filter((player) => player.org === org);
+  const logo = teamLogoUrl(org);
+  const topTarget = players[0];
+  elements.warRoomLogo.innerHTML = logo ? `<img src="${escapeHtml(logo)}" alt="${escapeHtml(org)} logo" loading="lazy" />` : `<strong>${escapeHtml(orgInitials(org))}</strong>`;
+  elements.warRoomTitle.textContent = org;
+  elements.warRoomSubtitle.textContent = topTarget
+    ? `${topTarget.player_name} is the next board target at ${topTarget.callup_score}% call-up chance.`
+    : "No active pre-call-up Top 100 prospects remain on this board.";
+  elements.warRoomSummary.innerHTML = warRoomSummaryMarkup(players, calledUp);
+
+  if (!players.length) {
+    elements.warRoomBoard.innerHTML = `<p class="muted">No pre-call-up Top 100 prospects are active for ${escapeHtml(org)} right now.</p>`;
+    return;
+  }
+
+  const lanes = buildWarRoomLanes(players);
+  elements.warRoomBoard.innerHTML = lanes.map((lane) => warRoomLaneMarkup(lane)).join("");
+  elements.warRoomBoard.querySelectorAll(".war-prospect[data-player-id]").forEach((card) => {
+    card.addEventListener("click", () => {
+      clearListFilters();
+      state.selectedId = card.dataset.playerId;
+      render();
+      document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+function warRoomSummaryMarkup(players, calledUp) {
+  const onForty = players.filter(isOnFortyMan).length;
+  const green = players.filter((player) => player.callup_score >= 60).length;
+  const bestPath = players.slice().sort((a, b) => b.opportunity_score - a.opportunity_score || b.callup_score - a.callup_score)[0];
+  return `
+    <div><span>Active Top 100</span><strong>${players.length}</strong></div>
+    <div><span>60%+ paths</span><strong>${green}</strong></div>
+    <div><span>On 40-man</span><strong>${onForty}</strong></div>
+    <div><span>Already up</span><strong>${calledUp.length}</strong></div>
+    <div><span>Cleanest lane</span><strong>${escapeHtml(bestPath ? roleGroup(bestPath.position) : "-")}</strong></div>
+  `;
+}
+
+function buildWarRoomLanes(players) {
+  const byRole = new Map();
+  for (const player of players) {
+    const role = roleGroup(player.position);
+    const lane = byRole.get(role) ?? { role, players: [], blockers: new Set(), injuries: 0, need: 0 };
+    lane.players.push(player);
+    blockerNames(player).forEach((name) => lane.blockers.add(name));
+    if (String(player.injury_opening).toLowerCase() === "true") lane.injuries += 1;
+    lane.need = Math.max(lane.need, Number(player.mlb_team_need) || 0);
+    byRole.set(role, lane);
+  }
+  return [...byRole.values()].sort((a, b) => b.players[0].callup_score - a.players[0].callup_score || laneSort(a.role) - laneSort(b.role));
+}
+
+function warRoomLaneMarkup(lane) {
+  const blockers = [...lane.blockers].slice(0, 7);
+  const top = lane.players[0];
+  return `
+    <article class="war-lane">
+      <div class="war-lane-head">
+        <div>
+          <span>${escapeHtml(lane.role)} lane</span>
+          <h3>${escapeHtml(top.player_name)}</h3>
+        </div>
+        <strong class="score-pill ${scoreClass(top.callup_score)}">${top.callup_score}%</strong>
+      </div>
+      <div class="war-depth">
+        <div>
+          <span>MLB blockers</span>
+          <ul>
+            ${blockers.length ? blockers.map((name) => `<li>${escapeHtml(name)}</li>`).join("") : "<li>No named blockers loaded</li>"}
+          </ul>
+        </div>
+        <div>
+          <span>Path read</span>
+          <p>${escapeHtml(pathRead(lane))}</p>
+        </div>
+      </div>
+      <div class="war-prospects">
+        ${lane.players.map((player) => warProspectMarkup(player)).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function warProspectMarkup(player) {
+  return `
+    <button class="war-prospect" type="button" data-player-id="${escapeHtml(player.player_id)}">
+      <span>
+        <strong>#${escapeHtml(player.prospect_rank)} ${escapeHtml(player.player_name)}</strong>
+        <em>${escapeHtml(player.level ?? "-")} · ${escapeHtml(player.position ?? "-")} · ETA ${escapeHtml(player.eta ?? "-")}</em>
+      </span>
+      <b>${escapeHtml(player.callup_score)}%</b>
+      <small>${escapeHtml(isOnFortyMan(player) ? "40-man" : "needs 40-man")}</small>
+    </button>
+  `;
+}
+
+function pathRead(lane) {
+  const blockerCount = lane.blockers.size || Number(lane.players[0]?.mlb_blockers) || 0;
+  const needText = lane.need >= 7 ? "strong team need" : lane.need >= 4 ? "moderate team need" : "light team need";
+  const injuryText = lane.injuries ? "injury churn is creating a possible opening" : "no injury opening is flagged";
+  return `${blockerCount} blocker${blockerCount === 1 ? "" : "s"} loaded, ${needText}, and ${injuryText}.`;
+}
+
+function blockerNames(player) {
+  const note = String(player.notes ?? "");
+  const match = note.match(/MLB [^:]+:\s*([^.]*)\./i) || note.match(/pitching depth includes\s*([^.]*)\./i);
+  if (!match) return [];
+  return match[1].split(",").map((name) => name.trim()).filter(Boolean);
+}
+
+function roleGroup(position) {
+  const value = String(position ?? "").toUpperCase();
+  if (value.includes("P")) return "Pitching";
+  if (value.includes("C")) return "Catcher";
+  if (value.includes("OF")) return "Outfield";
+  return "Infield";
+}
+
+function laneSort(role) {
+  return { Pitching: 1, Catcher: 2, Infield: 3, Outfield: 4 }[role] ?? 9;
 }
 
 function renderMarketBoard() {
@@ -848,6 +994,10 @@ function isCalledUp(player) {
   const level = String(player.level ?? "").toUpperCase();
   const calledUp = String(player.called_up ?? "").toLowerCase();
   return level === "MLB" || calledUp === "true" || Boolean(player.mlb_debut_date);
+}
+
+function isOnFortyMan(player) {
+  return String(player.on_40man ?? "").toLowerCase() === "true";
 }
 
 function download(filename, text) {

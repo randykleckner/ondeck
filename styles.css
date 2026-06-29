@@ -240,6 +240,7 @@ h2 {
 .card-panel,
 .team-board,
 .market-board,
+.war-room,
 .edge-board article,
 .summary-grid article {
   border: 1px solid var(--line);
@@ -368,7 +369,8 @@ input[type="range"] {
 }
 
 .market-board,
-.team-board {
+.team-board,
+.war-room {
   margin-bottom: 18px;
   overflow: hidden;
 }
@@ -633,6 +635,207 @@ tbody tr.selected {
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.war-room {
+  position: relative;
+}
+
+.war-room-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(82, 240, 255, 0.16), transparent 26rem),
+    rgba(4, 7, 18, 0.32);
+}
+
+.war-room-team {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 14px;
+}
+
+.war-room-team .eyebrow {
+  margin-bottom: 7px;
+}
+
+.war-room-team h2 {
+  font-size: clamp(1.45rem, 3vw, 2.25rem);
+}
+
+.war-room-team p:last-child {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.war-room-logo {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+}
+
+.war-room-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(92px, 1fr));
+  gap: 10px;
+  min-width: min(100%, 540px);
+}
+
+.war-room-summary div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(5, 8, 20, 0.58);
+}
+
+.war-room-summary span,
+.war-depth span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.war-room-summary strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.war-room-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 14px;
+  padding: 14px;
+}
+
+.war-lane {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(151, 170, 255, 0.2);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(11, 18, 42, 0.82), rgba(4, 7, 18, 0.72)),
+    rgba(4, 7, 18, 0.72);
+}
+
+.war-lane-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.war-lane-head span {
+  color: var(--cyan);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.war-lane-head h3 {
+  margin: 6px 0 0;
+  font-size: 1.12rem;
+}
+
+.war-depth {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 12px;
+}
+
+.war-depth > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(151, 170, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(5, 8, 20, 0.48);
+}
+
+.war-depth ul {
+  display: grid;
+  gap: 5px;
+  margin: 9px 0 0;
+  padding-left: 18px;
+}
+
+.war-depth li,
+.war-depth p {
+  margin: 0;
+  color: #d9e2ff;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.war-prospects {
+  display: grid;
+  gap: 8px;
+}
+
+.war-prospect {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 10px;
+  padding: 11px;
+  border: 1px solid rgba(82, 240, 255, 0.18);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(6, 12, 28, 0.76);
+  text-align: left;
+  cursor: pointer;
+}
+
+.war-prospect:hover,
+.war-prospect:focus-visible {
+  border-color: rgba(82, 240, 255, 0.58);
+  outline: none;
+}
+
+.war-prospect span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.war-prospect strong,
+.war-prospect em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.war-prospect em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 0.78rem;
+}
+
+.war-prospect b {
+  color: var(--cyan);
+  font-size: 1rem;
+}
+
+.war-prospect small {
+  grid-column: 1 / -1;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #06101b;
+  background: rgba(82, 240, 255, 0.9);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
 }
 
 .content-grid {
@@ -919,8 +1122,18 @@ tbody tr {
 
 @media (max-width: 1180px) {
   .app-header,
-  .content-grid {
+  .content-grid,
+  .war-room-hero {
     grid-template-columns: 1fr;
+  }
+
+  .war-room-hero {
+    display: grid;
+  }
+
+  .war-room-summary {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-width: 0;
   }
 
   .table-panel {
@@ -1056,6 +1269,7 @@ tbody tr {
 
   .market-board,
   .team-board,
+  .war-room,
   .table-panel,
   .card-panel,
   .edge-board article,
@@ -1081,8 +1295,17 @@ tbody tr {
   .summary-grid,
   .edge-board,
   .card-market-grid,
+  .war-depth,
   .market-card dl {
     grid-template-columns: 1fr;
+  }
+
+  .war-room-board {
+    grid-template-columns: 1fr;
+  }
+
+  .war-room-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .summary-grid,

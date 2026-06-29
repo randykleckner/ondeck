@@ -19,6 +19,7 @@
         <a href="#signals">Call-Up Signals</a>
         <a href="#card-market">Next Up</a>
         <a href="#break-board">Break Board</a>
+        <a href="#war-room">War Room</a>
       </nav>
       <div class="header-actions">
         <button id="load-top100" class="button primary" type="button">Refresh Board</button>
@@ -111,6 +112,23 @@
         <div id="team-board" class="team-grid"></div>
       </section>
 
+      <section id="war-room" class="war-room" aria-label="Team prospect war room">
+        <div class="war-room-hero">
+          <div class="war-room-team">
+            <span id="war-room-logo" class="team-logo-wrap war-room-logo"></span>
+            <div>
+              <p class="eyebrow">Team War Room</p>
+              <h2 id="war-room-title">Select a team</h2>
+              <p id="war-room-subtitle">Click a team on the Break Value Board to map prospect paths against MLB roster blockers.</p>
+            </div>
+          </div>
+          <div id="war-room-summary" class="war-room-summary"></div>
+        </div>
+        <div id="war-room-board" class="war-room-board">
+          <p class="muted">Pick a team above to open its roster-path board.</p>
+        </div>
+      </section>
+
       <section id="prospects" class="content-grid">
         <div class="table-panel">
           <div class="panel-heading">
@@ -167,6 +185,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260629-3"></script>
+    <script type="module" src="./src/app.js?v=20260629-4"></script>
   </body>
 </html>

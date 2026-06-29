@@ -30,6 +30,10 @@ Use CSV files matching the templates in `data/`:
 
 The app merges rows by `player_id`.
 
+## Team war room
+
+Click any team on the Break Value Board to open its Team War Room. The war room groups that organization's active Top 100 prospects by role, shows named MLB blockers from the depth-chart feed, highlights injury/opening context, and lets you click a prospect lane card to jump into that player's full profile.
+
 ## Card market data
 
 The homepage card-market section is a top-10 next call-up board. `data/card-market.csv` is only used inside the selected player profile's buy-zone panel and the exported score CSV. It should be generated from eBay sold-comp data, not manually seeded guesses.
@@ -58,6 +62,8 @@ CARD_COMP_SOURCE=web CARD_COMP_TARGET_IDS=mlb-top100-1 node scripts/update-ebay-
 ```
 
 The updater searches eBay sold item sales for the CPA code, player name, `Chrome`, `Prospect`, and `Auto`, filters out bad title matches, then writes only players with returned sold comps. If no real sold comps are returned, the script does not write a price for that player.
+
+Manual weekly comps can also be entered directly in `data/card-market.csv` using the same fields below. Keep `data_source` descriptive, such as `Manual seller comps`, so profile cards show where the market read came from.
 
 The current fields are:
 
