@@ -241,6 +241,7 @@ h2 {
 .card-panel,
 .team-board,
 .market-board,
+.scorebook-board,
 .war-room,
 .edge-board article,
 .summary-grid article {
@@ -370,6 +371,7 @@ input[type="range"] {
 }
 
 .market-board,
+.scorebook-board,
 .team-board,
 .war-room {
   margin-bottom: 18px;
@@ -460,6 +462,7 @@ input[type="range"] {
 
 .market-card,
 .team-card,
+.scorebook-card,
 .news-panel article,
 .card-market-panel {
   border: 1px solid rgba(151, 170, 255, 0.2);
@@ -554,6 +557,96 @@ input[type="range"] {
   margin: 4px 0 0;
   color: #fff;
   font-weight: 900;
+}
+
+.scorebook-list {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.scorebook-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.85fr) minmax(0, 1.35fr);
+  gap: 14px;
+  padding: 14px;
+}
+
+.scorebook-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+
+.scorebook-main h3,
+.scorebook-main p,
+.scorebook-card p {
+  margin: 0;
+}
+
+.scorebook-main h3 {
+  font-size: 1rem;
+}
+
+.scorebook-main p,
+.scorebook-card p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.scorebook-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.scorebook-status.is-hit {
+  color: #06101b;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+}
+
+.scorebook-status.is-miss {
+  color: white;
+  background: linear-gradient(90deg, #97314b, var(--red));
+}
+
+.scorebook-status.is-audit {
+  color: #201603;
+  background: var(--yellow);
+}
+
+.scorebook-card dl {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.scorebook-card dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.scorebook-card dd {
+  margin: 4px 0 0;
+  color: #fff;
+  font-weight: 900;
+}
+
+.scorebook-card > p {
+  grid-column: 1 / -1;
+  padding-top: 2px;
 }
 
 @keyframes market-scroll {
@@ -1836,6 +1929,7 @@ tbody tr {
   }
 
   .market-board,
+  .scorebook-board,
   .team-board,
   .war-room,
   .table-panel,
@@ -1862,9 +1956,14 @@ tbody tr {
 
   .summary-grid,
   .edge-board,
+  .scorebook-card,
   .card-market-grid,
   .market-card dl {
     grid-template-columns: 1fr;
+  }
+
+  .scorebook-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .war-room-board {

@@ -7,6 +7,7 @@ const state = {
   depthCharts: [],
   cardMarket: [],
   mlbPlayerFlags: [],
+  scorebook: [],
   scored: [],
   calledUp: [],
   selectedId: null,
@@ -90,6 +91,8 @@ const elements = {
   warRoomBoard: document.querySelector("#war-room-board"),
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
+  scorebookBoard: document.querySelector("#scorebook-board"),
+  scorebookCount: document.querySelector("#scorebook-count"),
   navLinks: document.querySelectorAll(".main-nav a"),
   secondaryTools: document.querySelectorAll(".secondary-tool"),
 };
@@ -169,7 +172,7 @@ async function loadTop100Prospects() {
     throw new Error(`Could not load MLB Top 100 seed data: ${response.status}`);
   }
   state.prospects = parseCsv(await response.text());
-  const [stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket, mlbPlayerFlags] = await Promise.all([
+  const [stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket, mlbPlayerFlags, scorebook] = await Promise.all([
     loadOptionalCsv("./data/current-stats.csv?v=20260626-2"),
     loadOptionalCsv("./data/savant-stats.csv?v=20260626-1"),
     loadOptionalCsv("./data/depth-chart-current.csv"),
@@ -178,12 +181,14 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
     loadOptionalCsv("./data/card-market.csv?v=20260626-3"),
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
+    loadOptionalCsv("./data/scorebook.csv?v=20260629-1"),
   ]);
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
   state.stats = mergeRowsByPlayerId(stats, savantStats);
   state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
   state.cardMarket = cardMarket;
   state.mlbPlayerFlags = mlbPlayerFlags;
+  state.scorebook = scorebook;
   state.selectedId = null;
   state.filters.org = "all";
   refreshScoredData();
@@ -258,6 +263,7 @@ function render() {
   renderTeamBoard();
   renderWarRoom();
   renderMarketBoard(rows);
+  renderScorebook();
   renderRows(rows);
   elements.rowCount.textContent = `${rows.length} ${rows.length === 1 ? "player" : "players"}`;
   const selected = state.selectedId ? rows.find((player) => String(player.player_id) === String(state.selectedId)) : null;
@@ -710,6 +716,79 @@ function renderMarketBoard() {
       }
     });
   });
+}
+
+function renderScorebook() {
+  const entries = buildScorebookEntries();
+  elements.scorebookCount.textContent = `${entries.length} ${entries.length === 1 ? "debut" : "debuts"}`;
+  if (!entries.length) {
+    elements.scorebookBoard.innerHTML = `<p class="muted">No MLB debuts are loaded yet. Called-up prospects will appear here once the Top 100 data marks them at MLB level.</p>`;
+    return;
+  }
+
+  elements.scorebookBoard.innerHTML = entries
+    .map((entry) => `
+      <article class="scorebook-card">
+        <div class="scorebook-main">
+          <span class="scorebook-status ${scorebookStatusClass(entry.verdict)}">${escapeHtml(entry.verdict)}</span>
+          <div>
+            <h3>${escapeHtml(entry.player.player_name)}</h3>
+            <p>${escapeHtml(entry.player.org ?? "-")} · ${escapeHtml(entry.player.position ?? "-")} · MLB debut ${escapeHtml(formatShortDate(entry.debutDate) || "date pending")}</p>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Added to Top 10</dt><dd>${escapeHtml(entry.addedDate)}</dd></div>
+          <div><dt>Board Rank</dt><dd>${escapeHtml(entry.top10Rank)}</dd></div>
+          <div><dt>Pre-Call-Up Score</dt><dd>${escapeHtml(entry.preCallupScore)}</dd></div>
+          <div><dt>Card Before</dt><dd>${escapeHtml(entry.cardBefore)}</dd></div>
+          <div><dt>Card After</dt><dd>${escapeHtml(entry.cardAfter)}</dd></div>
+        </dl>
+        <p>${escapeHtml(entry.note)}</p>
+      </article>
+    `)
+    .join("");
+}
+
+function buildScorebookEntries() {
+  const manualRows = new Map(state.scorebook.map((row) => [String(row.player_id), row]));
+  return state.calledUp
+    .slice()
+    .sort((a, b) => scorebookDateValue(b) - scorebookDateValue(a) || Number(a.prospect_rank) - Number(b.prospect_rank))
+    .map((player) => {
+      const row = manualRows.get(String(player.player_id)) ?? {};
+      const debutDate = row.mlb_debut_date || player.mlb_debut_date || "";
+      const verdict = row.verdict || "Needs audit";
+      return {
+        player,
+        debutDate,
+        verdict,
+        addedDate: row.added_to_top10_date || "Backfill needed",
+        top10Rank: row.top10_rank || "Backfill needed",
+        preCallupScore: scorebookScoreText(row.pre_callup_score),
+        cardBefore: row.card_before || "Add comp",
+        cardAfter: row.card_after || "Add comp",
+        note: row.result_note || "MLB debut detected from the prospect feed; backfill OnDeck board history to mark this as a hit or miss.",
+      };
+    });
+}
+
+function scorebookDateValue(player) {
+  const row = state.scorebook.find((entry) => String(entry.player_id) === String(player.player_id));
+  const date = new Date(`${row?.mlb_debut_date || player.mlb_debut_date || "1900-01-01"}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
+function scorebookScoreText(value) {
+  if (!value) return "Backfill needed";
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? `${numeric}%` : String(value);
+}
+
+function scorebookStatusClass(value) {
+  const status = String(value ?? "").toLowerCase();
+  if (status.includes("hit")) return "is-hit";
+  if (status.includes("miss")) return "is-miss";
+  return "is-audit";
 }
 
 function clearListFilters() {

@@ -17,6 +17,7 @@
         <a href="#dashboard" data-route="dashboard">Dashboard</a>
         <a href="#prospects" data-route="dashboard">Prospects</a>
         <a href="#card-market" data-route="dashboard">Next Up</a>
+        <a href="#scorebook" data-route="dashboard">Scorebook</a>
         <a href="#break-board" data-route="break">Break Board</a>
         <a href="#war-room" data-route="war">War Room</a>
       </nav>
@@ -56,6 +57,17 @@
           <span id="market-count">0 shown</span>
         </div>
         <div id="market-board" class="market-grid"></div>
+      </section>
+
+      <section id="scorebook" class="scorebook-board" aria-label="OnDeck prediction scorebook">
+        <div class="panel-heading">
+          <div>
+            <h2>Scorebook</h2>
+            <p>MLB debuts we tracked, with prediction result and card-market follow-up</p>
+          </div>
+          <span id="scorebook-count">0 debuts</span>
+        </div>
+        <div id="scorebook-board" class="scorebook-list"></div>
       </section>
 
       <section id="break-board" class="team-board secondary-tool" data-tool="break" aria-label="Top 100 prospects by team">
@@ -142,6 +154,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260629-15"></script>
+    <script type="module" src="./src/app.js?v=20260629-16"></script>
   </body>
 </html>
