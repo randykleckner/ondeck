@@ -876,6 +876,9 @@ tbody tr.selected {
   color: var(--ink);
   background: rgba(9, 14, 33, 0.82);
   text-align: left;
+}
+
+.current-player-chip.has-flag {
   cursor: pointer;
 }
 

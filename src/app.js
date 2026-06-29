@@ -6,6 +6,7 @@ const state = {
   stats: [],
   depthCharts: [],
   cardMarket: [],
+  mlbPlayerFlags: [],
   scored: [],
   calledUp: [],
   selectedId: null,
@@ -168,7 +169,7 @@ async function loadTop100Prospects() {
     throw new Error(`Could not load MLB Top 100 seed data: ${response.status}`);
   }
   state.prospects = parseCsv(await response.text());
-  const [stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket] = await Promise.all([
+  const [stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket, mlbPlayerFlags] = await Promise.all([
     loadOptionalCsv("./data/current-stats.csv?v=20260626-2"),
     loadOptionalCsv("./data/savant-stats.csv?v=20260626-1"),
     loadOptionalCsv("./data/depth-chart-current.csv"),
@@ -176,11 +177,13 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
     loadOptionalCsv("./data/card-market.csv?v=20260626-3"),
+    loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-1"),
   ]);
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
   state.stats = mergeRowsByPlayerId(stats, savantStats);
   state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
   state.cardMarket = cardMarket;
+  state.mlbPlayerFlags = mlbPlayerFlags;
   state.selectedId = null;
   state.filters.org = "all";
   refreshScoredData();
@@ -511,7 +514,7 @@ function pitchingLaneMarkup(lane) {
         <strong>${escapeHtml(rosterPressure(lane))}</strong>
       </header>
       <div class="current-stack">
-        ${blockers.length ? blockers.map((name, index) => currentPlayerChip(name, index === 0 ? "Current lead" : `Depth ${index + 1}`, lane, index)).join("") : `<span class="empty-chip">Pitching depth not loaded</span>`}
+        ${blockers.length ? blockers.map((name, index) => currentPlayerChip(name, index === 0 ? "Current lead" : `Depth ${index + 1}`)).join("") : `<span class="empty-chip">Pitching depth not loaded</span>`}
       </div>
       <div class="prospect-bubbles">
         ${lane.players.length ? lane.players.slice(0, 3).map((player, index) => warProspectMarkup(player, index)).join("") : `<span class="empty-prospect">No Top 100 pitching path</span>`}
@@ -533,8 +536,8 @@ function fieldPositionMarkup(lane) {
         <strong>${escapeHtml(pressure)}</strong>
       </header>
       <div class="current-stack">
-        ${starter ? currentPlayerChip(starter, "Starter", lane, 0) : `<span class="empty-chip">Starter not loaded</span>`}
-        ${backup ? currentPlayerChip(backup, "Backup", lane, 1) : `<span class="empty-chip">Backup not loaded</span>`}
+        ${starter ? currentPlayerChip(starter, "Starter") : `<span class="empty-chip">Starter not loaded</span>`}
+        ${backup ? currentPlayerChip(backup, "Backup") : `<span class="empty-chip">Backup not loaded</span>`}
       </div>
       <div class="prospect-bubbles">
         ${lane.players.length ? lane.players.slice(0, 2).map((player, index) => warProspectMarkup(player, index)).join("") : `<span class="empty-prospect">No Top 100 path</span>`}
@@ -543,23 +546,50 @@ function fieldPositionMarkup(lane) {
   `;
 }
 
-function currentPlayerChip(name, role, lane, index) {
-  const flags = currentPlayerFlags(name, lane, index);
-  return `
-    <button class="current-player-chip ${flags.length ? "has-flag" : ""}" type="button" aria-expanded="false">
+function currentPlayerChip(name, role) {
+  const flags = currentPlayerFlags(name);
+  const content = `
       <span>
         <b>${escapeHtml(name)}</b>
         <em>${escapeHtml(role)}</em>
       </span>
+  `;
+  if (!flags.length) {
+    return `<div class="current-player-chip">${content}</div>`;
+  }
+  return `
+    <button class="current-player-chip ${flags.length ? "has-flag" : ""}" type="button" aria-expanded="false">
+      ${content}
       ${flags.length ? `<i aria-label="Red flag"></i>` : ""}
       ${flags.length ? `<small>${flags.map((flag) => `<span><strong>${escapeHtml(flag.label)}</strong>${escapeHtml(flag.detail)}</span>`).join("")}</small>` : ""}
     </button>
   `;
 }
 
-function currentPlayerFlags(name, lane, index) {
-  const playerSpecificNotes = [];
-  return playerSpecificNotes;
+function currentPlayerFlags(name) {
+  const key = normalizeName(name);
+  return state.mlbPlayerFlags
+    .filter((row) => normalizeName(row.player_name) === key && row.flag_detail)
+    .map((row) => ({
+      label: row.flag_label || "Player note",
+      detail: sourceLinkText(row),
+    }));
+}
+
+function sourceLinkText(row) {
+  const source = row.source_name || row.source || "";
+  const date = row.updated || row.date || "";
+  const suffix = [source, date].filter(Boolean).join(", ");
+  return suffix ? `${row.flag_detail} (${suffix})` : row.flag_detail;
+}
+
+function normalizeName(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function warProspectMarkup(player, index = 0) {
