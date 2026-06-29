@@ -264,11 +264,11 @@ function renderEdgeBoard() {
   const riser = bestRankRiser();
   const path = bestPathTarget();
   const breakOrg = bestBreakExposureOrg();
-  const card = bestCardTarget();
+  const card = bestCardResearchTarget();
   elements.edgeRiser.textContent = riser ? `${riser.player_name} +${rankMovement(riser)}` : "-";
   elements.edgePath.textContent = path ? `${path.player_name} ${path.callup_score}%` : "-";
   elements.edgeBreak.textContent = breakOrg ? `${breakOrg.name} ${breakOrg.count}` : "-";
-  elements.edgeCard.textContent = card ? `${card.player_name} ${card.market_signal}` : "-";
+  elements.edgeCard.textContent = card ? `${card.player_name} ${card.callup_score}%` : "-";
   setEdgeCardTarget("riser", riser?.player_id);
   setEdgeCardTarget("path", path?.player_id);
   setEdgeCardTarget("break", breakOrg?.name);
@@ -360,18 +360,19 @@ function renderTeamBoard() {
   });
 }
 
-function renderMarketBoard(rows) {
+function renderMarketBoard() {
   const tracked = state.scored
-    .filter((player) => player.market_signal)
-    .sort((a, b) => marketScore(b) - marketScore(a) || b.callup_score - a.callup_score);
-  elements.marketCount.textContent = `${state.cardMarket.length} tracked`;
+    .slice()
+    .sort((a, b) => b.callup_score - a.callup_score || b.opportunity_score - a.opportunity_score || Number(a.prospect_rank) - Number(b.prospect_rank))
+    .slice(0, 10);
+  elements.marketCount.textContent = `Top ${tracked.length}`;
   if (!tracked.length) {
-    elements.marketBoard.innerHTML = `<p class="muted">Run scripts/update-ebay-comps.mjs with eBay API access to load CPA Chrome Prospect Auto sold comps.</p>`;
+    elements.marketBoard.innerHTML = `<p class="muted">Load MLB Top 100 to view the next call-up board.</p>`;
     return;
   }
 
   const cardMarkup = tracked
-    .map((player) => marketCardMarkup(player))
+    .map((player) => callupCardMarkup(player))
     .join("");
 
   elements.marketBoard.innerHTML = `
@@ -397,25 +398,24 @@ function renderMarketBoard(rows) {
   });
 }
 
-function marketCardMarkup(player) {
+function callupCardMarkup(player) {
+  const trend = rankTrendText(player);
+  const trendLabel = trend === "Untracked" ? "No rank trend" : trend;
   return `
       <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}">
         <div>
-          <span class="market-label">${escapeHtml(player.market_signal)}</span>
+          <span class="market-label">Next-up candidate</span>
           <h3>${escapeHtml(player.player_name)}</h3>
-          <p>${escapeHtml(cardDescription(player))}</p>
+          <p>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))}</p>
         </div>
         <div class="market-price">
-          <strong>${currency(player.last_sale)}</strong>
-          <span>${escapeHtml(player.last_sale_date ? `Last sold ${formatShortDate(player.last_sale_date)}` : "Last sale")}</span>
-        </div>
-        <div class="sparkline" aria-hidden="true">
-          ${sparkline(player)}
+          <strong>${escapeHtml(player.callup_score)}%</strong>
+          <span>Call-up chance</span>
         </div>
         <dl>
-          <div><dt>30D Avg</dt><dd>${currency(player.avg_30)}</dd></div>
-          <div><dt>Sell-through</dt><dd>${percent(player.sell_through)}</dd></div>
-          <div><dt>Buy Zone</dt><dd>${escapeHtml(buyZone(player))}</dd></div>
+          <div><dt>Stats</dt><dd>${escapeHtml(player.performance_score)}%</dd></div>
+          <div><dt>Org Path</dt><dd>${escapeHtml(player.opportunity_score)}%</dd></div>
+          <div><dt>Trend</dt><dd>${escapeHtml(trendLabel)}</dd></div>
         </dl>
       </article>
     `;
@@ -502,8 +502,8 @@ function renderCard(player) {
     <ul class="insight-list">
       ${player.insights.map((insight) => `<li>${escapeHtml(insight)}</li>`).join("")}
     </ul>
-    ${marketPanel(player)}
     ${newsPanel(player)}
+    ${marketPanel(player)}
   `;
 }
 
@@ -739,10 +739,10 @@ function bestBreakExposureOrg() {
   return buildOrgExposure()[0];
 }
 
-function bestCardTarget() {
+function bestCardResearchTarget() {
   return state.scored
-    .filter((player) => player.market_signal)
-    .sort((a, b) => marketScore(b) - marketScore(a) || b.callup_score - a.callup_score)[0];
+    .slice()
+    .sort((a, b) => b.callup_score - a.callup_score || b.opportunity_score - a.opportunity_score || Number(a.prospect_rank) - Number(b.prospect_rank))[0];
 }
 
 function marketScore(player) {

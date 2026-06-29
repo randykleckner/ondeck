@@ -26,13 +26,13 @@ Use CSV files matching the templates in `data/`:
 - `prospects-template.csv`: top prospect list and player profile fields
 - `stats-template.csv`: current season and recent-form stats
 - `depth-chart-template.csv`: organization opportunity and MLB-pathway inputs
-- `card-market.csv`: eBay sold-comp output for Bowman Chrome Prospect Auto CPA cards
+- `card-market.csv`: eBay sold-comp output for Bowman Chrome Prospect Auto CPA cards shown inside player profiles
 
 The app merges rows by `player_id`.
 
 ## Card market data
 
-`data/card-market.csv` powers the Card Market Edge board, each player card's buy-zone panel, and the exported score CSV. It should be generated from eBay sold-comp data, not manually seeded guesses.
+The homepage card-market section is a top-10 next call-up board. `data/card-market.csv` is only used inside the selected player profile's buy-zone panel and the exported score CSV. It should be generated from eBay sold-comp data, not manually seeded guesses.
 
 The card target is the Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv` when the generated initials are not enough.
 
