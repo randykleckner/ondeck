@@ -462,12 +462,12 @@ function positionWarRoomMarkup(board, players, calledUp) {
   const pitchingBoard = board.filter((lane) => PITCHING_POSITIONS.some((position) => position.key === lane.key));
   return `
     <div class="field-war-room">
+      ${orgHighlightMarkup(players, calledUp, board)}
       <div class="field-diamond" aria-label="Baseball field depth chart">
         ${fieldBoard.map((lane) => fieldPositionMarkup(lane)).join("")}
         <div class="field-grass" aria-hidden="true"></div>
         <div class="field-infield" aria-hidden="true"></div>
       </div>
-      ${orgHighlightMarkup(players, calledUp, board)}
       <section class="pitching-war-room" aria-label="Pitching war room">
         <div class="panel-heading compact">
           <h3>Pitching War Room</h3>
@@ -485,9 +485,6 @@ function orgHighlightMarkup(players, calledUp, board) {
   const active = board.filter((lane) => lane.players.length);
   const bestLane = active.slice().sort((a, b) => b.players[0].callup_score - a.players[0].callup_score)[0];
   const hot = players.filter((player) => player.callup_score >= 60);
-  const infield = players.filter((player) => ["1B", "2B", "3B", "SS"].includes(fieldPositionKey(player.position))).length;
-  const outfield = players.filter((player) => fieldPositionKey(player.position) === "OF").length;
-  const pitching = players.filter((player) => ["SP", "RP"].includes(fieldPositionKey(player.position))).length;
   return `
     <aside class="org-highlights">
       <div class="panel-heading compact">
@@ -500,14 +497,6 @@ function orgHighlightMarkup(players, calledUp, board) {
         <div><span>Already up</span><strong>${calledUp.length}</strong></div>
       </div>
       ${bestLane ? `<p><strong>${escapeHtml(bestLane.players[0].player_name)}</strong> is the strongest active lane at ${escapeHtml(bestLane.players[0].callup_score)}%.</p>` : "<p>No active Top 100 path is loaded for this org.</p>"}
-      <dl class="org-position-mix">
-        <div><dt>Infield</dt><dd>${infield}</dd></div>
-        <div><dt>Outfield</dt><dd>${outfield}</dd></div>
-        <div><dt>Pitching</dt><dd>${pitching}</dd></div>
-      </dl>
-      <div class="flag-legend">
-        <span><i></i> Click a current-player chip for player-specific flags.</span>
-      </div>
     </aside>
   `;
 }
