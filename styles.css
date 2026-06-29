@@ -981,6 +981,14 @@ tbody tr.selected {
   align-items: start;
 }
 
+.content-grid:not(.profile-open) {
+  grid-template-columns: 1fr;
+}
+
+.content-grid:not(.profile-open) .table-panel {
+  order: 1;
+}
+
 .card-panel {
   position: sticky;
   top: 104px;

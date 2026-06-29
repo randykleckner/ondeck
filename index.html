@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnDeck Prospect | Call-Up Signals & Card Market Edge</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260629-7" />
+    <link rel="stylesheet" href="./styles.css?v=20260629-8" />
   </head>
   <body>
     <header class="app-header">
@@ -16,7 +16,6 @@
       <nav class="main-nav" aria-label="Primary navigation">
         <a href="#dashboard" data-route="dashboard">Dashboard</a>
         <a href="#prospects" data-route="dashboard">Prospects</a>
-        <a href="#signals" data-route="dashboard">Call-Up Signals</a>
         <a href="#card-market" data-route="dashboard">Next Up</a>
         <a href="#break-board" data-route="break">Break Board</a>
         <a href="#war-room" data-route="war">War Room</a>
@@ -46,48 +45,6 @@
             <a class="button ghost" href="#card-market">View Next Up</a>
           </div>
         </div>
-      </section>
-
-      <section class="summary-grid" aria-label="Call-up summary">
-        <article>
-          <span>Pre-call-up targets</span>
-          <strong id="total-count">0</strong>
-        </article>
-        <article>
-          <span>Called-up removed</span>
-          <strong id="called-up-count">0</strong>
-        </article>
-        <article>
-          <span>60%+ call-up edges</span>
-          <strong id="alert-count">0</strong>
-        </article>
-        <article>
-          <span>Avg call-up edge</span>
-          <strong id="avg-score">0</strong>
-        </article>
-        <article>
-          <span>Best path org</span>
-          <strong id="best-org">-</strong>
-        </article>
-      </section>
-
-      <section id="signals" class="edge-board" aria-label="Market edge highlights">
-        <article class="edge-card-action" role="button" tabindex="0" data-edge="riser">
-          <span>Biggest rank riser</span>
-          <strong id="edge-riser">-</strong>
-        </article>
-        <article class="edge-card-action" role="button" tabindex="0" data-edge="path">
-          <span>Cleanest call-up path</span>
-          <strong id="edge-path">-</strong>
-        </article>
-        <article class="edge-card-action" role="button" tabindex="0" data-edge="break">
-          <span>Break exposure edge</span>
-          <strong id="edge-break">-</strong>
-        </article>
-        <article class="edge-card-action" role="button" tabindex="0" data-edge="card">
-          <span>Card research queue</span>
-          <strong id="edge-card">-</strong>
-        </article>
       </section>
 
       <section id="card-market" class="market-board" aria-label="Top call-up candidates board">
@@ -177,7 +134,7 @@
           </div>
         </div>
 
-        <aside class="card-panel" aria-label="Selected prospect card">
+        <aside class="card-panel" aria-label="Selected prospect card" hidden>
           <div id="player-card" class="player-card empty">
             <p>Select a player to review their call-up case.</p>
           </div>
@@ -185,6 +142,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260629-8"></script>
+    <script type="module" src="./src/app.js?v=20260629-9"></script>
   </body>
 </html>

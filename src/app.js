@@ -58,17 +58,10 @@ const elements = {
   orgFilter: document.querySelector("#org-filter"),
   scoreFilter: document.querySelector("#score-filter"),
   scoreFilterValue: document.querySelector("#score-filter-value"),
+  contentGrid: document.querySelector("#prospects"),
   rows: document.querySelector("#prospect-rows"),
+  cardPanel: document.querySelector(".card-panel"),
   playerCard: document.querySelector("#player-card"),
-  totalCount: document.querySelector("#total-count"),
-  calledUpCount: document.querySelector("#called-up-count"),
-  alertCount: document.querySelector("#alert-count"),
-  avgScore: document.querySelector("#avg-score"),
-  bestOrg: document.querySelector("#best-org"),
-  edgeRiser: document.querySelector("#edge-riser"),
-  edgePath: document.querySelector("#edge-path"),
-  edgeBreak: document.querySelector("#edge-break"),
-  edgeCard: document.querySelector("#edge-card"),
   rowCount: document.querySelector("#row-count"),
   teamBoard: document.querySelector("#team-board"),
   teamBoardCount: document.querySelector("#team-board-count"),
@@ -80,7 +73,6 @@ const elements = {
   warRoomBoard: document.querySelector("#war-room-board"),
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
-  edgeActions: document.querySelectorAll(".edge-card-action"),
   navLinks: document.querySelectorAll(".main-nav a"),
   secondaryTools: document.querySelectorAll(".secondary-tool"),
 };
@@ -132,23 +124,21 @@ elements.scoreFilter.addEventListener("input", (event) => {
   render();
 });
 
-elements.edgeActions.forEach((card) => {
-  const activate = () => activateEdgeCard(card.dataset.edge);
-  card.addEventListener("click", activate);
-  card.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      activate();
-    }
-  });
-});
-
 window.addEventListener("hashchange", () => {
   syncRouteFromHash();
 });
 
 window.addEventListener("popstate", () => {
   syncRouteFromHash();
+});
+
+document.addEventListener("click", (event) => {
+  if (!state.selectedId) return;
+  if (event.target.closest("#player-card, #prospect-rows tr[data-player-id], .market-card[data-player-id], .war-prospect[data-player-id], [data-open-war-room]")) {
+    return;
+  }
+  state.selectedId = null;
+  render();
 });
 
 refreshScoredData();
@@ -229,11 +219,8 @@ function refreshScoredData() {
   const allScored = applyCardMarket(mergeProspectData(state.prospects, state.stats, state.depthCharts)).sort((a, b) => b.callup_score - a.callup_score);
   state.calledUp = allScored.filter(isCalledUp);
   state.scored = allScored.filter((player) => !isCalledUp(player));
-  if (!state.selectedId && state.scored.length) {
-    state.selectedId = state.scored[0].player_id;
-  }
   if (state.selectedId && !state.scored.some((player) => String(player.player_id) === String(state.selectedId))) {
-    state.selectedId = state.scored[0]?.player_id ?? null;
+    state.selectedId = null;
   }
   hydrateOrgFilter();
   render();
@@ -249,12 +236,12 @@ function hydrateOrgFilter() {
 
 function render() {
   const rows = getFilteredRows();
-  renderSummary(rows);
   renderTeamBoard();
   renderWarRoom();
   renderMarketBoard(rows);
   renderRows(rows);
-  const selected = rows.find((player) => String(player.player_id) === String(state.selectedId)) ?? rows[0];
+  elements.rowCount.textContent = `${rows.length} ${rows.length === 1 ? "player" : "players"}`;
+  const selected = state.selectedId ? rows.find((player) => String(player.player_id) === String(state.selectedId)) : null;
   renderCard(selected);
   syncToolVisibility();
 }
@@ -267,71 +254,6 @@ function getFilteredRows() {
     const matchesScore = Number(player.callup_score) >= state.filters.minScore;
     return matchesSearch && matchesOrg && matchesScore;
   });
-}
-
-function renderSummary(rows) {
-  elements.totalCount.textContent = state.scored.length;
-  elements.calledUpCount.textContent = state.calledUp.length;
-  elements.alertCount.textContent = state.scored.filter((player) => player.callup_score >= 60).length;
-  elements.avgScore.textContent = state.scored.length
-    ? Math.round(state.scored.reduce((sum, player) => sum + player.callup_score, 0) / state.scored.length)
-    : 0;
-  elements.bestOrg.textContent = bestOpportunityOrg() ?? "-";
-  renderEdgeBoard();
-  elements.rowCount.textContent = `${rows.length} ${rows.length === 1 ? "player" : "players"}`;
-}
-
-function renderEdgeBoard() {
-  const riser = bestRankRiser();
-  const path = bestPathTarget();
-  const breakOrg = bestBreakExposureOrg();
-  const card = bestCardResearchTarget();
-  elements.edgeRiser.textContent = riser ? `${riser.player_name} +${rankMovement(riser)}` : "-";
-  elements.edgePath.textContent = path ? `${path.player_name} ${path.callup_score}%` : "-";
-  elements.edgeBreak.textContent = breakOrg ? `${breakOrg.name} ${breakOrg.count}` : "-";
-  elements.edgeCard.textContent = card ? `${card.player_name} ${card.callup_score}%` : "-";
-  setEdgeCardTarget("riser", riser?.player_id);
-  setEdgeCardTarget("path", path?.player_id);
-  setEdgeCardTarget("break", breakOrg?.name);
-  setEdgeCardTarget("card", card?.player_id);
-}
-
-function setEdgeCardTarget(edge, value) {
-  const card = [...elements.edgeActions].find((item) => item.dataset.edge === edge);
-  if (!card) return;
-  if (value) {
-    card.dataset.target = value;
-    card.removeAttribute("aria-disabled");
-  } else {
-    delete card.dataset.target;
-    card.setAttribute("aria-disabled", "true");
-  }
-}
-
-function activateEdgeCard(edge) {
-  const card = [...elements.edgeActions].find((item) => item.dataset.edge === edge);
-  const target = card?.dataset.target;
-  if (!target) return;
-
-  if (edge === "break") {
-    openTeamWarRoom(target);
-  } else {
-    state.filters.search = "";
-    state.filters.org = "all";
-    state.filters.minScore = 0;
-    elements.search.value = "";
-    elements.orgFilter.value = "all";
-    elements.scoreFilter.value = "0";
-    elements.scoreFilterValue.textContent = "0";
-    state.selectedId = target;
-  }
-
-  render();
-  if (edge === "break") {
-    openTool("war", "#war-room");
-  } else {
-    document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 }
 
 function applyCardMarket(players) {
@@ -372,7 +294,8 @@ function renderTeamBoard() {
     .join("");
 
   elements.teamBoard.querySelectorAll(".team-card").forEach((card) => {
-    card.addEventListener("click", () => {
+    card.addEventListener("click", (event) => {
+      event.stopPropagation();
       openTeamWarRoom(card.dataset.org);
       render();
       openTool("war", "#war-room");
@@ -417,7 +340,8 @@ function renderWarRoom() {
   const lanes = buildDepthChartColumns(players);
   elements.warRoomBoard.innerHTML = lanes.map((lane) => depthChartColumnMarkup(lane)).join("");
   elements.warRoomBoard.querySelectorAll(".war-prospect[data-player-id]").forEach((card) => {
-    card.addEventListener("click", () => {
+    card.addEventListener("click", (event) => {
+      event.stopPropagation();
       clearListFilters();
       state.selectedId = card.dataset.playerId;
       render();
@@ -612,7 +536,8 @@ function renderMarketBoard() {
   `;
 
   elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
-    const activate = () => {
+    const activate = (event) => {
+      event?.stopPropagation();
       clearListFilters();
       state.selectedId = card.dataset.playerId;
       render();
@@ -622,7 +547,7 @@ function renderMarketBoard() {
     card.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        activate();
+        activate(event);
       }
     });
   });
@@ -707,7 +632,8 @@ function renderRows(rows) {
     .join("");
 
   elements.rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
-    row.addEventListener("click", () => {
+    row.addEventListener("click", (event) => {
+      event.stopPropagation();
       state.selectedId = row.dataset.playerId;
       render();
     });
@@ -716,11 +642,15 @@ function renderRows(rows) {
 
 function renderCard(player) {
   if (!player) {
+    elements.contentGrid.classList.remove("profile-open");
+    elements.cardPanel.hidden = true;
     elements.playerCard.className = "player-card empty";
-    elements.playerCard.innerHTML = "<p>Import prospect, stats, and depth-chart CSVs or load the sample dataset.</p>";
+    elements.playerCard.innerHTML = "<p>Select a player to review their call-up case.</p>";
     return;
   }
 
+  elements.contentGrid.classList.add("profile-open");
+  elements.cardPanel.hidden = false;
   elements.playerCard.className = "player-card";
   elements.playerCard.innerHTML = `
     <div class="card-title">
@@ -747,7 +677,8 @@ function renderCard(player) {
     ${marketPanel(player)}
   `;
 
-  elements.playerCard.querySelector("[data-open-war-room]")?.addEventListener("click", () => {
+  elements.playerCard.querySelector("[data-open-war-room]")?.addEventListener("click", (event) => {
+    event.stopPropagation();
     openTeamWarRoom(player.org);
     render();
     openTool("war", "#war-room");
