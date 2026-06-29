@@ -739,7 +739,7 @@ tbody tr.selected {
 
 .field-diamond {
   position: relative;
-  min-height: 920px;
+  min-height: 690px;
   overflow: hidden;
   border: 1px solid rgba(82, 240, 255, 0.2);
   border-radius: 14px;
@@ -750,8 +750,7 @@ tbody tr.selected {
 }
 
 .field-grass,
-.field-infield,
-.field-mound {
+.field-infield {
   position: absolute;
   pointer-events: none;
 }
@@ -774,17 +773,6 @@ tbody tr.selected {
   border-radius: 10px;
   background: rgba(238, 198, 111, 0.1);
   transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.field-mound {
-  left: 50%;
-  top: 45%;
-  width: 64px;
-  height: 64px;
-  border: 1px solid rgba(238, 198, 111, 0.5);
-  border-radius: 999px;
-  background: rgba(238, 198, 111, 0.16);
-  transform: translate(-50%, -50%);
 }
 
 .field-position {
@@ -839,45 +827,34 @@ tbody tr.selected {
 
 .pos-c {
   left: 50%;
-  bottom: 3%;
+  bottom: 4%;
   transform: translateX(-50%);
 }
 
 .pos-first {
-  right: 5%;
-  top: 50%;
+  right: 8%;
+  top: 58%;
 }
 
 .pos-second {
-  right: 2%;
-  top: 27%;
+  right: 1%;
+  top: 25%;
 }
 
 .pos-third {
-  left: 5%;
-  top: 50%;
+  left: 8%;
+  top: 58%;
 }
 
 .pos-short {
-  left: 2%;
-  top: 27%;
+  left: 1%;
+  top: 25%;
 }
 
 .pos-outfield {
   left: 50%;
   top: 3%;
   transform: translateX(-50%);
-}
-
-.pos-starter {
-  left: 50%;
-  top: 43%;
-  transform: translateX(-50%);
-}
-
-.pos-bullpen {
-  right: 5%;
-  bottom: 5%;
 }
 
 .current-stack,
@@ -952,6 +929,7 @@ tbody tr.selected {
 
 .current-player-chip small strong {
   display: block;
+  margin-bottom: 2px;
   color: #fff;
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -968,7 +946,8 @@ tbody tr.selected {
   font-weight: 800;
 }
 
-.position-callouts {
+.position-callouts,
+.org-highlights {
   display: grid;
   align-content: start;
   gap: 12px;
@@ -981,11 +960,100 @@ tbody tr.selected {
 }
 
 .position-callouts p,
+.org-highlights p,
 .flag-legend {
   margin: 0;
   color: #d8def6;
   font-size: 0.84rem;
   line-height: 1.48;
+}
+
+.org-highlight-grid,
+.org-position-mix {
+  display: grid;
+  gap: 8px;
+}
+
+.org-highlight-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.org-highlight-grid div,
+.org-position-mix div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(5, 8, 20, 0.58);
+}
+
+.org-highlight-grid span,
+.org-position-mix dt {
+  display: block;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.org-highlight-grid strong,
+.org-position-mix dd {
+  display: block;
+  margin: 4px 0 0;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.org-position-mix {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pitching-war-room {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(82, 240, 255, 0.2);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(82, 240, 255, 0.1), transparent 16rem),
+    rgba(5, 8, 20, 0.62);
+}
+
+.pitching-lanes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pitching-lane {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(151, 170, 255, 0.22);
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(82, 240, 255, 0.07), rgba(117, 62, 255, 0.07)),
+    rgba(6, 12, 28, 0.78);
+}
+
+.pitching-lane header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pitching-lane header span {
+  color: white;
+  font-weight: 950;
+}
+
+.pitching-lane header strong {
+  color: var(--cyan);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
 }
 
 .flag-legend {
@@ -1636,6 +1704,10 @@ tbody tr {
   .field-war-room {
     grid-template-columns: 1fr;
   }
+
+  .pitching-war-room {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 680px) {
@@ -1783,8 +1855,7 @@ tbody tr {
   }
 
   .field-grass,
-  .field-infield,
-  .field-mound {
+  .field-infield {
     display: none;
   }
 
@@ -1792,6 +1863,12 @@ tbody tr {
     position: static;
     width: 100%;
     transform: none;
+  }
+
+  .org-highlight-grid,
+  .org-position-mix,
+  .pitching-lanes {
+    grid-template-columns: 1fr;
   }
 
   .war-room-summary {
