@@ -1,6 +1,6 @@
 # OnDeck Prospect
 
-Dark prospect forecasting dashboard for MLB Top 100 call-up signals, performance trends, organization pathway reads, and Bowman 1st Auto market edge.
+Dark prospect catalyst dashboard for MLB Top 100 prospects, organization prospects, performance trends, pathway reads, and Bowman 1st Auto market context.
 
 ## Run locally
 
@@ -13,7 +13,7 @@ python3 -m http.server 5173
 
 Then open `http://localhost:5173`.
 
-The dashboard loads `data/mlb-top100-2026.csv` by default. That file was seeded from the official MLB/MiLB Top 100 Prospects page on June 26, 2026:
+The dashboard loads `data/mlb-top100-2026.csv` by default, then optionally merges `data/org-prospects.csv` for organization Top 30, breakout, or catalyst prospects outside the Top 100. The Top 100 file was seeded from the official MLB/MiLB Top 100 Prospects page on June 26, 2026:
 
 https://www.mlb.com/milb/prospects/top100/
 
@@ -26,7 +26,9 @@ Use CSV files matching the templates in `data/`:
 - `prospects-template.csv`: top prospect list and player profile fields
 - `stats-template.csv`: current season and recent-form stats
 - `depth-chart-template.csv`: organization opportunity and MLB-pathway inputs
-- `card-market.csv`: eBay sold-comp output for Bowman Chrome Prospect Auto CPA cards shown inside player profiles
+- `org-prospects.csv`: optional non-Top-100 prospect universe for War Rooms and On Deck evaluation
+- `card-market.csv`: generated eBay sold-comp output for Bowman Chrome Prospect Auto CPA cards shown inside player profiles
+- `card-market-manual.csv`: weekly manual comps that override generated rows
 
 The app merges rows by `player_id`.
 
@@ -36,7 +38,7 @@ Break Board and Team War Room are secondary top-nav tools, not default landing-p
 
 ## Card market data
 
-The homepage card-market section is a top-10 next call-up board. `data/card-market.csv` is only used inside the selected player profile's buy-zone panel and the exported score CSV. It should be generated from eBay sold-comp data, not manually seeded guesses.
+The homepage card-market section is the On Deck Board. `data/card-market.csv` plus `data/card-market-manual.csv` are used inside selected player profiles and exports. Manual rows win over generated rows, so weekly seller-page comps can be entered without waiting on eBay automation.
 
 The card target is the Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv` when the generated initials are not enough.
 
@@ -63,7 +65,14 @@ CARD_COMP_SOURCE=web CARD_COMP_TARGET_IDS=mlb-top100-1 node scripts/update-ebay-
 
 The updater searches eBay sold item sales for the CPA code, player name, `Chrome`, `Prospect`, and `Auto`, filters out bad title matches, then writes only players with returned sold comps. If no real sold comps are returned, the script does not write a price for that player.
 
-Manual weekly comps can also be entered directly in `data/card-market.csv` using the same fields below. Keep `data_source` descriptive, such as `Manual seller comps`, so profile cards show where the market read came from.
+Manual weekly comps should be entered in `data/card-market-manual.csv` using the same fields below. Keep `data_source` descriptive, such as `Manual weekly comps`, so profile cards show where the market read came from.
+
+To write `data/card-market.csv` only from your manual weekly file:
+
+```sh
+cd mlb-prospects
+CARD_COMP_SOURCE=manual node scripts/update-ebay-comps.mjs
+```
 
 The current fields are:
 

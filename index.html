@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnDeck Prospect | Prospect Catalyst Intelligence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260630-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260630-2" />
   </head>
   <body>
     <header class="app-header">
@@ -16,8 +16,8 @@
       <nav class="main-nav" aria-label="Primary navigation">
         <a href="#dashboard" data-route="dashboard">Dashboard</a>
         <a href="#prospects" data-route="dashboard">Prospects</a>
-        <a href="#card-market" data-route="dashboard">Next Up</a>
-        <a href="#scorebook" data-route="dashboard">Scorebook</a>
+        <a href="#card-market" data-route="dashboard">On Deck</a>
+        <a href="#scorebook" data-route="scorebook">Scorebook</a>
         <a href="#break-board" data-route="break">Break Board</a>
         <a href="#war-room" data-route="war">War Room</a>
       </nav>
@@ -43,12 +43,12 @@
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#prospects">Explore Dashboard</a>
-            <a class="button ghost" href="#card-market">View Next Up</a>
+            <a class="button ghost" href="#card-market">View On Deck</a>
           </div>
         </div>
       </section>
 
-      <section id="card-market" class="market-board" aria-label="Top call-up candidates board">
+      <section id="card-market" class="market-board" aria-label="On Deck catalyst board">
         <div class="panel-heading">
           <div>
             <h2>On Deck Board</h2>
@@ -63,7 +63,7 @@
         <div id="market-board" class="market-grid"></div>
       </section>
 
-      <section id="scorebook" class="scorebook-board" aria-label="OnDeck prediction scorebook">
+      <section id="scorebook" class="scorebook-board secondary-tool" data-tool="scorebook" aria-label="OnDeck prediction scorebook">
         <div class="panel-heading">
           <div>
             <h2>Scorebook</h2>
@@ -74,11 +74,11 @@
         <div id="scorebook-board" class="scorebook-list"></div>
       </section>
 
-      <section id="break-board" class="team-board secondary-tool" data-tool="break" aria-label="Top 100 prospects by team">
+      <section id="break-board" class="team-board secondary-tool" data-tool="break" aria-label="Top prospects by team">
         <div class="panel-heading">
           <div>
             <h2>Break Value Board</h2>
-            <p>Top 100 exposure by organization</p>
+            <p>Prospect exposure by organization</p>
           </div>
           <span id="team-board-count">0 orgs</span>
         </div>
@@ -92,7 +92,7 @@
             <div>
               <p class="eyebrow">Team War Room</p>
               <h2 id="war-room-title">Select a team</h2>
-              <p id="war-room-subtitle">Click a team on the Break Value Board to map the depth chart, MLB blockers, and prospect call-up paths.</p>
+              <p id="war-room-subtitle">Click a team on the Break Value Board to map depth chart blockers and prospect paths.</p>
             </div>
           </div>
           <div id="war-room-summary" class="war-room-summary"></div>
@@ -153,6 +153,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260630-1"></script>
+    <script type="module" src="./src/app.js?v=20260630-2"></script>
   </body>
 </html>

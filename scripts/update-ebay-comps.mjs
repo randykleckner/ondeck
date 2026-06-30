@@ -14,7 +14,7 @@ const LIMIT = Number(process.env.EBAY_COMP_LIMIT || 100);
 const WEB_LIMIT = Number(process.env.WEB_COMP_LIMIT || 60);
 const MAX_PLAYERS = Number(process.env.CARD_COMP_MAX_PLAYERS || 0);
 const TARGET_IDS = new Set(String(process.env.CARD_COMP_TARGET_IDS || "").split(",").map((value) => value.trim()).filter(Boolean));
-const SOURCE_LABEL = shouldUseWebComps() ? "eBay public sold search scrape" : "eBay sold comps";
+const SOURCE_LABEL = COMP_SOURCE === "manual" ? "Manual weekly comps" : shouldUseWebComps() ? "eBay public sold search scrape" : "eBay sold comps";
 
 const MARKET_HEADERS = [
   "player_id",
@@ -43,7 +43,9 @@ if (COMP_SOURCE === "api" && !ACCESS_TOKEN) {
 
 const prospects = limitProspects(parseCsv(await readFile(resolve(DATA_DIR, "mlb-top100-2026.csv"), "utf8")));
 const targetOverrides = await readOptionalCsv(resolve(DATA_DIR, "card-targets.csv"));
+const manualMarketRows = await readOptionalCsv(resolve(DATA_DIR, "card-market-manual.csv"));
 const overridesById = new Map(targetOverrides.map((row) => [row.player_id, row]));
+const manualRowsById = new Map(manualMarketRows.map((row) => [row.player_id, row]));
 const rows = [];
 const errors = [];
 
@@ -51,6 +53,13 @@ for (const prospect of prospects) {
   const override = overridesById.get(prospect.player_id);
   const target = buildTarget(prospect, override);
   if (target.enabled === false) continue;
+  const manualRow = manualRowsById.get(prospect.player_id);
+  if (manualRow) {
+    rows.push(normalizeManualMarketRow(prospect, target, manualRow));
+    console.log(`${prospect.player_name}: using manual weekly comps for ${target.card_code}`);
+    continue;
+  }
+  if (COMP_SOURCE === "manual") continue;
 
   try {
     const soldItems = await fetchSoldItems(target);
@@ -69,6 +78,11 @@ for (const prospect of prospects) {
   }
 }
 
+for (const manualRow of manualMarketRows) {
+  if (!manualRow.player_id || rows.some((row) => row.player_id === manualRow.player_id)) continue;
+  rows.push(normalizeManualMarketRow({ player_id: manualRow.player_id, player_name: manualRow.player_name || "" }, { card_code: manualRow.card_code || "" }, manualRow));
+}
+
 await writeCsv(resolve(DATA_DIR, "card-market.csv"), rows, MARKET_HEADERS);
 await writeFile(
   resolve(DATA_DIR, "card-market-report.json"),
@@ -76,6 +90,19 @@ await writeFile(
 );
 
 console.log(`Wrote ${rows.length} card-market rows from ${SOURCE_LABEL}.`);
+
+function normalizeManualMarketRow(prospect, target, row) {
+  return Object.fromEntries(MARKET_HEADERS.map((header) => {
+    const fallback = {
+      player_id: prospect.player_id,
+      card_name: row.card_name || `${prospect.player_name} Bowman Chrome Prospect Auto`,
+      card_code: row.card_code || target.card_code,
+      data_source: row.data_source || "Manual weekly comps",
+      last_updated: row.last_updated || AS_OF_DATE,
+    }[header] ?? "";
+    return [header, row[header] || fallback];
+  }));
+}
 
 function limitProspects(prospects) {
   const targeted = TARGET_IDS.size ? prospects.filter((prospect) => TARGET_IDS.has(prospect.player_id) || TARGET_IDS.has(prospect.player_name)) : prospects;

@@ -855,7 +855,8 @@ tbody tr.selected {
   border: 1px solid rgba(82, 240, 255, 0.2);
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(23, 90, 70, 0.28) 0%, rgba(18, 80, 52, 0.18) 48%, rgba(103, 76, 42, 0.18) 100%),
+    radial-gradient(ellipse at 50% 8%, rgba(66, 225, 139, 0.22) 0 24%, transparent 24.5%),
+    linear-gradient(180deg, rgba(23, 90, 70, 0.28) 0%, rgba(18, 80, 52, 0.18) 54%, rgba(103, 76, 42, 0.2) 100%),
     linear-gradient(180deg, rgba(8, 25, 34, 0.94), rgba(4, 8, 19, 0.94));
 }
 
@@ -866,12 +867,12 @@ tbody tr.selected {
 }
 
 .field-grass {
-  left: 6%;
-  right: 6%;
-  top: 6%;
-  height: 48%;
+  left: 5%;
+  right: 5%;
+  top: 5%;
+  height: 58%;
   border: 1px solid rgba(66, 225, 139, 0.18);
-  border-radius: 999px 999px 42px 42px;
+  border-radius: 50% 50% 28% 28% / 72% 72% 28% 28%;
   background:
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 18px, transparent 18px 42px),
     linear-gradient(135deg, rgba(66, 225, 139, 0.08), rgba(82, 240, 255, 0.03));
@@ -879,14 +880,48 @@ tbody tr.selected {
 
 .field-infield {
   left: 50%;
-  top: 45%;
-  width: 230px;
-  height: 230px;
-  border: 1px solid rgba(238, 198, 111, 0.42);
-  border-radius: 10px;
+  top: 58%;
+  width: 310px;
+  height: 260px;
+  border: 1px solid rgba(238, 198, 111, 0.38);
+  border-radius: 46% 46% 12px 12px;
   background:
-    linear-gradient(135deg, rgba(238, 198, 111, 0.18), rgba(238, 198, 111, 0.07));
+    radial-gradient(ellipse at 50% 100%, rgba(238, 198, 111, 0.2), transparent 56%),
+    linear-gradient(180deg, rgba(238, 198, 111, 0.16), rgba(238, 198, 111, 0.06));
+  clip-path: polygon(50% 0, 100% 56%, 50% 100%, 0 56%);
+  transform: translate(-50%, -50%);
+}
+
+.base-marker {
+  position: absolute;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.22);
   transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.base-home {
+  left: 50%;
+  top: 78%;
+}
+
+.base-first {
+  left: 61%;
+  top: 60%;
+}
+
+.base-second {
+  left: 50%;
+  top: 43%;
+}
+
+.base-third {
+  left: 39%;
+  top: 60%;
 }
 
 .field-position {
@@ -896,12 +931,10 @@ tbody tr.selected {
   gap: 9px;
   width: clamp(168px, 18vw, 220px);
   padding: 9px;
-  border: 1px solid rgba(151, 170, 255, 0.22);
-  border-radius: 12px;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(82, 240, 255, 0.12), transparent 10rem),
-    rgba(5, 8, 20, 0.82);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .field-position.has-prospect {
@@ -972,6 +1005,7 @@ tbody tr.selected {
 }
 
 .current-stack,
+.field-tile-stack,
 .prospect-bubbles {
   display: grid;
   gap: 7px;
@@ -1170,6 +1204,8 @@ tbody tr.selected {
   border: 1px solid rgba(151, 170, 255, 0.22);
   border-radius: 12px;
   background:
+    radial-gradient(ellipse at 24% 72%, rgba(238, 198, 111, 0.22), transparent 32%),
+    radial-gradient(ellipse at 76% 72%, rgba(238, 198, 111, 0.18), transparent 32%),
     linear-gradient(90deg, rgba(82, 240, 255, 0.07), rgba(117, 62, 255, 0.07)),
     rgba(6, 12, 28, 0.78);
 }
@@ -1184,6 +1220,46 @@ tbody tr.selected {
   border: 1px solid rgba(238, 198, 111, 0.3);
   border-radius: 999px;
   background: radial-gradient(circle, rgba(238, 198, 111, 0.12), transparent 64%);
+}
+
+.bullpen-visual {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  min-height: 190px;
+  align-items: end;
+}
+
+.mound-stack {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: end;
+  gap: 7px;
+  min-height: 170px;
+  padding: 16px 10px 12px;
+  border: 1px solid rgba(238, 198, 111, 0.22);
+  border-radius: 999px 999px 14px 14px;
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(238, 198, 111, 0.22), transparent 58%),
+    rgba(5, 8, 20, 0.34);
+}
+
+.mound-stack::before {
+  content: "MLB";
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  transform: translateX(-50%);
+}
+
+.prospect-mound::before {
+  content: "Prospects";
 }
 
 .pitching-lane header {

@@ -128,7 +128,7 @@ elements.exportCsv.addEventListener("click", () => {
 });
 
 elements.search.addEventListener("input", (event) => {
-  state.filters.search = event.target.value.trim().toLowerCase();
+  state.filters.search = normalizeName(event.target.value);
   state.selectedId = null;
   render();
 });
@@ -206,22 +206,28 @@ async function loadTop100Prospects() {
   if (!response.ok) {
     throw new Error(`Could not load MLB Top 100 seed data: ${response.status}`);
   }
-  state.prospects = parseCsv(await response.text());
-  const [stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket, mlbPlayerFlags, scorebook] = await Promise.all([
+  const top100Prospects = parseCsv(await response.text()).map((player) => ({
+    ...player,
+    prospect_source: player.prospect_source || "MLB Top 100",
+  }));
+  const [orgProspects, stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket, manualCardMarket, mlbPlayerFlags, scorebook] = await Promise.all([
+    loadOptionalCsv("./data/org-prospects.csv?v=20260630-1"),
     loadOptionalCsv("./data/current-stats.csv?v=20260626-2"),
     loadOptionalCsv("./data/savant-stats.csv?v=20260626-1"),
     loadOptionalCsv("./data/depth-chart-current.csv"),
     loadOptionalCsv("./data/player-enrichment.csv"),
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
-    loadOptionalCsv("./data/card-market.csv?v=20260626-3"),
+    loadOptionalCsv("./data/card-market.csv?v=20260630-1"),
+    loadOptionalCsv("./data/card-market-manual.csv?v=20260630-1"),
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
     loadOptionalCsv("./data/scorebook.csv?v=20260629-1"),
   ]);
+  state.prospects = mergeProspectUniverse(top100Prospects, orgProspects);
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
   state.stats = mergeRowsByPlayerId(stats, savantStats);
   state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
-  state.cardMarket = cardMarket;
+  state.cardMarket = mergeRowsByPlayerId(cardMarket, manualCardMarket);
   state.mlbPlayerFlags = mlbPlayerFlags;
   state.scorebook = scorebook;
   state.selectedId = null;
@@ -258,6 +264,20 @@ function mergeRowsByPlayerId(primaryRows, overlayRows) {
   for (const row of overlayRows) {
     const key = String(row.player_id);
     byId.set(key, mergeNonBlank(byId.get(key) ?? {}, row));
+  }
+  return [...byId.values()];
+}
+
+function mergeProspectUniverse(top100Prospects, orgProspects) {
+  const byId = new Map(top100Prospects.map((player) => [String(player.player_id), player]));
+  for (const player of orgProspects) {
+    if (!player.player_id || !player.player_name) continue;
+    const key = String(player.player_id);
+    byId.set(key, {
+      ...(byId.get(key) ?? {}),
+      ...player,
+      prospect_source: player.prospect_source || byId.get(key)?.prospect_source || "Org Top Prospect",
+    });
   }
   return [...byId.values()];
 }
@@ -301,18 +321,18 @@ function render() {
   renderScorebook();
   renderRows(rows);
   elements.rowCount.textContent = `${rows.length} ${rows.length === 1 ? "player" : "players"}`;
-  const selected = state.selectedId ? rows.find((player) => String(player.player_id) === String(state.selectedId)) : null;
+  const selected = state.selectedId ? state.scored.find((player) => String(player.player_id) === String(state.selectedId)) : null;
   renderCard(selected);
   syncToolVisibility();
 }
 
 function getFilteredRows() {
   return state.scored.filter((player) => {
-    const searchBlob = `${player.player_name ?? ""} ${player.org ?? ""} ${player.position ?? ""}`.toLowerCase();
+    const searchBlob = normalizeName(`${player.player_name ?? ""} ${player.org ?? ""} ${player.position ?? ""}`);
     const matchesSearch = state.filters.search === "" || searchBlob.includes(state.filters.search);
     const matchesOrg = state.filters.org === "all" || player.org === state.filters.org;
     const matchesScore = Number(player.callup_score) >= state.filters.minScore;
-    return matchesSearch && matchesOrg && matchesScore;
+    return isTop100Prospect(player) && matchesSearch && matchesOrg && matchesScore;
   });
 }
 
@@ -371,7 +391,7 @@ function renderWarRoom() {
   const org = state.selectedOrg ?? bestBreakExposureOrg()?.name;
   if (!org) {
     elements.warRoomTitle.textContent = "Select a team";
-    elements.warRoomSubtitle.textContent = "Click a team on the Break Value Board to map the depth chart, MLB blockers, and prospect call-up paths.";
+    elements.warRoomSubtitle.textContent = "Click a team on the Break Value Board to map depth chart blockers and prospect paths.";
     elements.warRoomSummary.innerHTML = "";
     elements.warRoomBoard.innerHTML = `<p class="muted">Pick a team above to open its depth-chart board.</p>`;
     elements.warRoomLogo.innerHTML = "";
@@ -389,11 +409,11 @@ function renderWarRoom() {
   elements.warRoomTitle.textContent = org;
   elements.warRoomSubtitle.textContent = topTarget
     ? `${topTarget.player_name} is the next board target with ${topTarget.callup_score}% catalyst confidence.`
-    : "No active pre-call-up Top 100 prospects remain on this board.";
+    : "No active prospects remain on this board.";
   elements.warRoomSummary.innerHTML = warRoomSummaryMarkup(players, calledUp);
 
   if (!players.length) {
-    elements.warRoomBoard.innerHTML = `<p class="muted">No pre-call-up Top 100 prospects are active for ${escapeHtml(org)} right now.</p>`;
+    elements.warRoomBoard.innerHTML = `<p class="muted">No active prospects are loaded for ${escapeHtml(org)} right now.</p>`;
     return;
   }
 
@@ -425,6 +445,8 @@ function syncRouteFromHash() {
     openTool("break", "#break-board", false);
   } else if (location.hash === "#war-room") {
     openTool("war", "#war-room", false);
+  } else if (location.hash === "#scorebook") {
+    openTool("scorebook", "#scorebook", false);
   } else {
     state.activeTool = "dashboard";
     syncToolVisibility();
@@ -460,8 +482,8 @@ function warRoomSummaryMarkup(players, calledUp) {
   const green = players.filter((player) => player.callup_score >= 60).length;
   const bestPath = players.slice().sort((a, b) => b.opportunity_score - a.opportunity_score || b.callup_score - a.callup_score)[0];
   return `
-    <div><span>Active Top 100</span><strong>${players.length}</strong></div>
-    <div><span>60%+ paths</span><strong>${green}</strong></div>
+    <div><span>Active prospects</span><strong>${players.length}</strong></div>
+    <div><span>60%+ confidence</span><strong>${green}</strong></div>
     <div><span>On 40-man</span><strong>${onForty}</strong></div>
     <div><span>Already up</span><strong>${calledUp.length}</strong></div>
     <div><span>Cleanest lane</span><strong>${escapeHtml(bestPath ? depthChartGroup(bestPath.position) : "-")}</strong></div>
@@ -511,11 +533,15 @@ function positionWarRoomMarkup(board, players, calledUp) {
         ${fieldBoard.map((lane) => fieldPositionMarkup(lane)).join("")}
         <div class="field-grass" aria-hidden="true"></div>
         <div class="field-infield" aria-hidden="true"></div>
+        <i class="base-marker base-home" aria-hidden="true"></i>
+        <i class="base-marker base-first" aria-hidden="true"></i>
+        <i class="base-marker base-second" aria-hidden="true"></i>
+        <i class="base-marker base-third" aria-hidden="true"></i>
       </div>
       <section class="pitching-war-room" aria-label="Pitching war room">
         <div class="panel-heading compact">
-          <h3>Pitching War Room</h3>
-          <span>SP / Bullpen</span>
+          <h3>Pitching Bullpen</h3>
+          <span>Starters / Relief</span>
         </div>
         <div class="pitching-lanes">
           ${pitchingBoard.map((lane) => pitchingLaneMarkup(lane)).join("")}
@@ -536,11 +562,11 @@ function orgHighlightMarkup(players, calledUp, board) {
         <span>${escapeHtml(players[0]?.org ?? "Team")}</span>
       </div>
       <div class="org-highlight-grid">
-        <div><span>Active Top 100</span><strong>${players.length}</strong></div>
-        <div><span>60%+ call-up</span><strong>${hot.length}</strong></div>
+        <div><span>Active prospects</span><strong>${players.length}</strong></div>
+        <div><span>60%+ confidence</span><strong>${hot.length}</strong></div>
         <div><span>Already up</span><strong>${calledUp.length}</strong></div>
       </div>
-      ${bestLane ? `<p><strong>${escapeHtml(bestLane.players[0].player_name)}</strong> is the strongest active lane at ${escapeHtml(bestLane.players[0].callup_score)}%.</p>` : "<p>No active Top 100 path is loaded for this org.</p>"}
+      ${bestLane ? `<p><strong>${escapeHtml(bestLane.players[0].player_name)}</strong> is the strongest active lane at ${escapeHtml(bestLane.players[0].callup_score)}%.</p>` : "<p>No active prospect path is loaded for this org.</p>"}
     </aside>
   `;
 }
@@ -554,11 +580,13 @@ function pitchingLaneMarkup(lane) {
         <span>${escapeHtml(lane.title)}</span>
         <strong>${escapeHtml(rosterPressure(lane))}</strong>
       </header>
-      <div class="current-stack">
-        ${blockers.length ? blockers.map((name, index) => currentPlayerChip(name, index === 0 ? "Current lead" : `Depth ${index + 1}`)).join("") : `<span class="empty-chip">Pitching depth not loaded</span>`}
-      </div>
-      <div class="prospect-bubbles">
-        ${lane.players.length ? lane.players.slice(0, 3).map((player, index) => warProspectMarkup(player, index)).join("") : `<span class="empty-prospect">No Top 100 pitching path</span>`}
+      <div class="bullpen-visual">
+        <div class="mound-stack">
+          ${blockers.length ? blockers.slice(0, 2).map((name, index) => currentPlayerChip(name, index === 0 ? "Current arm" : `Depth ${index + 1}`)).join("") : `<span class="empty-chip">Pitching depth not loaded</span>`}
+        </div>
+        <div class="mound-stack prospect-mound">
+          ${lane.players.length ? lane.players.slice(0, 3).map((player, index) => warProspectMarkup(player, index)).join("") : `<span class="empty-prospect">No prospect arm loaded</span>`}
+        </div>
       </div>
     </article>
   `;
@@ -566,9 +594,8 @@ function pitchingLaneMarkup(lane) {
 
 function fieldPositionMarkup(lane) {
   const top = lane.players[0];
-  const blockers = lane.blockers.slice(0, 2);
+  const blockers = lane.blockers.slice(0, 1);
   const starter = blockers[0];
-  const backup = blockers[1];
   const pressure = rosterPressure(lane);
   return `
     <article class="field-position ${escapeHtml(positionClassName(lane.key))} ${top ? "has-prospect" : "empty-position"}">
@@ -576,12 +603,9 @@ function fieldPositionMarkup(lane) {
         <span>${escapeHtml(lane.label)}</span>
         <strong>${escapeHtml(pressure)}</strong>
       </header>
-      <div class="current-stack">
+      <div class="field-tile-stack">
         ${starter ? currentPlayerChip(starter, "Starter") : `<span class="empty-chip">Starter not loaded</span>`}
-        ${backup ? currentPlayerChip(backup, "Backup") : `<span class="empty-chip">Backup not loaded</span>`}
-      </div>
-      <div class="prospect-bubbles">
-        ${lane.players.length ? lane.players.slice(0, 2).map((player, index) => warProspectMarkup(player, index)).join("") : `<span class="empty-prospect">No Top 100 path</span>`}
+        ${lane.players.length ? lane.players.slice(0, 2).map((player, index) => warProspectMarkup(player, index)).join("") : `<span class="empty-prospect">No prospect path</span>`}
       </div>
     </article>
   `;
@@ -720,7 +744,7 @@ function renderMarketBoard() {
     .slice(0, 10);
   elements.marketCount.textContent = `Top ${tracked.length}`;
   if (!tracked.length) {
-    elements.marketBoard.innerHTML = `<p class="muted">Load MLB Top 100 to view the next call-up board.</p>`;
+    elements.marketBoard.innerHTML = `<p class="muted">Load prospects to view the On Deck board.</p>`;
     return;
   }
 
@@ -756,7 +780,7 @@ function renderScorebook() {
   const entries = buildScorebookEntries();
   elements.scorebookCount.textContent = `${entries.length} ${entries.length === 1 ? "debut" : "debuts"}`;
   if (!entries.length) {
-    elements.scorebookBoard.innerHTML = `<p class="muted">No MLB debuts are loaded yet. Called-up prospects will appear here once the Top 100 data marks them at MLB level.</p>`;
+    elements.scorebookBoard.innerHTML = `<p class="muted">No MLB debuts are loaded yet. Called-up prospects will appear here once the data marks them at MLB level.</p>`;
     return;
   }
 
@@ -1151,16 +1175,18 @@ function onDeckThesis(player) {
   if (trend.startsWith("Up")) {
     return `${player.player_name} already has ranking momentum; the next performance spike could pull more attention forward.`;
   }
-  return `${player.player_name} is on the watchlist because the next meaningful baseball event matters more than raw rank alone.`;
+  return `${player.player_name}'s next meaningful baseball event is the reason to monitor the profile this week.`;
 }
 
 function watchThesis(player) {
-  return `${player.player_name} is worth monitoring because the next likely catalyst is ${catalystSentenceText(player)}, not simply because of a list ranking. Current form, organizational opportunity, and rank movement combine into a ${player.callup_score}% confidence read.`;
+  const trend = rankTrendText(player);
+  const trendText = trend === "Untracked" ? "rank movement is not established yet" : `rank movement is ${trend.toLowerCase()}`;
+  return `${player.player_name} is working at ${player.level || "an unlisted level"} with ${onDeckCatalyst(player).toLowerCase()} as the next catalyst. ${trendText}, and current form/opportunity support a ${player.callup_score}% confidence read.`;
 }
 
 function whyItMatters(player) {
   const role = depthChartGroup(player.position).toLowerCase();
-  return `For baseball, this is about whether a clearer ${role} path is opening inside the ${player.org} system. For collectors, the edge is identifying the catalyst before it becomes obvious in box scores, rankings updates, or debut headlines.`;
+  return `${player.org} has to decide how aggressively to move this ${role} profile. A promotion, role change, or sustained production run would shift ${player.player_name} from follow-list status into a more urgent evaluation window.`;
 }
 
 function riskFactors(player) {
@@ -1175,7 +1201,7 @@ function riskFactors(player) {
 }
 
 function analystVerdict(player) {
-  return `${player.player_name} belongs on OnDeck because ${catalystSentenceText(player)} is the event most likely to change perception next. The profile is strongest when the baseball path and collector attention move at the same time.`;
+  return `${player.player_name}'s current case centers on ${catalystSentenceText(player)}. If the performance holds and the organization creates room, this profile can gain momentum quickly; if the developmental checkpoint stalls, the timeline pushes back.`;
 }
 
 function catalystSentenceText(player) {
@@ -1208,7 +1234,7 @@ function developmentFocus(player) {
 function profileResearchReport(player) {
   return `
     <section class="analyst-report">
-      <h3>Why We're Watching</h3>
+      <h3>Player News Read</h3>
       <p>${escapeHtml(watchThesis(player))}</p>
       <div class="report-catalyst">
         <span>On Deck</span>
@@ -1411,6 +1437,10 @@ function isCalledUp(player) {
 
 function isOnFortyMan(player) {
   return String(player.on_40man ?? "").toLowerCase() === "true";
+}
+
+function isTop100Prospect(player) {
+  return String(player.prospect_source ?? "").toLowerCase().includes("top 100") || String(player.player_id ?? "").startsWith("mlb-top100-");
 }
 
 function download(filename, text) {
