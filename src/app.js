@@ -264,7 +264,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
     loadOptionalCsv("./data/card-market.csv?v=20260630-1"),
-    loadOptionalCsv("./data/card-market-manual.csv?v=20260630-1"),
+    loadOptionalCsv("./data/card-market-manual.csv?v=20260630-2"),
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
     loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
   ]);
@@ -1470,54 +1470,16 @@ function marketPanel(player) {
   return `
     <section class="card-market-panel">
       <div class="panel-heading compact">
-        <h3>Card Market</h3>
+        <h3>Card Market Box Score</h3>
         <span>${escapeHtml(player.market_signal)}</span>
       </div>
       <div class="card-market-grid">
-        <div>
-          <span>Last Sale</span>
-          <strong>${currency(player.last_sale)}</strong>
-        </div>
-        <div>
-          <span>Last Sold</span>
-          <strong>${escapeHtml(formatShortDate(player.last_sale_date) || "-")}</strong>
-        </div>
-        <div>
-          <span>30D Avg</span>
-          <strong>${currency(player.avg_30)}</strong>
-        </div>
-        <div>
-          <span>14D Avg</span>
-          <strong>${currency(player.avg_14)}</strong>
-        </div>
-        <div>
-          <span>7D Avg</span>
-          <strong>${currency(player.avg_7)}</strong>
-        </div>
-        <div>
-          <span>30D Sales</span>
-          <strong>${countValue(player.sales_30)}</strong>
-        </div>
-        <div>
-          <span>14D Sales</span>
-          <strong>${countValue(player.sales_14)}</strong>
-        </div>
-        <div>
-          <span>7D Sales</span>
-          <strong>${countValue(player.sales_7)}</strong>
-        </div>
-        <div>
-          <span>Sell-through</span>
-          <strong>${percent(player.sell_through)}</strong>
-        </div>
-        <div>
-          <span>Buy Zone</span>
-          <strong>${escapeHtml(buyZone(player))}</strong>
-        </div>
-        <div>
-          <span>Source</span>
-          <strong>${escapeHtml(player.data_source ?? "Manual comp")}</strong>
-        </div>
+        ${marketMetricCells(player).map((cell) => `
+          <div>
+            <span>${escapeHtml(cell.label)}</span>
+            <strong>${escapeHtml(cell.value)}</strong>
+          </div>
+        `).join("")}
       </div>
       <p class="market-source">${escapeHtml(cardDescription(player))}</p>
       <p>${escapeHtml(player.market_note ?? "")}</p>
@@ -1530,6 +1492,38 @@ function marketPanel(player) {
       ${player.source_url ? `<a href="${escapeHtml(player.source_url)}" target="_blank" rel="noreferrer">Open eBay sold search</a>` : ""}
     </section>
   `;
+}
+
+function marketMetricCells(player) {
+  const cells = [
+    { label: "Last Sale", value: currency(player.last_sale) },
+    { label: "30D Avg", value: currency(player.avg_30) },
+    { label: "14D Avg", value: currency(player.avg_14) },
+    { label: "7D Avg", value: currency(player.avg_7) },
+    { label: "30D Sales", value: countValue(player.sales_30) },
+    { label: "14D Sales", value: countValue(player.sales_14) },
+    { label: "7D Sales", value: countValue(player.sales_7) },
+    { label: "Recommendation", value: recommendationLabel(player) },
+    { label: "Buy Zone", value: buyZone(player) },
+    { label: "Source", value: player.data_source || "Manual comp" },
+  ];
+  const active = Number(player.active_listings);
+  const sold = Number(player.sales_30);
+  if (Number.isFinite(active) && active > 0) {
+    cells.splice(7, 0, { label: "Active Listings", value: countValue(active) });
+    if (Number.isFinite(sold)) {
+      cells.splice(8, 0, { label: "Sell-through", value: `${Math.round((sold / (sold + active)) * 100)}%` });
+    }
+  }
+  return cells;
+}
+
+function recommendationLabel(player) {
+  const signal = String(player.market_signal || "").toLowerCase();
+  if (signal.includes("priced")) return "Watch";
+  if (signal.includes("buy")) return "Good buy";
+  if (signal.includes("moving") || signal.includes("momentum")) return "Momentum watch";
+  return "Watch";
 }
 
 function cardDescription(player) {
@@ -1547,9 +1541,9 @@ function marketReasonBullets(player) {
   const reasons = [];
   const last = numericMoney(player.last_sale);
   const avg30 = numericMoney(player.avg_30);
-  const avg90 = numericMoney(player.avg_90);
+  const avg14 = numericMoney(player.avg_14);
+  const avg7 = numericMoney(player.avg_7);
   const movement = rankMovement(player);
-  const sellThrough = player.sell_through === "" || player.sell_through == null ? NaN : Number(player.sell_through);
 
   if (Number.isFinite(last) && Number.isFinite(avg30) && avg30 > 0) {
     const diff = ((last - avg30) / avg30) * 100;
@@ -1562,17 +1556,29 @@ function marketReasonBullets(player) {
     }
   }
 
-  if (Number.isFinite(last) && Number.isFinite(avg90) && avg90 > 0) {
-    const diff90 = ((last - avg90) / avg90) * 100;
-    if (diff90 < -8) {
-      reasons.push(`Price is still ${Math.abs(Math.round(diff90))}% under the 90-day average, leaving rebound room if the player gets a fresh catalyst.`);
-    } else if (diff90 > 8) {
-      reasons.push(`Price is ${Math.round(diff90)}% above the 90-day average, so some of the upside may already be priced in.`);
+  if (Number.isFinite(avg7) && Number.isFinite(avg30) && avg30 > 0) {
+    const shortMove = ((avg7 - avg30) / avg30) * 100;
+    if (shortMove >= 8) {
+      reasons.push(`The 7-day average is ${Math.round(shortMove)}% above the 30-day average, showing short-window demand is heating up.`);
+    } else if (shortMove <= -8) {
+      reasons.push(`The 7-day average is ${Math.abs(Math.round(shortMove))}% below the 30-day average, so short-window pricing is cooling.`);
+    } else {
+      reasons.push("The 7-day average is close to the 30-day average, so the market is not separating sharply in either direction.");
     }
   }
 
-  if (Number.isFinite(sellThrough)) {
-    reasons.push(`${Math.round(sellThrough)}% sell-through shows ${sellThrough >= 35 ? "healthy demand against current listings" : "demand is present but not yet urgent"}.`);
+  if (Number.isFinite(avg14) && Number.isFinite(avg30) && avg30 > 0 && !Number.isFinite(avg7)) {
+    const midMove = ((avg14 - avg30) / avg30) * 100;
+    reasons.push(`The 14-day average is ${Math.round(midMove)}% ${midMove >= 0 ? "above" : "below"} the 30-day average.`);
+  }
+
+  const sales30 = Number(player.sales_30);
+  if (Number.isFinite(sales30)) {
+    if (sales30 >= 30) {
+      reasons.push(`${Math.round(sales30)} sales over 30 days gives the comp base enough volume to trust the range.`);
+    } else if (sales30 > 0) {
+      reasons.push(`${Math.round(sales30)} sales over 30 days is a thinner market, so one sale can move the read quickly.`);
+    }
   }
 
   if (movement != null) {
@@ -1586,6 +1592,7 @@ function marketReasonBullets(player) {
   }
 
   reasons.push(`${player.callup_score}% move score keeps the card case tied to a baseball event, not just raw card comps.`);
+  reasons.push(`Recommended action: ${recommendationLabel(player).toLowerCase()} at ${buyZone(player)}.`);
   return reasons;
 }
 
@@ -1844,9 +1851,11 @@ function marketScore(player) {
 
 function buyZone(player) {
   if (player.buy_low || player.buy_high) {
-    return [player.buy_low, player.buy_high].filter(Boolean).join(" - ");
+    return [player.buy_low, player.buy_high].filter(Boolean).map(currency).join(" - ");
   }
-  return "-";
+  const avg30 = numericMoney(player.avg_30);
+  if (!Number.isFinite(avg30)) return "-";
+  return `${currency(avg30 * 0.92)} - ${currency(avg30 * 1.03)}`;
 }
 
 function currency(value) {
