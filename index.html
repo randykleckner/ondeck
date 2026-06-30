@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnDeck Prospect | Prospect Catalyst Intelligence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260630-4" />
+    <link rel="stylesheet" href="./styles.css?v=20260630-5" />
   </head>
   <body>
     <header class="app-header">
@@ -18,7 +18,6 @@
         <a href="#prospects" data-route="dashboard">Prospects</a>
         <a href="#card-market" data-route="dashboard">On Deck</a>
         <a href="#break-board" data-route="break">Break Board</a>
-        <a href="#war-room" data-route="war">War Room</a>
       </nav>
       <div class="header-actions">
         <button id="load-top100" class="button primary" type="button">Refresh Board</button>
@@ -73,7 +72,7 @@
         <div id="team-board" class="team-grid"></div>
       </section>
 
-      <section id="war-room" class="war-room secondary-tool" data-tool="war" aria-label="Team prospect war room">
+      <section id="dugout" class="war-room secondary-tool" data-tool="war" aria-label="Team prospect dugout">
         <div class="tool-page-nav">
           <a class="button ghost" href="#dashboard" data-route="dashboard">Back to Dashboard</a>
         </div>
@@ -81,12 +80,11 @@
           <div class="war-room-team">
             <span id="war-room-logo" class="team-logo-wrap war-room-logo"></span>
             <div>
-              <p class="eyebrow">Team War Room</p>
+              <p class="eyebrow">The Dugout</p>
               <h2 id="war-room-title">Select a team</h2>
               <p id="war-room-subtitle">Click a team on the Break Value Board to map depth chart blockers and prospect paths.</p>
             </div>
           </div>
-          <div id="war-room-summary" class="war-room-summary"></div>
         </div>
         <div id="war-room-board" class="war-room-board">
           <p class="muted">Pick a team above to open its depth-chart board.</p>
@@ -144,6 +142,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260630-4"></script>
+    <script type="module" src="./src/app.js?v=20260630-5"></script>
   </body>
 </html>

@@ -609,7 +609,7 @@ body[data-view="war"] #prospects {
   display: none;
 }
 
-body[data-view="war"] #war-room {
+body[data-view="war"] #dugout {
   display: block;
   min-height: calc(100vh - 132px);
 }
@@ -799,9 +799,9 @@ body[data-view="war"] #war-room {
   padding: 0;
   border-color: rgba(238, 167, 54, 0.28);
   background:
-    radial-gradient(circle at 18% 0%, rgba(238, 167, 54, 0.18), transparent 16rem),
-    radial-gradient(circle at 75% 100%, rgba(82, 240, 255, 0.1), transparent 18rem),
-    linear-gradient(180deg, rgba(13, 18, 32, 0.94), rgba(4, 7, 18, 0.92));
+    linear-gradient(180deg, rgba(4, 7, 18, 0.52), rgba(4, 7, 18, 0.96) 42%, rgba(4, 7, 18, 0.92)),
+    linear-gradient(90deg, rgba(4, 7, 18, 0.9), rgba(4, 7, 18, 0.2) 48%, rgba(4, 7, 18, 0.92)),
+    url("./assets/bullpen-header.png") center 35% / cover no-repeat;
 }
 
 .bullpen-heading .eyebrow {
@@ -945,22 +945,39 @@ body[data-view="war"] #war-room {
 }
 
 .war-room-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 270px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 18px;
+  overflow: hidden;
+  padding: 28px;
   border-bottom: 1px solid var(--line);
   background:
-    radial-gradient(circle at 16% 0%, rgba(82, 240, 255, 0.16), transparent 26rem),
-    rgba(4, 7, 18, 0.32);
+    linear-gradient(90deg, rgba(4, 7, 18, 0.96) 0%, rgba(4, 7, 18, 0.76) 45%, rgba(4, 7, 18, 0.22) 100%),
+    linear-gradient(180deg, rgba(4, 7, 18, 0.16), rgba(4, 7, 18, 0.94)),
+    url("./assets/dugout-header.png") center right / cover no-repeat;
+}
+
+.war-room-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  z-index: -1;
+  height: 46%;
+  background: linear-gradient(180deg, transparent, rgba(4, 7, 18, 0.96));
 }
 
 .war-room-team {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   min-width: 0;
   gap: 14px;
+  max-width: 820px;
 }
 
 .war-room-team .eyebrow {
@@ -982,36 +999,6 @@ body[data-view="war"] #war-room {
   width: 64px;
   height: 64px;
   flex: 0 0 64px;
-}
-
-.war-room-summary {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(92px, 1fr));
-  gap: 10px;
-  min-width: min(100%, 540px);
-}
-
-.war-room-summary div {
-  min-width: 0;
-  padding: 10px;
-  border: 1px solid rgba(151, 170, 255, 0.18);
-  border-radius: 8px;
-  background: rgba(5, 8, 20, 0.58);
-}
-
-.war-room-summary span {
-  display: block;
-  color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.war-room-summary strong {
-  display: block;
-  margin-top: 5px;
-  color: #fff;
-  font-size: 1.05rem;
 }
 
 .war-room-board {
@@ -1281,20 +1268,20 @@ body[data-view="war"] #war-room {
 }
 
 .position-callouts,
-.org-highlights {
+.dugout-read {
   display: grid;
   align-content: start;
   gap: 12px;
-  padding: 14px;
-  border: 1px solid rgba(151, 170, 255, 0.22);
+  padding: 15px 16px;
+  border: 1px solid rgba(238, 167, 54, 0.24);
   border-radius: 14px;
   background:
-    radial-gradient(circle at 0% 0%, rgba(117, 62, 255, 0.14), transparent 12rem),
+    linear-gradient(90deg, rgba(238, 167, 54, 0.1), transparent 42%),
     rgba(5, 8, 20, 0.74);
 }
 
 .position-callouts p,
-.org-highlights p,
+.dugout-read p,
 .flag-legend {
   margin: 0;
   color: #d8def6;
@@ -1302,62 +1289,12 @@ body[data-view="war"] #war-room {
   line-height: 1.48;
 }
 
-.org-highlight-grid,
-.org-position-mix {
-  display: grid;
-  gap: 8px;
-}
-
-.org-highlight-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.org-highlight-grid div,
-.org-position-mix div {
-  min-width: 0;
-  padding: 10px;
-  border: 1px solid rgba(151, 170, 255, 0.18);
-  border-radius: 8px;
-  background: rgba(5, 8, 20, 0.58);
-}
-
-.org-highlight-grid span,
-.org-position-mix dt {
-  display: block;
-  color: var(--muted);
-  font-size: 0.66rem;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.org-highlight-grid strong,
-.org-position-mix dd {
-  display: block;
-  margin: 4px 0 0;
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: 950;
-}
-
-.org-position-mix {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.org-highlights {
-  grid-template-columns: minmax(190px, 0.7fr) minmax(300px, 1fr) minmax(260px, 1.15fr);
-  align-items: center;
-}
-
-.org-highlights .panel-heading {
+.dugout-read .panel-heading {
   padding: 0;
 }
 
-.org-highlights p {
+.dugout-read p {
   margin: 0;
-}
-
-.org-highlights .flag-legend {
-  align-content: center;
 }
 
 .pitching-war-room {
@@ -1554,7 +1491,6 @@ body[data-view="war"] #war-room {
   gap: 12px;
 }
 
-.war-room-summary span,
 .depth-tier-label span {
   display: block;
   color: var(--muted);
@@ -2153,11 +2089,6 @@ tbody tr {
     display: grid;
   }
 
-  .war-room-summary {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    min-width: 0;
-  }
-
   .table-panel {
     order: 1;
   }
@@ -2188,10 +2119,6 @@ tbody tr {
   }
 
   .field-war-room {
-    grid-template-columns: 1fr;
-  }
-
-  .org-highlights {
     grid-template-columns: 1fr;
   }
 
@@ -2355,14 +2282,8 @@ tbody tr {
     transform: none;
   }
 
-  .org-highlight-grid,
-  .org-position-mix,
   .pitching-lanes {
     grid-template-columns: 1fr;
-  }
-
-  .war-room-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .summary-grid,

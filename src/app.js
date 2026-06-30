@@ -82,11 +82,10 @@ const elements = {
   rowCount: document.querySelector("#row-count"),
   teamBoard: document.querySelector("#team-board"),
   teamBoardCount: document.querySelector("#team-board-count"),
-  warRoom: document.querySelector("#war-room"),
+  warRoom: document.querySelector("#dugout"),
   warRoomLogo: document.querySelector("#war-room-logo"),
   warRoomTitle: document.querySelector("#war-room-title"),
   warRoomSubtitle: document.querySelector("#war-room-subtitle"),
-  warRoomSummary: document.querySelector("#war-room-summary"),
   warRoomBoard: document.querySelector("#war-room-board"),
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
@@ -414,7 +413,7 @@ function renderTeamBoard() {
       event.stopPropagation();
       openTeamWarRoom(card.dataset.org);
       render();
-      openTool("war", "#war-room");
+      openTool("war", "#dugout");
     });
   });
 }
@@ -428,8 +427,7 @@ function renderWarRoom() {
   if (!org) {
     elements.warRoomTitle.textContent = "Select a team";
     elements.warRoomSubtitle.textContent = "Click a team on the Break Value Board to map depth chart blockers and prospect paths.";
-    elements.warRoomSummary.innerHTML = "";
-    elements.warRoomBoard.innerHTML = `<p class="muted">Pick a team above to open its depth-chart board.</p>`;
+    elements.warRoomBoard.innerHTML = `<p class="muted">Pick a team above to open its Dugout board.</p>`;
     elements.warRoomLogo.innerHTML = "";
     return;
   }
@@ -444,9 +442,8 @@ function renderWarRoom() {
   elements.warRoomLogo.innerHTML = logo ? `<img src="${escapeHtml(logo)}" alt="${escapeHtml(org)} logo" loading="lazy" />` : `<strong>${escapeHtml(orgInitials(org))}</strong>`;
   elements.warRoomTitle.textContent = org;
   elements.warRoomSubtitle.textContent = topTarget
-    ? `${topTarget.player_name} is the next board target with ${topTarget.callup_score}% catalyst confidence.`
+    ? `${topTarget.player_name} is the next name to watch as ${org} sorts its depth chart.`
     : "No active prospects remain on this board.";
-  elements.warRoomSummary.innerHTML = warRoomSummaryMarkup(players, calledUp);
 
   if (!players.length) {
     elements.warRoomBoard.innerHTML = `<p class="muted">No active prospects are loaded for ${escapeHtml(org)} right now.</p>`;
@@ -477,8 +474,11 @@ function renderWarRoom() {
 function syncRouteFromHash() {
   if (location.hash === "#break-board") {
     openTool("break", "#break-board", false);
-  } else if (location.hash === "#war-room") {
-    openTool("war", "#war-room", false);
+  } else if (location.hash === "#dugout" || location.hash === "#war-room") {
+    openTool("war", "#dugout", false);
+    if (location.hash === "#war-room") {
+      history.replaceState(null, "", "#dugout");
+    }
   } else {
     state.activeTool = "dashboard";
     if (location.hash === "#scorebook") {
@@ -511,19 +511,6 @@ function syncToolVisibility() {
       : route === state.activeTool;
     link.classList.toggle("active", active);
   });
-}
-
-function warRoomSummaryMarkup(players, calledUp) {
-  const onForty = players.filter(isOnFortyMan).length;
-  const green = players.filter((player) => player.callup_score >= 60).length;
-  const bestPath = players.slice().sort((a, b) => b.opportunity_score - a.opportunity_score || b.callup_score - a.callup_score)[0];
-  return `
-    <div><span>Active prospects</span><strong>${players.length}</strong></div>
-    <div><span>60%+ confidence</span><strong>${green}</strong></div>
-    <div><span>On 40-man</span><strong>${onForty}</strong></div>
-    <div><span>Already up</span><strong>${calledUp.length}</strong></div>
-    <div><span>Cleanest lane</span><strong>${escapeHtml(bestPath ? depthChartGroup(bestPath.position) : "-")}</strong></div>
-  `;
 }
 
 function buildPositionBoard(players) {
@@ -564,7 +551,7 @@ function positionWarRoomMarkup(board, players, calledUp) {
   const pitchingBoard = board.filter((lane) => PITCHING_POSITIONS.some((position) => position.key === lane.key));
   return `
     <div class="war-room-page">
-      ${orgHighlightMarkup(players, calledUp, board)}
+      ${dugoutReadMarkup(players, calledUp, board)}
       <div class="depth-chart-board" aria-label="Depth chart and call-up paths">
         <div class="depth-board-head">
           <h3>Depth Chart & Call-Up Paths</h3>
@@ -578,7 +565,7 @@ function positionWarRoomMarkup(board, players, calledUp) {
           ${fieldBoard.map((lane) => fieldPositionMarkup(lane)).join("")}
         </div>
       </div>
-      <section class="pitching-war-room bullpen-page" aria-label="Pitching war room">
+      <section class="pitching-war-room bullpen-page" aria-label="Pitching bullpen">
         <div class="bullpen-heading">
           <div>
             <p class="eyebrow">The Bullpen</p>
@@ -594,22 +581,18 @@ function positionWarRoomMarkup(board, players, calledUp) {
   `;
 }
 
-function orgHighlightMarkup(players, calledUp, board) {
+function dugoutReadMarkup(players, calledUp, board) {
   const active = board.filter((lane) => lane.players.length);
   const bestLane = active.slice().sort((a, b) => b.players[0].callup_score - a.players[0].callup_score)[0];
-  const hot = players.filter((player) => player.callup_score >= 60);
+  const team = players[0]?.org ?? "This org";
+  const calledUpText = calledUp.length ? `${calledUp.length} recent call-up${calledUp.length === 1 ? "" : "s"} already moved off this board.` : "No recent call-ups are parked in this view.";
   return `
-    <aside class="org-highlights">
+    <aside class="dugout-read">
       <div class="panel-heading compact">
-        <h3>Org Highlights</h3>
-        <span>${escapeHtml(players[0]?.org ?? "Team")}</span>
+        <h3>Dugout Read</h3>
+        <span>${escapeHtml(team)}</span>
       </div>
-      <div class="org-highlight-grid">
-        <div><span>Active prospects</span><strong>${players.length}</strong></div>
-        <div><span>60%+ confidence</span><strong>${hot.length}</strong></div>
-        <div><span>Already up</span><strong>${calledUp.length}</strong></div>
-      </div>
-      ${bestLane ? `<p><strong>${escapeHtml(bestLane.players[0].player_name)}</strong> is the strongest active lane at ${escapeHtml(bestLane.players[0].callup_score)}%.</p>` : "<p>No active prospect path is loaded for this org.</p>"}
+      ${bestLane ? `<p><strong>${escapeHtml(bestLane.players[0].player_name)}</strong> is the clearest name to track in this Dugout because the current depth lane creates the next decision point. ${escapeHtml(calledUpText)}</p>` : `<p>No active prospect path is loaded for ${escapeHtml(team)} right now.</p>`}
     </aside>
   `;
 }
@@ -955,7 +938,7 @@ function renderCard(player) {
     event.stopPropagation();
     openTeamWarRoom(player.org);
     render();
-    openTool("war", "#war-room");
+    openTool("war", "#dugout");
   });
 }
 
@@ -973,13 +956,13 @@ function teamPathPanel(player) {
   return `
     <section class="profile-war-room">
       <div class="panel-heading compact">
-        <h3>Team War Room</h3>
+        <h3>The Dugout</h3>
         <span>${escapeHtml(role)}</span>
       </div>
       <p>${escapeHtml(playerPathRead(player, lane))}</p>
       <p class="muted">MLB blockers: ${escapeHtml(blockerText)}</p>
       <button class="button ghost profile-war-action" type="button" data-open-war-room="${escapeHtml(player.org ?? "")}">
-        Open ${escapeHtml(player.org ?? "team")} war room
+        Open ${escapeHtml(player.org ?? "team")} Dugout
       </button>
     </section>
   `;
