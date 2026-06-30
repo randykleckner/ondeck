@@ -7,6 +7,7 @@ const state = {
   depthCharts: [],
   cardMarket: [],
   mlbPlayerFlags: [],
+  scorebook: [],
   scored: [],
   calledUp: [],
   selectedId: null,
@@ -89,6 +90,7 @@ const elements = {
   warRoomBoard: document.querySelector("#war-room-board"),
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
+  scorebookBoard: document.querySelector("#scorebook-board"),
   deckPrev: document.querySelector("#deck-prev"),
   deckNext: document.querySelector("#deck-next"),
   navLinks: document.querySelectorAll(".main-nav a"),
@@ -125,24 +127,24 @@ elements.exportCsv.addEventListener("click", () => {
     sell_through: player.sell_through ?? "",
     buy_zone: buyZone(player),
   }));
-  download("prospect-callup-scores.csv", toCsv(records));
+  download("prospect-ondeck-scores.csv", toCsv(records));
 });
 
-elements.search.addEventListener("input", (event) => {
+elements.search?.addEventListener("input", (event) => {
   state.filters.search = normalizeName(event.target.value);
   state.selectedId = null;
   render();
 });
 
-elements.orgFilter.addEventListener("change", (event) => {
+elements.orgFilter?.addEventListener("change", (event) => {
   state.filters.org = event.target.value;
   state.selectedId = null;
   render();
 });
 
-elements.scoreFilter.addEventListener("input", (event) => {
+elements.scoreFilter?.addEventListener("input", (event) => {
   state.filters.minScore = Number(event.target.value);
-  elements.scoreFilterValue.textContent = event.target.value;
+  if (elements.scoreFilterValue) elements.scoreFilterValue.textContent = event.target.value;
   state.selectedId = null;
   render();
 });
@@ -227,7 +229,7 @@ async function loadTop100Prospects() {
     ...player,
     prospect_source: player.prospect_source || "MLB Top 100",
   }));
-  const [orgProspects, stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket, manualCardMarket, mlbPlayerFlags] = await Promise.all([
+  const [orgProspects, stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket, manualCardMarket, mlbPlayerFlags, scorebook] = await Promise.all([
     loadOptionalCsv("./data/org-prospects.csv?v=20260630-1"),
     loadOptionalCsv("./data/current-stats.csv?v=20260626-2"),
     loadOptionalCsv("./data/savant-stats.csv?v=20260626-1"),
@@ -238,6 +240,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/card-market.csv?v=20260630-1"),
     loadOptionalCsv("./data/card-market-manual.csv?v=20260630-1"),
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
+    loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
   ]);
   state.prospects = mergeProspectUniverse(top100Prospects, orgProspects);
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
@@ -245,6 +248,7 @@ async function loadTop100Prospects() {
   state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
   state.cardMarket = mergeRowsByPlayerId(cardMarket, manualCardMarket);
   state.mlbPlayerFlags = mlbPlayerFlags;
+  state.scorebook = scorebook;
   state.selectedId = null;
   state.filters.org = "all";
   refreshScoredData();
@@ -321,6 +325,7 @@ function refreshScoredData() {
 }
 
 function hydrateOrgFilter() {
+  if (!elements.orgFilter) return;
   const current = state.filters.org;
   const orgs = [...new Set(state.scored.map((player) => player.org).filter(Boolean))].sort();
   elements.orgFilter.innerHTML = `<option value="all">All orgs</option>${orgs.map((org) => `<option value="${escapeHtml(org)}">${escapeHtml(org)}</option>`).join("")}`;
@@ -332,9 +337,10 @@ function render() {
   const rows = getFilteredRows();
   renderTeamBoard();
   renderWarRoom();
-  renderMarketBoard(rows);
+  renderMarketBoard();
   renderRows(rows);
-  elements.rowCount.textContent = `${rows.length} ${rows.length === 1 ? "player" : "players"}`;
+  renderScorebook();
+  elements.rowCount.textContent = rows.length ? `Top ${rows.length}` : "No active Top 10 data loaded";
   const selected = state.selectedId ? state.scored.find((player) => String(player.player_id) === String(state.selectedId)) : null;
   renderCard(selected);
   syncToolVisibility();
@@ -363,12 +369,12 @@ function openPlayerProfile(playerId, options = {}) {
 }
 
 function getFilteredRows() {
-  return state.scored.filter((player) => {
+  return onDeckPlayers().filter((player) => {
     const searchBlob = normalizeName(`${player.player_name ?? ""} ${player.org ?? ""} ${player.position ?? ""}`);
     const matchesSearch = state.filters.search === "" || searchBlob.includes(state.filters.search);
     const matchesOrg = state.filters.org === "all" || player.org === state.filters.org;
     const matchesScore = Number(player.callup_score) >= state.filters.minScore;
-    return isTop100Prospect(player) && matchesSearch && matchesOrg && matchesScore;
+    return matchesSearch && matchesOrg && matchesScore;
   });
 }
 
@@ -480,11 +486,10 @@ function syncRouteFromHash() {
     if (location.hash === "#war-room") {
       history.replaceState(null, "", "#dugout");
     }
+  } else if (location.hash === "#scorebook") {
+    openTool("scorebook", "#scorebook", false);
   } else {
     state.activeTool = "dashboard";
-    if (location.hash === "#scorebook") {
-      history.replaceState(null, "", "#dashboard");
-    }
     syncToolVisibility();
   }
 }
@@ -508,7 +513,7 @@ function syncToolVisibility() {
     const route = link.dataset.route;
     const href = link.getAttribute("href");
     const active = state.activeTool === "dashboard"
-      ? route === "dashboard" && (href === location.hash || (href === "#dashboard" && !location.hash))
+      ? route === "dashboard" && (href === location.hash || (href === "#top-10" && (!location.hash || location.hash === "#dashboard")))
       : route === state.activeTool;
     link.classList.toggle("active", active);
   });
@@ -553,7 +558,7 @@ function positionWarRoomMarkup(board, players, calledUp) {
   return `
     <div class="war-room-page">
       ${dugoutReadMarkup(players, calledUp, board)}
-      ${fieldBoard.length ? `<div class="depth-chart-board" aria-label="Depth chart and call-up paths">
+      ${fieldBoard.length ? `<div class="depth-chart-board" aria-label="Depth chart and next-move paths">
         <div class="depth-board-head">
           <h3>Depth Chart & Call-Up Paths</h3>
           <div class="lane-legend" aria-label="Path legend">
@@ -586,7 +591,7 @@ function dugoutReadMarkup(players, calledUp, board) {
   const active = board.filter((lane) => lane.players.length);
   const bestLane = active.slice().sort((a, b) => b.players[0].callup_score - a.players[0].callup_score)[0];
   const team = players[0]?.org ?? "This org";
-  const calledUpText = calledUp.length ? `${calledUp.length} recent call-up${calledUp.length === 1 ? "" : "s"} already moved off this board.` : "No recent call-ups are parked in this view.";
+  const calledUpText = calledUp.length ? `${calledUp.length} recent move${calledUp.length === 1 ? "" : "s"} already came off this board.` : "No completed moves are parked in this view.";
   return `
     <aside class="dugout-read">
       <div class="panel-heading compact">
@@ -824,29 +829,30 @@ function clearListFilters() {
   state.filters.search = "";
   state.filters.org = "all";
   state.filters.minScore = 0;
-  elements.search.value = "";
-  elements.orgFilter.value = "all";
-  elements.scoreFilter.value = "0";
-  elements.scoreFilterValue.textContent = "0";
+  if (elements.search) elements.search.value = "";
+  if (elements.orgFilter) elements.orgFilter.value = "all";
+  if (elements.scoreFilter) elements.scoreFilter.value = "0";
+  if (elements.scoreFilterValue) elements.scoreFilterValue.textContent = "0";
 }
 
 function callupCardMarkup(player) {
   const catalyst = onDeckCatalyst(player);
+  const rank = top10Rank(player);
   return `
       <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}">
         <div>
-          <span class="market-label">On Deck: ${escapeHtml(catalyst)}</span>
+          <span class="market-label">#${escapeHtml(rank)} · ${escapeHtml(playerTypeBadge(player))}</span>
           <h3>${escapeHtml(player.player_name)}</h3>
           <p>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))} · MLB ETA ${escapeHtml(player.eta ?? "-")}</p>
         </div>
         <div class="market-price">
           <strong>${escapeHtml(player.callup_score)}%</strong>
-          <span>Confidence</span>
+          <span>Move Score</span>
         </div>
         <dl>
-          <div><dt>Next Event</dt><dd>${escapeHtml(catalyst)}</dd></div>
-          <div><dt>ETA</dt><dd>${escapeHtml(player.eta ?? "-")}</dd></div>
-          <div><dt>Trend</dt><dd>${escapeHtml(rankTrendText(player))}</dd></div>
+          <div><dt>Next Move</dt><dd>${escapeHtml(catalyst)}</dd></div>
+          <div><dt>Card</dt><dd>${escapeHtml(cardBaselineLabel(player))}</dd></div>
+          <div><dt>Market</dt><dd>${escapeHtml(marketStatus(player))}</dd></div>
         </dl>
         <p class="market-thesis">${escapeHtml(onDeckThesis(player))}</p>
       </article>
@@ -872,27 +878,31 @@ function buildOrgExposure() {
 
 function renderRows(rows) {
   if (!rows.length) {
-    elements.rows.innerHTML = `<tr><td colspan="7" class="muted">No prospects match the current filters.</td></tr>`;
+    elements.rows.innerHTML = `<tr><td colspan="11" class="muted">No active Top 10 data loaded yet. Add players in the admin panel to publish the board.</td></tr>`;
     return;
   }
 
   elements.rows.innerHTML = rows
-    .map((player) => {
+    .map((player, index) => {
       const selected = String(player.player_id) === String(state.selectedId) ? "selected" : "";
       return `
         <tr class="${selected}" data-player-id="${escapeHtml(player.player_id)}">
+          <td><strong>${index + 1}</strong></td>
           <td>
             <span class="player-name">
               <strong>${escapeHtml(player.player_name)}</strong>
-              <span>Rank ${escapeHtml(player.prospect_rank ?? "-")} · Age ${escapeHtml(player.age ?? "-")}</span>
+              <span>${escapeHtml(playerTypeBadge(player))} · Age ${escapeHtml(player.age ?? "-")}</span>
             </span>
           </td>
           <td>${escapeHtml(player.org ?? "-")}</td>
           <td>${escapeHtml(player.position ?? "-")}</td>
           <td>${escapeHtml(player.level ?? "-")}</td>
-          <td>${rankTrend(player)}</td>
-          <td>${escapeHtml(onDeckCatalyst(player))}</td>
           <td><span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}%</span></td>
+          <td>${escapeHtml(onDeckCatalyst(player))}</td>
+          <td>${escapeHtml(cardBaselineLabel(player))}</td>
+          <td><span class="market-status">${escapeHtml(marketStatus(player))}</span></td>
+          <td>${escapeHtml(formatShortDate(player.date_added || player.last_updated) || "-")}</td>
+          <td><button class="button ghost row-profile-button" type="button">View</button></td>
         </tr>
       `;
     })
@@ -906,12 +916,162 @@ function renderRows(rows) {
   });
 }
 
+function renderScorebook() {
+  if (!elements.scorebookBoard) return;
+  const officialHits = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "hit");
+  const historical = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "historical");
+  const missed = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "missed");
+  const pending = onDeckPlayers().map((player, index) => ({
+    player_id: player.player_id,
+    player_name: player.player_name,
+    team: player.org,
+    date_added: player.date_added || player.last_updated || "Manual baseline needed",
+    current_rank: index + 1,
+    ondeck_score: player.callup_score,
+    card_baseline: cardBaselineLabel(player),
+    latest_value: latestCardValue(player),
+    market_status: marketStatus(player),
+  }));
+
+  elements.scorebookBoard.innerHTML = `
+    <div class="scorebook-summary">
+      ${scorebookMetric("Official hits", officialHits.length)}
+      ${scorebookMetric("Pending Top 10", pending.length)}
+      ${scorebookMetric("Historical examples", historical.length)}
+      ${scorebookMetric("Missed", missed.length)}
+    </div>
+    ${scorebookTable("Official OnDeck Hits", officialHits, officialHitColumns())}
+    ${pendingTable(pending)}
+    ${scorebookTable("Historical Market Examples", historical, historicalColumns())}
+  `;
+  elements.scorebookBoard.querySelectorAll("tr[data-player-id]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openPlayerProfile(row.dataset.playerId);
+      state.activeTool = "dashboard";
+      history.pushState(null, "", "#top-10");
+      syncToolVisibility();
+    });
+  });
+}
+
+function scorebookMetric(label, value) {
+  return `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`;
+}
+
+function pendingTable(rows) {
+  if (!rows.length) {
+    return `<section class="scorebook-section"><h3>Pending Top 10</h3><p class="muted">No active Top 10 data loaded yet.</p></section>`;
+  }
+  return `
+    <section class="scorebook-section">
+      <h3>Pending Top 10</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Team</th>
+              <th>Date Added</th>
+              <th>Current Rank</th>
+              <th>Move Score</th>
+              <th>Card Baseline</th>
+              <th>Latest Card</th>
+              <th>Market Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => `
+              <tr data-player-id="${escapeHtml(row.player_id)}">
+                <td><strong>${escapeHtml(row.player_name)}</strong></td>
+                <td>${escapeHtml(row.team ?? "-")}</td>
+                <td>${escapeHtml(formatShortDate(row.date_added) || row.date_added || "-")}</td>
+                <td>${escapeHtml(row.current_rank)}</td>
+                <td><span class="score-pill ${scoreClass(row.ondeck_score)}">${escapeHtml(row.ondeck_score)}%</span></td>
+                <td>${escapeHtml(row.card_baseline)}</td>
+                <td>${escapeHtml(row.latest_value)}</td>
+                <td><span class="market-status">${escapeHtml(row.market_status)}</span></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function scorebookTable(title, rows, columns) {
+  if (!rows.length) {
+    return `<section class="scorebook-section"><h3>${escapeHtml(title)}</h3><p class="muted">No entries yet.</p></section>`;
+  }
+  return `
+    <section class="scorebook-section">
+      <h3>${escapeHtml(title)}</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>${columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join("")}</tr></thead>
+          <tbody>
+            ${rows.map((row) => `<tr>${columns.map((column) => `<td>${column.render(row)}</td>`).join("")}</tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function officialHitColumns() {
+  return [
+    { label: "Player", render: (row) => `<strong>${escapeHtml(scorebookPlayerName(row))}</strong>` },
+    { label: "Team", render: (row) => escapeHtml(row.team || row.org || "-") },
+    { label: "Date Added", render: (row) => escapeHtml(formatShortDate(row.added_to_top10_date) || row.added_to_top10_date || "-") },
+    { label: "Debut Date", render: (row) => escapeHtml(formatShortDate(row.mlb_debut_date) || row.mlb_debut_date || "-") },
+    { label: "Lead Time", render: (row) => escapeHtml(leadTimeLabel(row)) },
+    { label: "Score", render: (row) => escapeHtml(row.pre_callup_score || "-") },
+    { label: "Market Move", render: (row) => escapeHtml(marketMoveLabel(row)) },
+    { label: "Result", render: (row) => `<span class="scorebook-result hit">Hit</span>` },
+  ];
+}
+
+function historicalColumns() {
+  return [
+    { label: "Player", render: (row) => `<strong>${escapeHtml(scorebookPlayerName(row))}</strong>` },
+    { label: "Team", render: (row) => escapeHtml(row.team || row.org || "-") },
+    { label: "Debut Date", render: (row) => escapeHtml(formatShortDate(row.mlb_debut_date) || row.mlb_debut_date || "-") },
+    { label: "Card Before", render: (row) => escapeHtml(currency(row.card_before)) },
+    { label: "Card After", render: (row) => escapeHtml(currency(row.card_after)) },
+    { label: "Market Move", render: (row) => escapeHtml(marketMoveLabel(row)) },
+    { label: "Result", render: () => `<span class="scorebook-result historical">Historical</span>` },
+  ];
+}
+
+function scorebookPlayerName(row) {
+  const player = state.scored.find((candidate) => String(candidate.player_id) === String(row.player_id))
+    || state.calledUp.find((candidate) => String(candidate.player_id) === String(row.player_id));
+  return row.player_name || player?.player_name || row.player_id || "-";
+}
+
+function leadTimeLabel(row) {
+  if (row.lead_time_days) return `${row.lead_time_days} days`;
+  const added = new Date(`${row.added_to_top10_date}T00:00:00`);
+  const debut = new Date(`${row.mlb_debut_date}T00:00:00`);
+  if (Number.isNaN(added.getTime()) || Number.isNaN(debut.getTime())) return "-";
+  return `${Math.max(0, Math.round((debut - added) / 86400000))} days`;
+}
+
+function marketMoveLabel(row) {
+  if (row.price_change_pct) return `${row.price_change_pct}%`;
+  const before = numericMoney(row.card_before);
+  const after = numericMoney(row.card_after);
+  if (!Number.isFinite(before) || !Number.isFinite(after) || before <= 0) return row.result_note || "-";
+  return `${Math.round(((after - before) / before) * 100)}%`;
+}
+
 function renderCard(player) {
   if (!player) {
     elements.contentGrid.classList.remove("profile-open");
     elements.cardPanel.hidden = true;
     elements.playerCard.className = "player-card empty";
-    elements.playerCard.innerHTML = "<p>Select a player to review their call-up case.</p>";
+    elements.playerCard.innerHTML = "<p>Select a player to review why he is on deck.</p>";
     return;
   }
 
@@ -923,15 +1083,16 @@ function renderCard(player) {
       <div>
         <p class="card-kicker">${escapeHtml(player.org ?? "-")} · ${escapeHtml(player.level ?? "-")} · ${escapeHtml(player.position ?? "-")}</p>
         <h3>${escapeHtml(player.player_name)}</h3>
-        <p class="muted">Rank ${escapeHtml(player.prospect_rank ?? "-")} · Age ${escapeHtml(player.age ?? "-")} · ETA ${escapeHtml(player.eta ?? "-")}</p>
+        <p class="muted">Top 10 rank ${escapeHtml(top10Rank(player))} · Prospect rank ${escapeHtml(player.prospect_rank ?? "-")} · Age ${escapeHtml(player.age ?? "-")} · ETA ${escapeHtml(player.eta ?? "-")}</p>
       </div>
-    <span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}% confidence</span>
+    <span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}% move score</span>
     </div>
 
     <div class="breakdown">
-      ${bar("Current Form", player.performance_score)}
-      ${bar("Opportunity", player.opportunity_score)}
+      ${bar("Path", player.opportunity_score)}
       ${bar("Readiness", player.readiness_score)}
+      ${bar("Performance", player.performance_score)}
+      ${bar("Card Signal", cardMarketScore(player))}
     </div>
 
     ${profileResearchReport(player)}
@@ -940,12 +1101,6 @@ function renderCard(player) {
     ${isOnDeckBoardPlayer(player) ? marketPanel(player) : ""}
   `;
 
-  elements.playerCard.querySelector("[data-open-war-room]")?.addEventListener("click", (event) => {
-    event.stopPropagation();
-    openTeamWarRoom(player.org);
-    render();
-    openTool("war", "#dugout");
-  });
 }
 
 function teamPathPanel(player) {
@@ -962,24 +1117,70 @@ function teamPathPanel(player) {
   return `
     <section class="profile-war-room">
       <div class="panel-heading compact">
-        <h3>The Dugout</h3>
+        <h3>Org Path</h3>
         <span>${escapeHtml(role)}</span>
       </div>
       <p>${escapeHtml(playerPathRead(player, lane))}</p>
-      <p class="muted">MLB blockers: ${escapeHtml(blockerText)}</p>
-      <button class="button ghost profile-war-action" type="button" data-open-war-room="${escapeHtml(player.org ?? "")}">
-        Open ${escapeHtml(player.org ?? "team")} Dugout
-      </button>
+      <p class="muted">Names ahead: ${escapeHtml(blockerText)}</p>
     </section>
   `;
+}
+
+function top10Rank(player) {
+  const index = onDeckPlayers().findIndex((candidate) => String(candidate.player_id) === String(player.player_id));
+  return index >= 0 ? index + 1 : "-";
+}
+
+function playerTypeBadge(player) {
+  if (player.player_type_badge) return player.player_type_badge;
+  const level = String(player.level ?? "").toUpperCase();
+  const position = String(player.position ?? "").toUpperCase();
+  if (level === "AAA" && Number(player.performance_score) >= 65) return position.includes("P") ? "AAA Heat Check" : "AAA Heat Check";
+  if (String(player.injury_opening).toLowerCase() === "true") return "Injury Replacement";
+  if (Number(player.opportunity_score) >= 70) return "Path Play";
+  if (isOnFortyMan(player)) return "40-Man Candidate";
+  if (player.market_signal) return "Card Sleeper";
+  if (isTop100Prospect(player)) return "Top 100 Watch";
+  return "Path Play";
+}
+
+function cardBaselineLabel(player) {
+  const avg30 = numericMoney(player.avg_30);
+  if (Number.isFinite(avg30)) return currency(avg30);
+  const baseline = numericMoney(player.baseline_value);
+  if (Number.isFinite(baseline)) return currency(baseline);
+  return player.market_signal ? "Manual comp needed" : "No clean market";
+}
+
+function latestCardValue(player) {
+  const last = numericMoney(player.last_sale);
+  if (Number.isFinite(last)) return currency(last);
+  const latest = numericMoney(player.latest_value);
+  if (Number.isFinite(latest)) return currency(latest);
+  return cardBaselineLabel(player);
+}
+
+function marketStatus(player) {
+  const signal = String(player.market_status || player.market_signal || "").toLowerCase();
+  if (signal.includes("spiked")) return "Spiked";
+  if (signal.includes("strong") || signal.includes("buy")) return "Moving";
+  if (signal.includes("watch")) return "Early";
+  if (signal.includes("flat")) return "Flat";
+  if (signal.includes("priced")) return "Priced In";
+  if (signal.includes("illiquid")) return "Illiquid";
+  return player.card_name || player.avg_30 ? "Early" : "No Clean Market";
+}
+
+function cardMarketScore(player) {
+  return Math.max(0, Math.min(100, Math.round(marketScore(player))));
 }
 
 function playerPathRead(player, lane) {
   const blockers = blockerNames(player).slice(0, 3);
   if (blockers.length) {
-    return `${player.player_name} is tracking behind ${blockers.join(", ")} with a ${player.callup_score}% On Deck confidence read.`;
+    return `${player.player_name} is tracking behind ${blockers.join(", ")} with a ${player.callup_score}% move score.`;
   }
-  return `${player.player_name} has a ${player.callup_score}% On Deck confidence read; named MLB blockers still need more depth-chart data.`;
+  return `${player.player_name} has a ${player.callup_score}% move score; named blockers still need more depth-chart data.`;
 }
 
 function marketPanel(player) {
@@ -1109,11 +1310,11 @@ function marketReasonBullets(player) {
     } else if (movement > 0) {
       reasons.push(`Top 100 rank is up ${movement} spots, adding prospect-hype momentum to the card signal.`);
     } else {
-      reasons.push("Top 100 rank is flat, so the card signal leans more on price, stats, and call-up path.");
+      reasons.push("Top 100 rank is flat, so the card signal leans more on price, stats, and organizational path.");
     }
   }
 
-  reasons.push(`${player.callup_score}% catalyst confidence keeps the card case tied to a baseball event, not just raw card comps.`);
+  reasons.push(`${player.callup_score}% move score keeps the card case tied to a baseball event, not just raw card comps.`);
   return reasons;
 }
 
@@ -1154,7 +1355,7 @@ function onDeckCatalyst(player) {
   if (String(player.level ?? "").toUpperCase() === "MLB") return "MLB Debut Follow-Up";
   const level = String(player.level ?? "").toUpperCase();
   if (level === "AA") return "Triple-A Promotion";
-  if (level === "AAA" || Number(player.callup_score) >= 80) return "MLB Debut";
+  if (level === "AAA") return "MLB Debut";
   if (level === "A+" || level === "A") return "Double-A Promotion";
   const movement = rankMovement(player);
   if (movement != null && movement > 0) return "Top 100 Momentum";
@@ -1165,7 +1366,7 @@ function onDeckThesis(player) {
   const catalyst = onDeckCatalyst(player);
   const trend = rankTrendText(player);
   if (catalyst === "MLB Debut") {
-    return `${player.player_name} is close enough to force a roster decision if current form and organizational need keep aligning.`;
+    return `${player.player_name} is close enough to force a major-league roster decision if current form and organizational need keep aligning.`;
   }
   if (catalyst.includes("Promotion")) {
     return `${player.player_name}'s next assignment is the catalyst that could reset the market's view of the timeline.`;
@@ -1179,7 +1380,7 @@ function onDeckThesis(player) {
 function watchThesis(player) {
   const trend = rankTrendText(player);
   const trendText = trend === "Untracked" ? "rank movement is not established yet" : `rank movement is ${trend.toLowerCase()}`;
-  return `${player.player_name} is working at ${player.level || "an unlisted level"} with ${onDeckCatalyst(player).toLowerCase()} as the next catalyst. ${trendText}, and current form/opportunity support a ${player.callup_score}% confidence read.`;
+  return `${player.player_name} is working at ${player.level || "an unlisted level"} with ${onDeckCatalyst(player).toLowerCase()} as the next move. ${trendText}, and the current path/readiness/performance blend supports a ${player.callup_score}% move score.`;
 }
 
 function whyItMatters(player) {
@@ -1199,7 +1400,7 @@ function riskFactors(player) {
 }
 
 function analystVerdict(player) {
-  return `${player.player_name}'s current case centers on ${catalystSentenceText(player)}. If the production holds and the lane opens, the timeline can move quickly; if the next assignment stalls, the call-up clock likely pushes back.`;
+  return `${player.player_name}'s current case centers on ${catalystSentenceText(player)}. If the production holds and the organizational lane opens, the next move can happen quickly; if the assignment stalls, the timeline likely pushes back.`;
 }
 
 function catalystSentenceText(player) {
@@ -1232,20 +1433,41 @@ function developmentFocus(player) {
 function profileResearchReport(player) {
   return `
     <section class="analyst-report">
-      <h3>Player News Read</h3>
+      <h3>Why He Is OnDeck</h3>
       <p>${escapeHtml(watchThesis(player))}</p>
       <div class="report-catalyst">
-        <span>On Deck</span>
+        <span>Next move</span>
         <strong>${escapeHtml(onDeckCatalyst(player))}</strong>
       </div>
-      <h3>Why It Matters</h3>
-      <p>${escapeHtml(whyItMatters(player))}</p>
+      <ul>${whyOnDeckBullets(player).map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join("")}</ul>
       <h3>Risk Factors</h3>
       <ul>${riskFactors(player).map((risk) => `<li>${escapeHtml(risk)}</li>`).join("")}</ul>
       <h3>Analyst Verdict</h3>
       <p>${escapeHtml(analystVerdict(player))}</p>
     </section>
   `;
+}
+
+function whyOnDeckBullets(player) {
+  const bullets = [];
+  if (Number(player.opportunity_score) >= 65) bullets.push("Organizational path is stronger than the average prospect on this board.");
+  if (Number(player.readiness_score) >= 65) bullets.push(`${player.level || "Current level"} assignment and age point to near-term readiness.`);
+  if (Number(player.performance_score) >= 65) bullets.push(recentFormRead(player));
+  const blockers = blockerNames(player).slice(0, 2);
+  if (blockers.length) bullets.push(`The current MLB lane runs through ${blockers.join(" and ")}.`);
+  if (rankMovement(player) > 0) bullets.push(`Top 100 ranking momentum is positive: ${rankTrendText(player)}.`);
+  if (player.market_signal) bullets.push(`Primary tracked card shows a ${marketStatus(player).toLowerCase()} market status.`);
+  if (!bullets.length) bullets.push(`${player.player_name}'s board case is built around ${onDeckCatalyst(player).toLowerCase()} and organizational fit.`);
+  return bullets;
+}
+
+function recentFormRead(player) {
+  if (String(player.position ?? "").toUpperCase().includes("P")) {
+    const era = player.last_30_era || player.era;
+    return era ? `Recent run prevention is supporting the case, with a ${era} ERA marker in the loaded stat window.` : "Recent pitching form is supporting the next-move case.";
+  }
+  const ops = player.last_14_ops || player.last_30_ops || player.ops;
+  return ops ? `Recent offensive form is supporting the case, with a ${ops} OPS marker in the loaded stat window.` : "Recent offensive form is supporting the next-move case.";
 }
 
 function scoutingSnapshotPanel(player) {

@@ -603,13 +603,30 @@ tbody tr.selected {
 }
 
 body[data-view="war"] .hero-panel,
-body[data-view="war"] #card-market,
+body[data-view="war"] #top-10,
 body[data-view="war"] #break-board,
-body[data-view="war"] #prospects {
+body[data-view="war"] #prospects,
+body[data-view="war"] #methodology,
+body[data-view="war"] #resources {
   display: none;
 }
 
 body[data-view="war"] #dugout {
+  display: block;
+  min-height: calc(100vh - 132px);
+}
+
+body[data-view="scorebook"] .hero-panel,
+body[data-view="scorebook"] #top-10,
+body[data-view="scorebook"] #break-board,
+body[data-view="scorebook"] #dugout,
+body[data-view="scorebook"] #prospects,
+body[data-view="scorebook"] #methodology,
+body[data-view="scorebook"] #resources {
+  display: none;
+}
+
+body[data-view="scorebook"] #scorebook {
   display: block;
   min-height: calc(100vh - 132px);
 }
@@ -1739,7 +1756,7 @@ body[data-view="war"] #dugout {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 1160px;
 }
 
 th,
@@ -2093,6 +2110,191 @@ tbody tr {
   text-transform: uppercase;
 }
 
+.info-panel,
+.scorebook-page {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(17, 24, 54, 0.82), rgba(8, 12, 27, 0.86));
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.method-grid article {
+  display: grid;
+  gap: 8px;
+  padding: 15px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(82, 240, 255, 0.1), transparent 10rem),
+    rgba(4, 7, 18, 0.58);
+}
+
+.method-grid article span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #07101d;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  font-weight: 950;
+}
+
+.method-grid h3,
+.scorebook-section h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.method-grid p {
+  margin: 0;
+  color: #d8def6;
+  font-size: 0.84rem;
+  line-height: 1.48;
+}
+
+.resource-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+}
+
+.resource-list a,
+.resource-list span {
+  padding: 13px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 10px;
+  color: #d8def6;
+  background: rgba(4, 7, 18, 0.58);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.resource-list a {
+  color: var(--cyan);
+}
+
+.scorebook-page {
+  margin-top: 0;
+}
+
+.scorebook-hero {
+  min-height: 300px;
+  padding: clamp(26px, 5vw, 54px);
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgba(4, 7, 18, 0.98) 0%, rgba(4, 7, 18, 0.78) 52%, rgba(4, 7, 18, 0.46) 100%),
+    radial-gradient(circle at 88% 18%, rgba(238, 167, 54, 0.25), transparent 18rem),
+    linear-gradient(135deg, rgba(238, 167, 54, 0.16), rgba(82, 240, 255, 0.06));
+}
+
+.scorebook-hero h2 {
+  max-width: 760px;
+  margin-bottom: 12px;
+  color: #fff;
+  font-size: clamp(2.1rem, 5vw, 4.2rem);
+  line-height: 0.95;
+}
+
+.scorebook-hero p:last-child {
+  max-width: 660px;
+  margin: 0;
+  color: #d8def6;
+  line-height: 1.55;
+}
+
+.scorebook-board {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.scorebook-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scorebook-summary article {
+  padding: 16px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(4, 7, 18, 0.58);
+}
+
+.scorebook-summary span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.scorebook-summary strong {
+  display: block;
+  margin-top: 6px;
+  color: white;
+  font-size: 2rem;
+}
+
+.scorebook-section {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(4, 7, 18, 0.58);
+}
+
+.scorebook-section table {
+  min-width: 920px;
+}
+
+.scorebook-result {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.scorebook-result.hit {
+  color: #06101b;
+  background: var(--green);
+}
+
+.scorebook-result.historical {
+  color: #06101b;
+  background: var(--yellow);
+}
+
+.market-status {
+  color: var(--cyan);
+  font-weight: 950;
+}
+
+.row-profile-button {
+  min-height: 32px;
+  padding-inline: 12px;
+}
+
 @media (max-width: 1180px) {
   .app-header,
   .content-grid,
@@ -2129,7 +2331,10 @@ tbody tr {
 
 @media (max-width: 980px) {
   .summary-grid,
-  .edge-board {
+  .edge-board,
+  .method-grid,
+  .scorebook-summary,
+  .resource-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2201,6 +2406,12 @@ tbody tr {
     min-height: 40px;
     padding-inline: 12px;
     font-size: 0.88rem;
+  }
+
+  .method-grid,
+  .scorebook-summary,
+  .resource-list {
+    grid-template-columns: 1fr;
   }
 
   .app-shell {

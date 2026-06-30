@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OnDeck Prospect | Prospect Catalyst Intelligence</title>
+    <title>OnDeck Prospect | Top 10 Next-Move Intelligence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260630-5" />
+    <link rel="stylesheet" href="./styles.css?v=20260630-6" />
   </head>
   <body>
     <header class="app-header">
@@ -14,10 +14,10 @@
         <span>Prospect</span>
       </div>
       <nav class="main-nav" aria-label="Primary navigation">
-        <a href="#dashboard" data-route="dashboard">Dashboard</a>
-        <a href="#prospects" data-route="dashboard">Prospects</a>
-        <a href="#card-market" data-route="dashboard">On Deck</a>
-        <a href="#break-board" data-route="break">Break Board</a>
+        <a href="#top-10" data-route="dashboard">Top 10</a>
+        <a href="#scorebook" data-route="scorebook">Scorebook</a>
+        <a href="#methodology" data-route="dashboard">Methodology</a>
+        <a href="#resources" data-route="dashboard">Resources</a>
       </nav>
       <div class="header-actions">
         <button id="load-top100" class="button primary" type="button">Refresh Board</button>
@@ -28,40 +28,39 @@
     <main id="dashboard" class="app-shell">
       <section class="hero-panel" aria-label="OnDeck Prospect hero">
         <div class="hero-copy">
-          <p class="eyebrow">Data. Signals. Edge.</p>
+          <p class="eyebrow">Next-move intelligence for card investors</p>
           <h1>
-            <span>See the next</span>
-            <span>call-up before</span>
-            <span>the market does.</span>
+            <span>Who is</span>
+            <span>on deck next?</span>
+            <span>Know why before the market reacts.</span>
           </h1>
           <p>
-            OnDeck Prospect explains why a player matters now, what catalyst is
-            likely to happen next, and how that movement could affect both
-            baseball opportunity and card-market attention.
+            OnDeck Prospect tracks the Top 10 prospects most likely to make the next meaningful move,
+            whether that is an MLB debut, a level promotion, or another catalyst that pulls attention forward.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="#prospects">Explore Dashboard</a>
-            <a class="button ghost" href="#card-market">View On Deck</a>
+            <a class="button primary" href="#top-10">View the Top 10</a>
+            <a class="button ghost" href="#scorebook" data-route="scorebook">View Scorebook</a>
           </div>
         </div>
       </section>
 
-      <section id="card-market" class="market-board" aria-label="On Deck catalyst board">
+      <section id="top-10" class="market-board" aria-label="Top 10 next prospect moves">
         <div class="panel-heading">
           <div>
-            <h2>On Deck Board</h2>
-            <p>Weekly Top 10 prospects with the most meaningful upcoming catalysts</p>
+            <h2>Top 10 On Deck</h2>
+            <p>The prospects most likely to move onward and upward next, with the why shown in the profile</p>
           </div>
           <div class="deck-controls" aria-label="On Deck Board controls">
             <button id="deck-prev" class="icon-button" type="button" aria-label="Previous On Deck cards">‹</button>
-            <span id="market-count">0 shown</span>
+            <span id="market-count">Top 10</span>
             <button id="deck-next" class="icon-button" type="button" aria-label="Next On Deck cards">›</button>
           </div>
         </div>
         <div id="market-board" class="market-grid"></div>
       </section>
 
-      <section id="break-board" class="team-board secondary-tool" data-tool="break" aria-label="Top prospects by team">
+      <section id="break-board" class="team-board secondary-tool" data-tool="break" aria-label="Top prospects by team" hidden>
         <div class="panel-heading">
           <div>
             <h2>Break Value Board</h2>
@@ -72,7 +71,7 @@
         <div id="team-board" class="team-grid"></div>
       </section>
 
-      <section id="dugout" class="war-room secondary-tool" data-tool="war" aria-label="Team prospect dugout">
+      <section id="dugout" class="war-room secondary-tool" data-tool="war" aria-label="Team prospect dugout" hidden>
         <div class="tool-page-nav">
           <a class="button ghost" href="#dashboard" data-route="dashboard">Back to Dashboard</a>
         </div>
@@ -94,39 +93,27 @@
       <section id="prospects" class="content-grid">
         <div class="table-panel">
           <div class="panel-heading">
-            <h2>Player Watchlist</h2>
-            <span id="row-count">0 players</span>
-          </div>
-          <div class="list-controls" aria-label="Player list filters">
-            <div class="filter-grid">
-              <label>
-                Search
-                <input id="search" type="search" placeholder="Player or org" />
-              </label>
-              <label>
-                Organization
-                <select id="org-filter">
-                  <option value="all">All orgs</option>
-                </select>
-              </label>
-              <label>
-                Minimum Score
-                <input id="score-filter" type="range" min="0" max="100" value="0" />
-                <strong id="score-filter-value">0</strong>
-              </label>
+            <div>
+              <h2>Top 10 Board</h2>
+              <p>Click any player to open the profile and recommendation details</p>
             </div>
+            <span id="row-count">Top 10</span>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
+                  <th>Rank</th>
                   <th>Player</th>
                   <th>Org</th>
                   <th>Pos</th>
                   <th>Level</th>
-                  <th>Trend</th>
-                  <th>Next Catalyst</th>
-                  <th>Confidence</th>
+                  <th>Move Score</th>
+                  <th>Next Move</th>
+                  <th>Card Baseline</th>
+                  <th>Market Status</th>
+                  <th>Added</th>
+                  <th>Profile</th>
                 </tr>
               </thead>
               <tbody id="prospect-rows"></tbody>
@@ -136,12 +123,65 @@
 
         <aside class="card-panel" aria-label="Selected prospect card" hidden>
           <div id="player-card" class="player-card empty">
-            <p>Select a player to review their call-up case.</p>
+            <p>Select a player to review why he is on deck.</p>
           </div>
         </aside>
       </section>
+
+      <section id="methodology" class="info-panel" aria-label="Methodology">
+        <div class="panel-heading">
+          <div>
+            <h2>How OnDeck Works</h2>
+            <p>Not another ranking list. A focused answer to who is on deck next and why.</p>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article>
+            <span>1</span>
+            <h3>Path</h3>
+            <p>We look for players whose organization has a clear reason to push them forward: roster need, level dominance, injury pressure, 40-man timing, or assignment fit.</p>
+          </article>
+          <article>
+            <span>2</span>
+            <h3>Readiness</h3>
+            <p>Level, age, role, recent form, and trend data help separate a true next-move candidate from a long-range prospect name.</p>
+          </article>
+          <article>
+            <span>3</span>
+            <h3>Card market</h3>
+            <p>For Top 10 players only, the profile tracks one primary Bowman prospect card so the baseball catalyst and market move can be read together.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="resources" class="info-panel" aria-label="Resources">
+        <div class="panel-heading">
+          <div>
+            <h2>Resources</h2>
+            <p>Reference sources used to keep the board grounded</p>
+          </div>
+        </div>
+        <div class="resource-list">
+          <a href="https://www.mlb.com/milb/prospects" target="_blank" rel="noreferrer">MLB Pipeline prospect pages</a>
+          <a href="https://www.mlb.com/prospects/stats/top-prospects" target="_blank" rel="noreferrer">MLB prospect stats</a>
+          <span>Manual Sports Card Investor / Market Movers comps for active Top 10 cards</span>
+          <span>Manual eBay Product Research checks when a clean market exists</span>
+        </div>
+      </section>
+
+      <section id="scorebook" class="scorebook-page secondary-tool" data-tool="scorebook" aria-label="OnDeck Scorebook">
+        <div class="tool-page-nav">
+          <a class="button ghost" href="#top-10" data-route="dashboard">Back to Top 10</a>
+        </div>
+        <div class="scorebook-hero">
+          <p class="eyebrow">The Scorebook</p>
+          <h2>Proof that the board was early.</h2>
+          <p>We track players flagged before a meaningful move, how early they appeared on the board, and what happened to their primary prospect card after the catalyst.</p>
+        </div>
+        <div id="scorebook-board" class="scorebook-board"></div>
+      </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260630-5"></script>
+    <script type="module" src="./src/app.js?v=20260630-7"></script>
   </body>
 </html>
