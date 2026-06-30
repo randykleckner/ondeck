@@ -1309,6 +1309,21 @@ body[data-view="war"] #dugout {
     rgba(5, 8, 20, 0.62);
 }
 
+.pitching-war-room.bullpen-page {
+  overflow: hidden;
+  padding: 0;
+  border-color: rgba(238, 167, 54, 0.28);
+  background:
+    linear-gradient(180deg, rgba(4, 7, 18, 0.28), rgba(4, 7, 18, 0.96) 48%, rgba(4, 7, 18, 0.92)),
+    linear-gradient(90deg, rgba(4, 7, 18, 0.9), rgba(4, 7, 18, 0.18) 52%, rgba(4, 7, 18, 0.86)),
+    url("./assets/bullpen-header.png") center 35% / cover no-repeat;
+}
+
+.pitching-war-room.bullpen-page .bullpen-heading {
+  min-height: 220px;
+  align-items: end;
+}
+
 .pitching-lanes {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

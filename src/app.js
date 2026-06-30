@@ -180,6 +180,10 @@ elements.marketBoard?.addEventListener("pointermove", (event) => {
 
 elements.marketBoard?.addEventListener("pointerup", (event) => {
   if (!deckDragState || deckDragState.pointerId !== event.pointerId) return;
+  const card = document.elementFromPoint(event.clientX, event.clientY)?.closest(".market-card[data-player-id]");
+  if (card && !deckDragState.wasDragged) {
+    activateMarketCard(card, event);
+  }
   elements.marketBoard.querySelector(".market-track")?.classList.remove("is-dragging");
   window.setTimeout(() => {
     deckDragState = null;
@@ -189,10 +193,7 @@ elements.marketBoard?.addEventListener("pointerup", (event) => {
 elements.marketBoard?.addEventListener("click", (event) => {
   const card = event.target.closest(".market-card[data-player-id]");
   if (!card || deckDragState?.wasDragged) return;
-  event.preventDefault();
-  event.stopPropagation();
-  clearListFilters();
-  openPlayerProfile(card.dataset.playerId);
+  activateMarketCard(card, event);
 }, true);
 
 window.addEventListener("hashchange", () => {
@@ -547,12 +548,12 @@ function buildPositionBoard(players) {
 }
 
 function positionWarRoomMarkup(board, players, calledUp) {
-  const fieldBoard = board.filter((lane) => FIELD_POSITIONS.some((position) => position.key === lane.key));
-  const pitchingBoard = board.filter((lane) => PITCHING_POSITIONS.some((position) => position.key === lane.key));
+  const fieldBoard = board.filter((lane) => lane.players.length && FIELD_POSITIONS.some((position) => position.key === lane.key));
+  const pitchingBoard = board.filter((lane) => lane.players.length && PITCHING_POSITIONS.some((position) => position.key === lane.key));
   return `
     <div class="war-room-page">
       ${dugoutReadMarkup(players, calledUp, board)}
-      <div class="depth-chart-board" aria-label="Depth chart and call-up paths">
+      ${fieldBoard.length ? `<div class="depth-chart-board" aria-label="Depth chart and call-up paths">
         <div class="depth-board-head">
           <h3>Depth Chart & Call-Up Paths</h3>
           <div class="lane-legend" aria-label="Path legend">
@@ -564,8 +565,8 @@ function positionWarRoomMarkup(board, players, calledUp) {
         <div class="depth-lanes">
           ${fieldBoard.map((lane) => fieldPositionMarkup(lane)).join("")}
         </div>
-      </div>
-      <section class="pitching-war-room bullpen-page" aria-label="Pitching bullpen">
+      </div>` : ""}
+      ${pitchingBoard.length ? `<section class="pitching-war-room bullpen-page" aria-label="Pitching bullpen">
         <div class="bullpen-heading">
           <div>
             <p class="eyebrow">The Bullpen</p>
@@ -576,7 +577,7 @@ function positionWarRoomMarkup(board, players, calledUp) {
         <div class="pitching-lanes">
           ${pitchingBoard.map((lane) => pitchingLaneMarkup(lane)).join("")}
         </div>
-      </section>
+      </section>` : ""}
     </div>
   `;
 }
@@ -791,10 +792,7 @@ function renderMarketBoard() {
 
   elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
     const activate = (event) => {
-      event?.preventDefault?.();
-      event?.stopPropagation?.();
-      clearListFilters();
-      openPlayerProfile(card.dataset.playerId);
+      activateMarketCard(card, event);
     };
     card.addEventListener("click", activate);
     card.addEventListener("keydown", (event) => {
@@ -804,6 +802,14 @@ function renderMarketBoard() {
       }
     });
   });
+}
+
+function activateMarketCard(card, event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  if (!card?.dataset.playerId) return;
+  clearListFilters();
+  openPlayerProfile(card.dataset.playerId);
 }
 
 function scrollOnDeckBoard(direction) {
