@@ -119,7 +119,12 @@ elements.exportCsv.addEventListener("click", () => {
     card_signal: player.market_signal ?? "",
     card_last_sale: player.last_sale ?? "",
     card_last_sale_date: player.last_sale_date ?? "",
+    card_avg_7: player.avg_7 ?? "",
+    card_avg_14: player.avg_14 ?? "",
     card_avg_30: player.avg_30 ?? "",
+    card_sales_7: player.sales_7 ?? "",
+    card_sales_14: player.sales_14 ?? "",
+    card_sales_30: player.sales_30 ?? "",
     card_data_source: player.data_source ?? "",
     sell_through: player.sell_through ?? "",
     buy_zone: buyZone(player),
@@ -1037,6 +1042,26 @@ function marketPanel(player) {
           <strong>${currency(player.avg_30)}</strong>
         </div>
         <div>
+          <span>14D Avg</span>
+          <strong>${currency(player.avg_14)}</strong>
+        </div>
+        <div>
+          <span>7D Avg</span>
+          <strong>${currency(player.avg_7)}</strong>
+        </div>
+        <div>
+          <span>30D Sales</span>
+          <strong>${countValue(player.sales_30)}</strong>
+        </div>
+        <div>
+          <span>14D Sales</span>
+          <strong>${countValue(player.sales_14)}</strong>
+        </div>
+        <div>
+          <span>7D Sales</span>
+          <strong>${countValue(player.sales_7)}</strong>
+        </div>
+        <div>
           <span>Sell-through</span>
           <strong>${percent(player.sell_through)}</strong>
         </div>
@@ -1371,13 +1396,19 @@ function percent(value) {
   return `${Math.round(numeric)}%`;
 }
 
+function countValue(value) {
+  if (value === "" || value == null) return "-";
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? String(Math.round(numeric)) : escapeHtml(value);
+}
+
 function numericMoney(value) {
   const numeric = Number(String(value ?? "").replaceAll(/[^0-9.-]/g, ""));
   return Number.isFinite(numeric) ? numeric : NaN;
 }
 
 function sparkline(player) {
-  const values = [player.avg_90, player.avg_30, player.avg_7, player.last_sale].map(numericMoney).filter(Number.isFinite);
+  const values = [player.avg_90, player.avg_30, player.avg_14, player.avg_7, player.last_sale].map(numericMoney).filter(Number.isFinite);
   if (values.length < 2) return "";
   const min = Math.min(...values);
   const max = Math.max(...values);

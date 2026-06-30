@@ -23,8 +23,11 @@ const MARKET_HEADERS = [
   "last_sale",
   "last_sale_date",
   "avg_7",
+  "avg_14",
   "avg_30",
   "avg_90",
+  "sales_7",
+  "sales_14",
   "sales_30",
   "active_listings",
   "sell_through",
@@ -55,8 +58,9 @@ for (const prospect of prospects) {
   if (target.enabled === false) continue;
   const manualRow = manualRowsById.get(prospect.player_id);
   if (manualRow) {
-    rows.push(normalizeManualMarketRow(prospect, target, manualRow));
-    console.log(`${prospect.player_name}: using manual weekly comps for ${target.card_code}`);
+    const normalizedRow = normalizeManualMarketRow(prospect, target, manualRow);
+    rows.push(normalizedRow);
+    console.log(`${prospect.player_name}: using manual weekly comps for ${normalizedRow.card_code}`);
     continue;
   }
   if (COMP_SOURCE === "manual") continue;
