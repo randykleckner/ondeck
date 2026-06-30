@@ -787,15 +787,27 @@ function laneSort(role) {
 
 function renderMarketBoard() {
   const tracked = onDeckPlayers();
+  const bubble = bubblePlayers();
   elements.marketCount.textContent = `Top ${tracked.length}`;
   if (!tracked.length) {
     elements.marketBoard.innerHTML = `<p class="muted">Load prospects to view the On Deck board.</p>`;
     return;
   }
 
-  elements.marketBoard.innerHTML = `<div class="market-track">${tracked.map((player) => callupCardMarkup(player)).join("")}</div>`;
+  elements.marketBoard.innerHTML = `
+    <div class="market-track">${tracked.map((player) => callupCardMarkup(player)).join("")}</div>
+    <section class="bubble-board" aria-label="On the bubble">
+      <div class="bubble-heading">
+        <h3>On The Bubble</h3>
+        <p>The next five names outside the Top 10, with the reason they missed.</p>
+      </div>
+      <div class="bubble-grid">
+        ${bubble.map((player) => bubbleCardMarkup(player)).join("")}
+      </div>
+    </section>
+  `;
 
-  elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
+  elements.marketBoard.querySelectorAll(".market-card[data-player-id], .bubble-card[data-player-id]").forEach((card) => {
     const activate = (event) => {
       activateMarketCard(card, event);
     };
@@ -807,6 +819,41 @@ function renderMarketBoard() {
       }
     });
   });
+}
+
+function bubblePlayers() {
+  const topIds = new Set(onDeckPlayers().map((player) => String(player.player_id)));
+  return state.scored
+    .filter((player) => !topIds.has(String(player.player_id)))
+    .slice()
+    .sort((a, b) => b.callup_score - a.callup_score || b.opportunity_score - a.opportunity_score || Number(a.prospect_rank) - Number(b.prospect_rank))
+    .slice(0, 5);
+}
+
+function bubbleCardMarkup(player) {
+  return `
+    <button class="bubble-card" type="button" data-player-id="${escapeHtml(player.player_id)}">
+      <span>${escapeHtml(player.callup_score)}%</span>
+      <strong>${escapeHtml(player.player_name)}</strong>
+      <em>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))}</em>
+      <small>${escapeHtml(bubbleMissReason(player))}</small>
+    </button>
+  `;
+}
+
+function bubbleMissReason(player) {
+  const topTenFloor = onDeckPlayers()[9]?.callup_score ?? 0;
+  const gap = Math.max(0, topTenFloor - Number(player.callup_score));
+  if (Number(player.opportunity_score) < 45) {
+    return `Missed by ${gap} points: path is the drag.`;
+  }
+  if (Number(player.performance_score) < 60) {
+    return `Missed by ${gap} points: needs more current form.`;
+  }
+  if (Number(player.readiness_score) < 60) {
+    return `Missed by ${gap} points: timeline is less immediate.`;
+  }
+  return `Missed by ${gap} points: next move is close, not locked.`;
 }
 
 function activateMarketCard(card, event) {
@@ -1096,11 +1143,126 @@ function renderCard(player) {
     </div>
 
     ${profileResearchReport(player)}
+    ${profileStatsPanel(player)}
     ${teamPathPanel(player)}
     ${scoutingSnapshotPanel(player)}
     ${isOnDeckBoardPlayer(player) ? marketPanel(player) : ""}
   `;
 
+}
+
+function profileStatsPanel(player) {
+  return `
+    <section class="profile-stats-panel">
+      <div class="panel-heading compact">
+        <h3>Current Stats & Trend</h3>
+        <span>${escapeHtml(player.stat_team || player.level || "Current form")}</span>
+      </div>
+      <div class="profile-stat-grid">
+        ${profileStatCells(player).map((cell) => `
+          <div>
+            <span>${escapeHtml(cell.label)}</span>
+            <strong>${escapeHtml(cell.value)}</strong>
+          </div>
+        `).join("")}
+      </div>
+      <p>${escapeHtml(profileTrendSentence(player))}</p>
+    </section>
+  `;
+}
+
+function profileStatCells(player) {
+  if (isPitcherPosition(player.position)) {
+    return [
+      { label: "Level", value: player.stat_level || player.level || "-" },
+      { label: "ERA", value: statValue(player.era) },
+      { label: "WHIP", value: statValue(player.whip) },
+      { label: "K/9", value: statValue(player.k_per_9) },
+      { label: "BB/9", value: statValue(player.bb_per_9) },
+      { label: "Recent", value: pitcherTrendValue(player) },
+    ];
+  }
+  return [
+    { label: "Level", value: player.stat_level || player.level || "-" },
+    { label: "AVG", value: statValue(player.avg) },
+    { label: "OBP", value: statValue(player.obp) },
+    { label: "SLG", value: statValue(player.slg) },
+    { label: "OPS", value: statValue(player.ops) },
+    { label: "14/30 Trend", value: hitterTrendValue(player) },
+  ];
+}
+
+function hitterTrendValue(player) {
+  const recent = player.last_14_ops || player.last_30_ops || player.last_60_ops;
+  if (!recent) return "-";
+  const label = player.last_14_ops ? "14D" : player.last_30_ops ? "30D" : "60D";
+  return `${label} ${formatStatDecimal(recent)}`;
+}
+
+function pitcherTrendValue(player) {
+  const recent = player.last_14_era || player.last_30_era || player.last_60_era;
+  if (!recent) return "-";
+  const label = player.last_14_era ? "14D" : player.last_30_era ? "30D" : "60D";
+  return `${label} ${formatEraValue(recent)}`;
+}
+
+function profileTrendSentence(player) {
+  if (isPitcherPosition(player.position)) {
+    const recent = firstAvailableWindow(player, [["last_14_era", 14], ["last_30_era", 30], ["last_60_era", 60]]);
+    const seasonEra = Number(player.era);
+    if (!recent) {
+      return player.era ? `Recent ERA splits are not loaded yet; season baseline is ${formatEraValue(player.era)} ERA.` : "Current pitching trend data is not loaded yet.";
+    }
+    if (Number.isFinite(seasonEra)) {
+      if (recent.value <= seasonEra - 0.35) return `${formatEraValue(recent.value)} ERA over the last ${recent.days} days is better than the season ${formatEraValue(player.era)} ERA. Run prevention is trending up.`;
+      if (recent.value >= seasonEra + 0.35) return `${formatEraValue(recent.value)} ERA over the last ${recent.days} days is worse than the season ${formatEraValue(player.era)} ERA. Run prevention is trending down.`;
+      return `${formatEraValue(recent.value)} ERA over the last ${recent.days} days is close to the season ${formatEraValue(player.era)} ERA.`;
+    }
+    return `${formatEraValue(recent.value)} ERA over the last ${recent.days} days is the current trend marker.`;
+  }
+
+  const recent = firstAvailableWindow(player, [["last_14_ops", 14], ["last_30_ops", 30], ["last_60_ops", 60]]);
+  const seasonOps = Number(player.ops);
+  if (!recent) {
+    return player.ops ? `Recent OPS splits are not loaded yet; season baseline is ${formatStatDecimal(player.ops)} OPS.` : "Current hitting trend data is not loaded yet.";
+  }
+  if (Number.isFinite(seasonOps)) {
+    if (recent.value >= seasonOps + 0.05) return `${formatStatDecimal(recent.value)} OPS over the last ${recent.days} days is above the season ${formatStatDecimal(player.ops)} OPS. Bat is trending up.`;
+    if (recent.value <= seasonOps - 0.05) return `${formatStatDecimal(recent.value)} OPS over the last ${recent.days} days is below the season ${formatStatDecimal(player.ops)} OPS. Bat is trending down.`;
+    return `${formatStatDecimal(recent.value)} OPS over the last ${recent.days} days is close to the season ${formatStatDecimal(player.ops)} OPS.`;
+  }
+  return `${formatStatDecimal(recent.value)} OPS over the last ${recent.days} days is the current trend marker.`;
+}
+
+function firstAvailableWindow(player, fields) {
+  for (const [field, days] of fields) {
+    const value = Number(player[field]);
+    if (player[field] !== "" && player[field] != null && Number.isFinite(value)) {
+      return { value, days };
+    }
+  }
+  return null;
+}
+
+function statValue(value) {
+  if (value === "" || value == null) return "-";
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && Math.abs(numeric) < 2) return formatStatDecimal(numeric);
+  return String(value);
+}
+
+function formatStatDecimal(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(3).replace(/^0/, "") : String(value ?? "-");
+}
+
+function formatEraValue(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(2) : String(value ?? "-");
+}
+
+function isPitcherPosition(position) {
+  return String(position ?? "").toUpperCase().includes("P");
 }
 
 function teamPathPanel(player) {

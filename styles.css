@@ -475,6 +475,94 @@ input[type="range"] {
   user-select: none;
 }
 
+.bubble-board {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 12px;
+  margin: 10px 14px 0;
+  padding: 14px;
+  border: 1px solid rgba(151, 170, 255, 0.16);
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, rgba(82, 240, 255, 0.08), rgba(117, 62, 255, 0.06)),
+    rgba(4, 7, 18, 0.72);
+}
+
+.bubble-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.bubble-heading h3 {
+  margin: 0;
+  color: white;
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bubble-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.bubble-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bubble-card {
+  display: grid;
+  gap: 5px;
+  min-height: 126px;
+  padding: 11px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(5, 8, 20, 0.68);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bubble-card:hover,
+.bubble-card:focus-visible {
+  border-color: rgba(82, 240, 255, 0.55);
+  outline: none;
+}
+
+.bubble-card span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #06101b;
+  background: var(--yellow);
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.bubble-card strong {
+  color: white;
+  font-size: 0.9rem;
+}
+
+.bubble-card em,
+.bubble-card small {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 0.74rem;
+  line-height: 1.32;
+}
+
+.bubble-card small {
+  color: #d8def6;
+}
+
 .market-card,
 .team-card,
 .news-panel article,
@@ -1873,6 +1961,52 @@ tbody tr {
   width: fit-content;
 }
 
+.profile-stats-panel {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid rgba(56, 245, 166, 0.2);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(56, 245, 166, 0.12), transparent 11rem),
+    rgba(5, 8, 20, 0.58);
+}
+
+.profile-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-stat-grid div {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid rgba(151, 170, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(4, 7, 18, 0.58);
+}
+
+.profile-stat-grid span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.profile-stat-grid strong {
+  color: white;
+  font-size: 0.98rem;
+}
+
+.profile-stats-panel p {
+  margin: 0;
+  color: #d8def6;
+  font-size: 0.84rem;
+  line-height: 1.48;
+}
+
 .card-title {
   display: flex;
   align-items: start;
@@ -2334,7 +2468,8 @@ tbody tr {
   .edge-board,
   .method-grid,
   .scorebook-summary,
-  .resource-list {
+  .resource-list,
+  .bubble-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2410,8 +2545,14 @@ tbody tr {
 
   .method-grid,
   .scorebook-summary,
-  .resource-list {
+  .resource-list,
+  .bubble-grid,
+  .profile-stat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .bubble-heading {
+    display: grid;
   }
 
   .app-shell {
