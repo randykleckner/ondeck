@@ -168,6 +168,7 @@ elements.marketBoard?.addEventListener("pointerdown", (event) => {
     pointerId: event.pointerId,
     startX: event.clientX,
     scrollLeft: elements.marketBoard.scrollLeft,
+    wasDragged: false,
   };
   elements.marketBoard.setPointerCapture(event.pointerId);
   track.classList.add("is-dragging");
@@ -175,14 +176,28 @@ elements.marketBoard?.addEventListener("pointerdown", (event) => {
 
 elements.marketBoard?.addEventListener("pointermove", (event) => {
   if (!deckDragState || deckDragState.pointerId !== event.pointerId) return;
+  if (Math.abs(event.clientX - deckDragState.startX) > 8) {
+    deckDragState.wasDragged = true;
+  }
   elements.marketBoard.scrollLeft = deckDragState.scrollLeft - (event.clientX - deckDragState.startX);
 });
 
 elements.marketBoard?.addEventListener("pointerup", (event) => {
   if (!deckDragState || deckDragState.pointerId !== event.pointerId) return;
-  deckDragState = null;
   elements.marketBoard.querySelector(".market-track")?.classList.remove("is-dragging");
+  window.setTimeout(() => {
+    deckDragState = null;
+  }, 0);
 });
+
+elements.marketBoard?.addEventListener("click", (event) => {
+  const card = event.target.closest(".market-card[data-player-id]");
+  if (!card || deckDragState?.wasDragged) return;
+  event.preventDefault();
+  event.stopPropagation();
+  clearListFilters();
+  openPlayerProfile(card.dataset.playerId);
+}, true);
 
 window.addEventListener("hashchange", () => {
   syncRouteFromHash();
@@ -194,7 +209,7 @@ window.addEventListener("popstate", () => {
 
 document.addEventListener("click", (event) => {
   if (!state.selectedId) return;
-  if (event.target.closest("#player-card, #prospect-rows tr[data-player-id], .market-card[data-player-id], .war-prospect[data-player-id], [data-open-war-room]")) {
+  if (event.target.closest("#player-card, #prospect-rows tr[data-player-id], .market-card[data-player-id], .war-prospect[data-player-id], [data-open-war-room], .tool-page-nav")) {
     return;
   }
   state.selectedId = null;
@@ -331,6 +346,28 @@ function render() {
   syncToolVisibility();
 }
 
+function onDeckPlayers() {
+  return state.scored
+    .slice()
+    .sort((a, b) => b.callup_score - a.callup_score || b.opportunity_score - a.opportunity_score || Number(a.prospect_rank) - Number(b.prospect_rank))
+    .slice(0, 10);
+}
+
+function isOnDeckBoardPlayer(player) {
+  if (!player?.player_id) return false;
+  const id = String(player.player_id);
+  return onDeckPlayers().some((candidate) => String(candidate.player_id) === id);
+}
+
+function openPlayerProfile(playerId, options = {}) {
+  if (!playerId) return;
+  state.selectedId = String(playerId);
+  render();
+  if (options.scroll !== false) {
+    document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 function getFilteredRows() {
   return state.scored.filter((player) => {
     const searchBlob = normalizeName(`${player.player_name ?? ""} ${player.org ?? ""} ${player.position ?? ""}`);
@@ -428,9 +465,7 @@ function renderWarRoom() {
     card.addEventListener("click", (event) => {
       event.stopPropagation();
       clearListFilters();
-      state.selectedId = card.dataset.playerId;
-      render();
-      document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      openPlayerProfile(card.dataset.playerId);
     });
   });
   elements.warRoomBoard.querySelectorAll(".current-player-chip.has-flag").forEach((chip) => {
@@ -468,6 +503,7 @@ function openTool(tool, selector, updateHash = true) {
 }
 
 function syncToolVisibility() {
+  document.body.dataset.view = state.activeTool;
   elements.secondaryTools.forEach((section) => {
     const active = section.dataset.tool === state.activeTool;
     section.classList.toggle("active-tool", active);
@@ -532,21 +568,28 @@ function positionWarRoomMarkup(board, players, calledUp) {
   const fieldBoard = board.filter((lane) => FIELD_POSITIONS.some((position) => position.key === lane.key));
   const pitchingBoard = board.filter((lane) => PITCHING_POSITIONS.some((position) => position.key === lane.key));
   return `
-    <div class="field-war-room">
+    <div class="war-room-page">
       ${orgHighlightMarkup(players, calledUp, board)}
-      <div class="field-diamond" aria-label="Baseball field depth chart">
-        ${fieldBoard.map((lane) => fieldPositionMarkup(lane)).join("")}
-        <div class="field-grass" aria-hidden="true"></div>
-        <div class="field-infield" aria-hidden="true"></div>
-        <i class="base-marker base-home" aria-hidden="true"></i>
-        <i class="base-marker base-first" aria-hidden="true"></i>
-        <i class="base-marker base-second" aria-hidden="true"></i>
-        <i class="base-marker base-third" aria-hidden="true"></i>
+      <div class="depth-chart-board" aria-label="Depth chart and call-up paths">
+        <div class="depth-board-head">
+          <h3>Depth Chart & Call-Up Paths</h3>
+          <div class="lane-legend" aria-label="Path legend">
+            <span><i class="clean"></i> Clean path</span>
+            <span><i class="moderate"></i> Moderate</span>
+            <span><i class="blocked"></i> Blocked</span>
+          </div>
+        </div>
+        <div class="depth-lanes">
+          ${fieldBoard.map((lane) => fieldPositionMarkup(lane)).join("")}
+        </div>
       </div>
-      <section class="pitching-war-room" aria-label="Pitching war room">
-        <div class="panel-heading compact">
-          <h3>Pitching Bullpen</h3>
-          <span>Starters / Relief</span>
+      <section class="pitching-war-room bullpen-page" aria-label="Pitching war room">
+        <div class="bullpen-heading">
+          <div>
+            <p class="eyebrow">The Bullpen</p>
+            <h3>Next-Up Arms</h3>
+          </div>
+          <span>Rotation lanes / relief lanes</span>
         </div>
         <div class="pitching-lanes">
           ${pitchingBoard.map((lane) => pitchingLaneMarkup(lane)).join("")}
@@ -603,15 +646,16 @@ function fieldPositionMarkup(lane) {
   const starter = blockers[0];
   const pressure = rosterPressure(lane);
   return `
-    <article class="field-position ${escapeHtml(positionClassName(lane.key))} ${top ? "has-prospect" : "empty-position"}">
+    <article class="field-position ${escapeHtml(pathClassName(pressure))} ${top ? "has-prospect" : "empty-position"}">
       <header>
-        <span>${escapeHtml(lane.label)}</span>
+        <strong>${escapeHtml(lane.label)}</strong>
         <strong>${escapeHtml(pressure)}</strong>
       </header>
       <div class="field-tile-stack">
         ${starter ? currentPlayerChip(starter, "Starter") : `<span class="empty-chip">Starter not loaded</span>`}
         ${lane.players.length ? lane.players.slice(0, 2).map((player, index) => warProspectMarkup(player, index)).join("") : `<span class="empty-prospect">No prospect path</span>`}
       </div>
+      <p>${escapeHtml(laneNarrative(lane))}</p>
     </article>
   `;
 }
@@ -674,6 +718,21 @@ function warProspectMarkup(player, index = 0) {
       <small>${escapeHtml(isOnFortyMan(player) ? "40-man" : "needs 40-man")}</small>
     </button>
   `;
+}
+
+function pathClassName(pressure) {
+  const value = normalizeName(pressure);
+  if (value.includes("hot") || value.includes("need")) return "clean-path";
+  if (value.includes("churn")) return "moderate-path";
+  return "blocked-path";
+}
+
+function laneNarrative(lane) {
+  const top = lane.players[0];
+  if (!top) return "No active org prospect is mapped to this lane yet.";
+  const blockerText = lane.blockers.length ? `${lane.blockers[0]} is the loaded MLB name ahead of him` : "Starter data still needs a named MLB blocker";
+  const catalyst = onDeckCatalyst(top).toLowerCase();
+  return `${blockerText}; ${top.player_name}'s next catalyst is ${catalyst}.`;
 }
 
 function pathRead(lane) {
@@ -743,10 +802,7 @@ function laneSort(role) {
 }
 
 function renderMarketBoard() {
-  const tracked = state.scored
-    .slice()
-    .sort((a, b) => b.callup_score - a.callup_score || b.opportunity_score - a.opportunity_score || Number(a.prospect_rank) - Number(b.prospect_rank))
-    .slice(0, 10);
+  const tracked = onDeckPlayers();
   elements.marketCount.textContent = `Top ${tracked.length}`;
   if (!tracked.length) {
     elements.marketBoard.innerHTML = `<p class="muted">Load prospects to view the On Deck board.</p>`;
@@ -757,11 +813,10 @@ function renderMarketBoard() {
 
   elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
     const activate = (event) => {
-      event?.stopPropagation();
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
       clearListFilters();
-      state.selectedId = card.dataset.playerId;
-      render();
-      document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      openPlayerProfile(card.dataset.playerId);
     };
     card.addEventListener("click", activate);
     card.addEventListener("keydown", (event) => {
@@ -935,8 +990,7 @@ function renderRows(rows) {
   elements.rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
       event.stopPropagation();
-      state.selectedId = row.dataset.playerId;
-      render();
+      openPlayerProfile(row.dataset.playerId, { scroll: false });
     });
   });
 }
@@ -972,7 +1026,7 @@ function renderCard(player) {
     ${profileResearchReport(player)}
     ${teamPathPanel(player)}
     ${scoutingSnapshotPanel(player)}
-    ${marketPanel(player)}
+    ${isOnDeckBoardPlayer(player) ? marketPanel(player) : ""}
   `;
 
   elements.playerCard.querySelector("[data-open-war-room]")?.addEventListener("click", (event) => {
@@ -1000,13 +1054,21 @@ function teamPathPanel(player) {
         <h3>Team War Room</h3>
         <span>${escapeHtml(role)}</span>
       </div>
-      <p>${escapeHtml(pathRead(lane))}</p>
+      <p>${escapeHtml(playerPathRead(player, lane))}</p>
       <p class="muted">MLB blockers: ${escapeHtml(blockerText)}</p>
       <button class="button ghost profile-war-action" type="button" data-open-war-room="${escapeHtml(player.org ?? "")}">
         Open ${escapeHtml(player.org ?? "team")} war room
       </button>
     </section>
   `;
+}
+
+function playerPathRead(player, lane) {
+  const blockers = blockerNames(player).slice(0, 3);
+  if (blockers.length) {
+    return `${player.player_name} is tracking behind ${blockers.join(", ")} with a ${player.callup_score}% On Deck confidence read.`;
+  }
+  return `${player.player_name} has a ${player.callup_score}% On Deck confidence read; named MLB blockers still need more depth-chart data.`;
 }
 
 function marketPanel(player) {
@@ -1017,7 +1079,7 @@ function marketPanel(player) {
           <h3>Card Market</h3>
           <span>Awaiting comps</span>
         </div>
-        <p class="muted">No CPA Chrome Prospect Auto sold-comps row is loaded yet for ${escapeHtml(player.player_name)}. Run scripts/update-ebay-comps.mjs with eBay API access, or CARD_COMP_SOURCE=web for best-effort public scrape comps, to activate buy-zone analysis.</p>
+        <p class="muted">No manual Chrome Prospect Auto comp row is loaded yet for ${escapeHtml(player.player_name)}. Add a row to data/card-market-manual.csv when you have a reliable weekly comp.</p>
       </section>
     `;
   }
@@ -1211,7 +1273,7 @@ function watchThesis(player) {
 
 function whyItMatters(player) {
   const role = depthChartGroup(player.position).toLowerCase();
-  return `${player.org} has to decide how aggressively to move this ${role} profile. A promotion, role change, or sustained production run would shift ${player.player_name} from follow-list status into a more urgent evaluation window.`;
+  return `${player.org} has to decide how aggressively to move this ${role} profile. ${player.player_name}'s next jump depends on current production, level fit, and the MLB names directly ahead of him.`;
 }
 
 function riskFactors(player) {
@@ -1226,7 +1288,7 @@ function riskFactors(player) {
 }
 
 function analystVerdict(player) {
-  return `${player.player_name}'s current case centers on ${catalystSentenceText(player)}. If the performance holds and the organization creates room, this profile can gain momentum quickly; if the developmental checkpoint stalls, the timeline pushes back.`;
+  return `${player.player_name}'s current case centers on ${catalystSentenceText(player)}. If the production holds and the lane opens, the timeline can move quickly; if the next assignment stalls, the call-up clock likely pushes back.`;
 }
 
 function catalystSentenceText(player) {
