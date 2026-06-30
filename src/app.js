@@ -91,6 +91,8 @@ const elements = {
   warRoomBoard: document.querySelector("#war-room-board"),
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
+  deckPrev: document.querySelector("#deck-prev"),
+  deckNext: document.querySelector("#deck-next"),
   scorebookBoard: document.querySelector("#scorebook-board"),
   scorebookCount: document.querySelector("#scorebook-count"),
   navLinks: document.querySelectorAll(".main-nav a"),
@@ -142,6 +144,39 @@ elements.scoreFilter.addEventListener("input", (event) => {
   elements.scoreFilterValue.textContent = event.target.value;
   state.selectedId = null;
   render();
+});
+
+elements.deckPrev?.addEventListener("click", () => {
+  scrollOnDeckBoard(-1);
+});
+
+elements.deckNext?.addEventListener("click", () => {
+  scrollOnDeckBoard(1);
+});
+
+let deckDragState = null;
+
+elements.marketBoard?.addEventListener("pointerdown", (event) => {
+  const track = elements.marketBoard.querySelector(".market-track");
+  if (!track) return;
+  deckDragState = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    scrollLeft: elements.marketBoard.scrollLeft,
+  };
+  elements.marketBoard.setPointerCapture(event.pointerId);
+  track.classList.add("is-dragging");
+});
+
+elements.marketBoard?.addEventListener("pointermove", (event) => {
+  if (!deckDragState || deckDragState.pointerId !== event.pointerId) return;
+  elements.marketBoard.scrollLeft = deckDragState.scrollLeft - (event.clientX - deckDragState.startX);
+});
+
+elements.marketBoard?.addEventListener("pointerup", (event) => {
+  if (!deckDragState || deckDragState.pointerId !== event.pointerId) return;
+  deckDragState = null;
+  elements.marketBoard.querySelector(".market-track")?.classList.remove("is-dragging");
 });
 
 window.addEventListener("hashchange", () => {
@@ -353,7 +388,7 @@ function renderWarRoom() {
   elements.warRoomLogo.innerHTML = logo ? `<img src="${escapeHtml(logo)}" alt="${escapeHtml(org)} logo" loading="lazy" />` : `<strong>${escapeHtml(orgInitials(org))}</strong>`;
   elements.warRoomTitle.textContent = org;
   elements.warRoomSubtitle.textContent = topTarget
-    ? `${topTarget.player_name} is the next board target at ${topTarget.callup_score}% call-up chance.`
+    ? `${topTarget.player_name} is the next board target with ${topTarget.callup_score}% catalyst confidence.`
     : "No active pre-call-up Top 100 prospects remain on this board.";
   elements.warRoomSummary.innerHTML = warRoomSummaryMarkup(players, calledUp);
 
@@ -689,16 +724,7 @@ function renderMarketBoard() {
     return;
   }
 
-  const cardMarkup = tracked
-    .map((player) => callupCardMarkup(player))
-    .join("");
-
-  elements.marketBoard.innerHTML = `
-    <div class="market-track">
-      ${cardMarkup}
-      ${tracked.length > 2 ? cardMarkup : ""}
-    </div>
-  `;
+  elements.marketBoard.innerHTML = `<div class="market-track">${tracked.map((player) => callupCardMarkup(player)).join("")}</div>`;
 
   elements.marketBoard.querySelectorAll(".market-card[data-player-id]").forEach((card) => {
     const activate = (event) => {
@@ -716,6 +742,14 @@ function renderMarketBoard() {
       }
     });
   });
+}
+
+function scrollOnDeckBoard(direction) {
+  const track = elements.marketBoard.querySelector(".market-track");
+  if (!track) return;
+  const firstCard = track.querySelector(".market-card");
+  const distance = firstCard ? firstCard.getBoundingClientRect().width + 14 : 340;
+  elements.marketBoard.scrollBy({ left: direction * distance, behavior: "smooth" });
 }
 
 function renderScorebook() {
@@ -802,24 +836,24 @@ function clearListFilters() {
 }
 
 function callupCardMarkup(player) {
-  const trend = rankTrendText(player);
-  const trendLabel = trend === "Untracked" ? "No rank trend" : trend;
+  const catalyst = onDeckCatalyst(player);
   return `
       <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}">
         <div>
-          <span class="market-label">Next-up candidate</span>
+          <span class="market-label">On Deck: ${escapeHtml(catalyst)}</span>
           <h3>${escapeHtml(player.player_name)}</h3>
-          <p>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))}</p>
+          <p>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))} · MLB ETA ${escapeHtml(player.eta ?? "-")}</p>
         </div>
         <div class="market-price">
           <strong>${escapeHtml(player.callup_score)}%</strong>
-          <span>Call-up chance</span>
+          <span>Confidence</span>
         </div>
         <dl>
-          <div><dt>Stats</dt><dd>${escapeHtml(player.performance_score)}%</dd></div>
-          <div><dt>Org Path</dt><dd>${escapeHtml(player.opportunity_score)}%</dd></div>
-          <div><dt>Trend</dt><dd>${escapeHtml(trendLabel)}</dd></div>
+          <div><dt>Next Event</dt><dd>${escapeHtml(catalyst)}</dd></div>
+          <div><dt>ETA</dt><dd>${escapeHtml(player.eta ?? "-")}</dd></div>
+          <div><dt>Trend</dt><dd>${escapeHtml(rankTrendText(player))}</dd></div>
         </dl>
+        <p class="market-thesis">${escapeHtml(onDeckThesis(player))}</p>
       </article>
     `;
 }
@@ -862,7 +896,7 @@ function renderRows(rows) {
           <td>${escapeHtml(player.position ?? "-")}</td>
           <td>${escapeHtml(player.level ?? "-")}</td>
           <td>${rankTrend(player)}</td>
-          <td>${marketBadge(player)}</td>
+          <td>${escapeHtml(onDeckCatalyst(player))}</td>
           <td><span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}%</span></td>
         </tr>
       `;
@@ -897,21 +931,18 @@ function renderCard(player) {
         <h3>${escapeHtml(player.player_name)}</h3>
         <p class="muted">Rank ${escapeHtml(player.prospect_rank ?? "-")} · Age ${escapeHtml(player.age ?? "-")} · ETA ${escapeHtml(player.eta ?? "-")}</p>
       </div>
-    <span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}% call-up chance</span>
+    <span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}% confidence</span>
     </div>
 
     <div class="breakdown">
-      ${bar("Stats", player.performance_score)}
-      ${bar("Org Path", player.opportunity_score)}
+      ${bar("Current Form", player.performance_score)}
+      ${bar("Opportunity", player.opportunity_score)}
       ${bar("Readiness", player.readiness_score)}
     </div>
 
-    <h3>Market Edge</h3>
-    <ul class="insight-list">
-      ${player.insights.map((insight) => `<li>${escapeHtml(insight)}</li>`).join("")}
-    </ul>
+    ${profileResearchReport(player)}
     ${teamPathPanel(player)}
-    ${newsPanel(player)}
+    ${scoutingSnapshotPanel(player)}
     ${marketPanel(player)}
   `;
 
@@ -1060,15 +1091,8 @@ function marketReasonBullets(player) {
     }
   }
 
-  reasons.push(`${player.callup_score}% call-up chance keeps the card case tied to promotion upside, not just raw card comps.`);
+  reasons.push(`${player.callup_score}% catalyst confidence keeps the card case tied to a baseball event, not just raw card comps.`);
   return reasons;
-}
-
-function marketBadge(player) {
-  if (!player.market_signal) {
-    return `<span class="muted">-</span>`;
-  }
-  return `<span class="market-badge">${escapeHtml(player.market_signal)}</span>`;
 }
 
 function rankTrend(player) {
@@ -1104,19 +1128,123 @@ function rankMovement(player) {
   return previous - current;
 }
 
-function newsPanel(player) {
-  const note = player.news_note || fallbackProfileNote(player);
-  const headline = player.news_headline || "MLB Pipeline profile";
-  const source = player.news_source || "MLB Pipeline";
+function onDeckCatalyst(player) {
+  if (String(player.level ?? "").toUpperCase() === "MLB") return "MLB Debut Follow-Up";
+  const level = String(player.level ?? "").toUpperCase();
+  if (level === "AA") return "Triple-A Promotion";
+  if (level === "AAA" || Number(player.callup_score) >= 80) return "MLB Debut";
+  if (level === "A+" || level === "A") return "Double-A Promotion";
+  const movement = rankMovement(player);
+  if (movement != null && movement > 0) return "Top 100 Momentum";
+  return "Breakout Watch";
+}
+
+function onDeckThesis(player) {
+  const catalyst = onDeckCatalyst(player);
+  const trend = rankTrendText(player);
+  if (catalyst === "MLB Debut") {
+    return `${player.player_name} is close enough to force a roster decision if current form and organizational need keep aligning.`;
+  }
+  if (catalyst.includes("Promotion")) {
+    return `${player.player_name}'s next assignment is the catalyst that could reset the market's view of the timeline.`;
+  }
+  if (trend.startsWith("Up")) {
+    return `${player.player_name} already has ranking momentum; the next performance spike could pull more attention forward.`;
+  }
+  return `${player.player_name} is on the watchlist because the next meaningful baseball event matters more than raw rank alone.`;
+}
+
+function watchThesis(player) {
+  return `${player.player_name} is worth monitoring because the next likely catalyst is ${catalystSentenceText(player)}, not simply because of a list ranking. Current form, organizational opportunity, and rank movement combine into a ${player.callup_score}% confidence read.`;
+}
+
+function whyItMatters(player) {
+  const role = depthChartGroup(player.position).toLowerCase();
+  return `For baseball, this is about whether a clearer ${role} path is opening inside the ${player.org} system. For collectors, the edge is identifying the catalyst before it becomes obvious in box scores, rankings updates, or debut headlines.`;
+}
+
+function riskFactors(player) {
+  const risks = [];
+  const blockers = blockerNames(player).slice(0, 3);
+  if (blockers.length) risks.push(`Depth chart pressure from ${blockers.join(", ")}.`);
+  if (Number(player.readiness_score) < 55) risks.push("Readiness score suggests the organization may want more development time.");
+  if (Number(player.performance_score) < 55) risks.push("Current statistical form needs to strengthen before the catalyst becomes urgent.");
+  if (rankMovement(player) != null && rankMovement(player) < 0) risks.push("Recent Top 100 trend is negative, which can cool public and hobby momentum.");
+  if (!risks.length) risks.push("Primary risk is timing: the catalyst may be real but slower than the market wants.");
+  return risks;
+}
+
+function analystVerdict(player) {
+  return `${player.player_name} belongs on OnDeck because ${catalystSentenceText(player)} is the event most likely to change perception next. The profile is strongest when the baseball path and collector attention move at the same time.`;
+}
+
+function catalystSentenceText(player) {
+  return onDeckCatalyst(player).replace("MLB", "MLB").toLowerCase().replace("mlb", "MLB");
+}
+
+function toolSummary(player) {
+  const position = String(player.position ?? "").toUpperCase();
+  if (position.includes("P")) return "Arsenal, command, role fit";
+  if (position.includes("C")) return "Power, defense, patience";
+  if (position.includes("SS") || position.includes("2B") || position.includes("3B")) return "Athleticism, contact, defensive value";
+  return "Power, approach, athleticism";
+}
+
+function scoutingStrengths(player) {
+  const position = String(player.position ?? "").toUpperCase();
+  const trend = rankTrendText(player);
+  if (position.includes("P")) return "The profile is driven by run-prevention upside, miss-bat potential, and how quickly the arsenal can translate against upper-level hitters.";
+  if (trend.startsWith("Up")) return "Ranking movement is positive, suggesting evaluators are already reacting to growth in performance, tools, or role confidence.";
+  return "The carrying strength is the combination of prospect pedigree, current assignment, and a visible organizational runway.";
+}
+
+function developmentFocus(player) {
+  const position = String(player.position ?? "").toUpperCase();
+  if (position.includes("P")) return "Command consistency, workload management, and proving the arsenal holds up through a starter's turn remain the key checkpoints.";
+  if (Number(player.performance_score) < 55) return "The next step is converting tools into steadier game production so the catalyst is backed by performance, not projection alone.";
+  return "The focus is sustaining current form long enough for the organization to justify the next assignment.";
+}
+
+function profileResearchReport(player) {
+  return `
+    <section class="analyst-report">
+      <h3>Why We're Watching</h3>
+      <p>${escapeHtml(watchThesis(player))}</p>
+      <div class="report-catalyst">
+        <span>On Deck</span>
+        <strong>${escapeHtml(onDeckCatalyst(player))}</strong>
+      </div>
+      <h3>Why It Matters</h3>
+      <p>${escapeHtml(whyItMatters(player))}</p>
+      <h3>Risk Factors</h3>
+      <ul>${riskFactors(player).map((risk) => `<li>${escapeHtml(risk)}</li>`).join("")}</ul>
+      <h3>Analyst Verdict</h3>
+      <p>${escapeHtml(analystVerdict(player))}</p>
+    </section>
+  `;
+}
+
+function scoutingSnapshotPanel(player) {
+  const source = player.news_source || "Generated snapshot";
   const url = player.news_url || mlbProfileUrl(player) || player.source_url || "";
   const meta = [source, player.news_date].filter(Boolean).join(" · ");
   return `
     <section class="news-panel">
-      <h3>Profile Notes</h3>
+      <h3>MLB Snapshot</h3>
       <article>
         ${meta ? `<p class="news-meta">${escapeHtml(meta)}</p>` : ""}
-        <h4>${escapeHtml(headline)}</h4>
-        <p>${escapeHtml(note)}</p>
+        <div class="snapshot-grid">
+          <div><span>Current Level</span><strong>${escapeHtml(player.level ?? "-")}</strong></div>
+          <div><span>ETA</span><strong>${escapeHtml(player.eta ?? "-")}</strong></div>
+          <div><span>Organization</span><strong>${escapeHtml(player.org ?? "-")}</strong></div>
+          <div><span>Tools</span><strong>${escapeHtml(toolSummary(player))}</strong></div>
+        </div>
+        <h4>Scouting Strengths</h4>
+        <p>${escapeHtml(scoutingStrengths(player))}</p>
+        <h4>Development Focus</h4>
+        <p>${escapeHtml(developmentFocus(player))}</p>
+        <h4>Concise Report</h4>
+        <p>${escapeHtml(player.news_note || fallbackProfileNote(player))}</p>
         ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">Open source</a>` : ""}
       </article>
     </section>
@@ -1127,7 +1255,7 @@ function fallbackProfileNote(player) {
   const trend = rankTrendText(player);
   const trendText = trend === "Untracked" ? "rank movement is not tracked yet" : `rank trend is ${trend.toLowerCase()}`;
   const path = player.notes ? cleanShortNote(player.notes) : "the MLB path still needs more depth-chart context";
-  return `${player.player_name} is a ${player.org} ${player.position} at ${player.level} with a ${player.callup_score}% call-up score; ${trendText}, and ${path}.`;
+  return `${player.player_name} is a ${player.org} ${player.position} at ${player.level}; ${trendText}, and ${path}.`;
 }
 
 function cleanShortNote(note) {

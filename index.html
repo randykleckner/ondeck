@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OnDeck Prospect | Call-Up Signals & Card Market Edge</title>
+    <title>OnDeck Prospect | Prospect Catalyst Intelligence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260629-12" />
+    <link rel="stylesheet" href="./styles.css?v=20260630-1" />
   </head>
   <body>
     <header class="app-header">
@@ -37,9 +37,9 @@
             <span>the market does.</span>
           </h1>
           <p>
-            OnDeck Prospect combines MLB Top 100 movement, call-up pathways,
-            current performance, and Bowman 1st Auto market signals into one
-            collector-focused dashboard.
+            OnDeck Prospect explains why a player matters now, what catalyst is
+            likely to happen next, and how that movement could affect both
+            baseball opportunity and card-market attention.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#prospects">Explore Dashboard</a>
@@ -51,10 +51,14 @@
       <section id="card-market" class="market-board" aria-label="Top call-up candidates board">
         <div class="panel-heading">
           <div>
-            <h2>Next Call-Up Board</h2>
-            <p>Top 10 most likely call-ups before card-market detail</p>
+            <h2>On Deck Board</h2>
+            <p>Weekly Top 10 prospects with the most meaningful upcoming catalysts</p>
           </div>
-          <span id="market-count">0 shown</span>
+          <div class="deck-controls" aria-label="On Deck Board controls">
+            <button id="deck-prev" class="icon-button" type="button" aria-label="Previous On Deck cards">‹</button>
+            <span id="market-count">0 shown</span>
+            <button id="deck-next" class="icon-button" type="button" aria-label="Next On Deck cards">›</button>
+          </div>
         </div>
         <div id="market-board" class="market-grid"></div>
       </section>
@@ -101,7 +105,7 @@
       <section id="prospects" class="content-grid">
         <div class="table-panel">
           <div class="panel-heading">
-            <h2>Player Edge Watchlist</h2>
+            <h2>Player Watchlist</h2>
             <span id="row-count">0 players</span>
           </div>
           <div class="list-controls" aria-label="Player list filters">
@@ -122,11 +126,6 @@
                 <strong id="score-filter-value">0</strong>
               </label>
             </div>
-            <div class="legend" aria-label="Call-up score legend">
-              <span><i class="legend-dot score-high"></i> Green: 60%+ call-up chance</span>
-              <span><i class="legend-dot score-medium"></i> Yellow: 50-59% call-up chance</span>
-              <span><i class="legend-dot score-low"></i> Red: 49% or below</span>
-            </div>
           </div>
           <div class="table-wrap">
             <table>
@@ -137,8 +136,8 @@
                   <th>Pos</th>
                   <th>Level</th>
                   <th>Trend</th>
-                  <th>Card Signal</th>
-                  <th>Call-Up Chance</th>
+                  <th>Next Catalyst</th>
+                  <th>Confidence</th>
                 </tr>
               </thead>
               <tbody id="prospect-rows"></tbody>
@@ -154,6 +153,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260629-16"></script>
+    <script type="module" src="./src/app.js?v=20260630-1"></script>
   </body>
 </html>

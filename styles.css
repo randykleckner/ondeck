@@ -138,6 +138,21 @@ a {
   cursor: pointer;
 }
 
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(151, 170, 255, 0.34);
+  border-radius: 999px;
+  color: var(--ink);
+  background: rgba(9, 14, 33, 0.76);
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+
 .button.primary {
   color: #06101b;
   border-color: transparent;
@@ -422,8 +437,10 @@ input[type="range"] {
 
 .market-grid {
   position: relative;
-  overflow: hidden;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
   padding: 14px 0;
+  scrollbar-width: thin;
 }
 
 .market-grid::before,
@@ -452,12 +469,12 @@ input[type="range"] {
   width: max-content;
   gap: 12px;
   padding-inline: 14px;
-  animation: market-scroll 46s linear infinite;
+  cursor: grab;
 }
 
-.market-grid:hover .market-track,
-.market-grid:focus-within .market-track {
-  animation-play-state: paused;
+.market-track.is-dragging {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .market-card,
@@ -474,6 +491,7 @@ input[type="range"] {
   display: grid;
   gap: 13px;
   flex: 0 0 clamp(260px, 24vw, 340px);
+  scroll-snap-align: start;
   padding: 15px;
   color: var(--ink);
   cursor: pointer;
@@ -501,6 +519,16 @@ input[type="range"] {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+.market-thesis {
+  color: #d8def6;
+}
+
+.deck-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .market-price strong {
@@ -647,16 +675,6 @@ input[type="range"] {
 .scorebook-card > p {
   grid-column: 1 / -1;
   padding-top: 2px;
-}
-
-@keyframes market-scroll {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(calc(-50% - 6px));
-  }
 }
 
 .team-card {
@@ -837,8 +855,7 @@ tbody tr.selected {
   border: 1px solid rgba(82, 240, 255, 0.2);
   border-radius: 14px;
   background:
-    radial-gradient(circle at 50% 36%, rgba(82, 240, 255, 0.14), transparent 17rem),
-    radial-gradient(circle at 50% 62%, rgba(66, 225, 139, 0.14), transparent 28rem),
+    linear-gradient(180deg, rgba(23, 90, 70, 0.28) 0%, rgba(18, 80, 52, 0.18) 48%, rgba(103, 76, 42, 0.18) 100%),
     linear-gradient(180deg, rgba(8, 25, 34, 0.94), rgba(4, 8, 19, 0.94));
 }
 
@@ -849,11 +866,14 @@ tbody tr.selected {
 }
 
 .field-grass {
-  inset: 7%;
+  left: 6%;
+  right: 6%;
+  top: 6%;
+  height: 48%;
   border: 1px solid rgba(66, 225, 139, 0.18);
-  border-radius: 50% 50% 44% 44%;
+  border-radius: 999px 999px 42px 42px;
   background:
-    radial-gradient(circle at 50% 58%, rgba(66, 225, 139, 0.18), transparent 22rem),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 18px, transparent 18px 42px),
     linear-gradient(135deg, rgba(66, 225, 139, 0.08), rgba(82, 240, 255, 0.03));
 }
 
@@ -864,7 +884,8 @@ tbody tr.selected {
   height: 230px;
   border: 1px solid rgba(238, 198, 111, 0.42);
   border-radius: 10px;
-  background: rgba(238, 198, 111, 0.1);
+  background:
+    linear-gradient(135deg, rgba(238, 198, 111, 0.18), rgba(238, 198, 111, 0.07));
   transform: translate(-50%, -50%) rotate(45deg);
 }
 
@@ -1141,14 +1162,28 @@ tbody tr.selected {
 }
 
 .pitching-lane {
+  position: relative;
   display: grid;
   gap: 10px;
+  overflow: hidden;
   padding: 12px;
   border: 1px solid rgba(151, 170, 255, 0.22);
   border-radius: 12px;
   background:
     linear-gradient(90deg, rgba(82, 240, 255, 0.07), rgba(117, 62, 255, 0.07)),
     rgba(6, 12, 28, 0.78);
+}
+
+.pitching-lane::before {
+  content: "";
+  position: absolute;
+  right: -34px;
+  bottom: -42px;
+  width: 150px;
+  height: 150px;
+  border: 1px solid rgba(238, 198, 111, 0.3);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(238, 198, 111, 0.12), transparent 64%);
 }
 
 .pitching-lane header {
@@ -1628,6 +1663,65 @@ tbody tr {
   font-size: 1.55rem;
 }
 
+.analyst-report {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid rgba(151, 170, 255, 0.2);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(117, 62, 255, 0.14), transparent 12rem),
+    rgba(4, 7, 18, 0.58);
+}
+
+.analyst-report h3 {
+  margin: 0;
+  color: var(--cyan);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.analyst-report p,
+.analyst-report li {
+  color: #d8def6;
+  font-size: 0.84rem;
+  line-height: 1.48;
+}
+
+.analyst-report p,
+.analyst-report ul {
+  margin: 0;
+}
+
+.analyst-report ul {
+  padding-left: 18px;
+}
+
+.report-catalyst {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px;
+  border: 1px solid rgba(82, 240, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(82, 240, 255, 0.07);
+}
+
+.report-catalyst span,
+.snapshot-grid span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.report-catalyst strong {
+  color: white;
+}
+
 .trend-up,
 .trend-down {
   font-weight: 950;
@@ -1755,6 +1849,26 @@ tbody tr {
   display: grid;
   gap: 7px;
   padding: 12px;
+}
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.snapshot-grid div {
+  padding: 10px;
+  border: 1px solid rgba(151, 170, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(5, 8, 20, 0.48);
+}
+
+.snapshot-grid strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 0.9rem;
 }
 
 .news-panel h4,
