@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnDeck Prospect | Top 10 Next-Move Intelligence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260630-8" />
+    <link rel="stylesheet" href="./styles.css?v=20260630-10" />
   </head>
   <body>
     <header class="app-header">
@@ -15,6 +15,7 @@
       </div>
       <nav class="main-nav" aria-label="Primary navigation">
         <a href="#top-10" data-route="dashboard">Top 10</a>
+        <a href="#top-100" data-route="dashboard">Top 100</a>
         <a href="#scorebook" data-route="scorebook">Scorebook</a>
         <a href="#methodology" data-route="dashboard">Methodology</a>
         <a href="#resources" data-route="dashboard">Resources</a>
@@ -128,6 +129,56 @@
         </aside>
       </section>
 
+      <section id="top-100" class="table-panel reference-panel" aria-label="MLB Top 100 reference list">
+        <div class="panel-heading">
+          <div>
+            <h2>MLB Top 100 Reference</h2>
+            <p>Full ranked context so the Top 10 decision can be compared against everyone else</p>
+          </div>
+          <span id="top100-row-count">0 players</span>
+        </div>
+        <div class="list-controls" aria-label="Top 100 filters">
+          <div class="filter-grid">
+            <label>
+              Search
+              <input id="top100-search" type="search" placeholder="Player or org" />
+            </label>
+            <label>
+              Organization
+              <select id="top100-org-filter">
+                <option value="all">All orgs</option>
+              </select>
+            </label>
+            <label>
+              Board View
+              <select id="top100-board-filter">
+                <option value="all">Full Top 100</option>
+                <option value="bubble">On Deck + Bubble</option>
+                <option value="outside">Outside Top 10</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>MLB Rank</th>
+                <th>Player</th>
+                <th>Org</th>
+                <th>Pos</th>
+                <th>Level</th>
+                <th>Move Score</th>
+                <th>Next Move</th>
+                <th>Trend</th>
+                <th>Why Not Top 10</th>
+              </tr>
+            </thead>
+            <tbody id="top100-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section id="methodology" class="info-panel" aria-label="Methodology">
         <div class="panel-heading">
           <div>
@@ -182,6 +233,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260630-9"></script>
+    <script type="module" src="./src/app.js?v=20260630-11"></script>
   </body>
 </html>

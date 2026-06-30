@@ -8,6 +8,7 @@ const state = {
   cardMarket: [],
   mlbPlayerFlags: [],
   scorebook: [],
+  allScored: [],
   scored: [],
   calledUp: [],
   selectedId: null,
@@ -17,6 +18,11 @@ const state = {
     search: "",
     org: "all",
     minScore: 0,
+  },
+  top100Filters: {
+    search: "",
+    org: "all",
+    board: "all",
   },
 };
 
@@ -78,6 +84,11 @@ const elements = {
   scoreFilterValue: document.querySelector("#score-filter-value"),
   contentGrid: document.querySelector("#prospects"),
   rows: document.querySelector("#prospect-rows"),
+  top100Rows: document.querySelector("#top100-rows"),
+  top100RowCount: document.querySelector("#top100-row-count"),
+  top100Search: document.querySelector("#top100-search"),
+  top100OrgFilter: document.querySelector("#top100-org-filter"),
+  top100BoardFilter: document.querySelector("#top100-board-filter"),
   cardPanel: document.querySelector(".card-panel"),
   playerCard: document.querySelector("#player-card"),
   rowCount: document.querySelector("#row-count"),
@@ -149,6 +160,21 @@ elements.scoreFilter?.addEventListener("input", (event) => {
   render();
 });
 
+elements.top100Search?.addEventListener("input", (event) => {
+  state.top100Filters.search = normalizeName(event.target.value);
+  render();
+});
+
+elements.top100OrgFilter?.addEventListener("change", (event) => {
+  state.top100Filters.org = event.target.value;
+  render();
+});
+
+elements.top100BoardFilter?.addEventListener("change", (event) => {
+  state.top100Filters.board = event.target.value;
+  render();
+});
+
 elements.deckPrev?.addEventListener("click", () => {
   scrollOnDeckBoard(-1);
 });
@@ -208,7 +234,7 @@ window.addEventListener("popstate", () => {
 
 document.addEventListener("click", (event) => {
   if (!state.selectedId) return;
-  if (event.target.closest("#player-card, #prospect-rows tr[data-player-id], .market-card[data-player-id], .war-prospect[data-player-id], [data-open-war-room], .tool-page-nav")) {
+  if (event.target.closest("#player-card, #prospect-rows tr[data-player-id], #top100-rows tr[data-player-id], .market-card[data-player-id], .bubble-card[data-player-id], .war-prospect[data-player-id], [data-open-war-room], .tool-page-nav")) {
     return;
   }
   state.selectedId = null;
@@ -251,6 +277,7 @@ async function loadTop100Prospects() {
   state.scorebook = scorebook;
   state.selectedId = null;
   state.filters.org = "all";
+  state.top100Filters.org = "all";
   refreshScoredData();
 }
 
@@ -315,12 +342,14 @@ function mergeNonBlank(base, overlay) {
 
 function refreshScoredData() {
   const allScored = applyCardMarket(mergeProspectData(state.prospects, state.stats, state.depthCharts)).sort((a, b) => b.callup_score - a.callup_score);
+  state.allScored = allScored;
   state.calledUp = allScored.filter(isCalledUp);
   state.scored = allScored.filter((player) => !isCalledUp(player));
-  if (state.selectedId && !state.scored.some((player) => String(player.player_id) === String(state.selectedId))) {
+  if (state.selectedId && !state.allScored.some((player) => String(player.player_id) === String(state.selectedId))) {
     state.selectedId = null;
   }
   hydrateOrgFilter();
+  hydrateTop100OrgFilter();
   render();
 }
 
@@ -333,17 +362,44 @@ function hydrateOrgFilter() {
   state.filters.org = elements.orgFilter.value;
 }
 
+function hydrateTop100OrgFilter() {
+  if (!elements.top100OrgFilter) return;
+  const current = state.top100Filters.org;
+  const orgs = [...new Set(state.allScored.filter(isTop100Prospect).map((player) => player.org).filter(Boolean))].sort();
+  elements.top100OrgFilter.innerHTML = `<option value="all">All orgs</option>${orgs.map((org) => `<option value="${escapeHtml(org)}">${escapeHtml(org)}</option>`).join("")}`;
+  elements.top100OrgFilter.value = orgs.includes(current) ? current : "all";
+  state.top100Filters.org = elements.top100OrgFilter.value;
+}
+
 function render() {
   const rows = getFilteredRows();
   renderTeamBoard();
   renderWarRoom();
   renderMarketBoard();
   renderRows(rows);
+  renderTop100Rows();
   renderScorebook();
   elements.rowCount.textContent = rows.length ? `Top ${rows.length}` : "No active Top 10 data loaded";
-  const selected = state.selectedId ? state.scored.find((player) => String(player.player_id) === String(state.selectedId)) : null;
+  const selected = state.selectedId ? state.allScored.find((player) => String(player.player_id) === String(state.selectedId)) : null;
   renderCard(selected);
   syncToolVisibility();
+}
+
+function getTop100Rows() {
+  const topIds = new Set(onDeckPlayers().map((player) => String(player.player_id)));
+  const bubbleIds = new Set(bubblePlayers().map((player) => String(player.player_id)));
+  return state.allScored
+    .filter(isTop100Prospect)
+    .filter((player) => {
+      const searchBlob = normalizeName(`${player.player_name ?? ""} ${player.org ?? ""} ${player.position ?? ""}`);
+      const matchesSearch = state.top100Filters.search === "" || searchBlob.includes(state.top100Filters.search);
+      const matchesOrg = state.top100Filters.org === "all" || player.org === state.top100Filters.org;
+      const matchesBoard = state.top100Filters.board === "all"
+        || (state.top100Filters.board === "bubble" && (topIds.has(String(player.player_id)) || bubbleIds.has(String(player.player_id))))
+        || (state.top100Filters.board === "outside" && !topIds.has(String(player.player_id)));
+      return matchesSearch && matchesOrg && matchesBoard;
+    })
+    .sort((a, b) => Number(a.prospect_rank) - Number(b.prospect_rank));
 }
 
 function onDeckPlayers() {
@@ -961,6 +1017,59 @@ function renderRows(rows) {
       openPlayerProfile(row.dataset.playerId, { scroll: false });
     });
   });
+}
+
+function renderTop100Rows() {
+  if (!elements.top100Rows) return;
+  const rows = getTop100Rows();
+  if (elements.top100RowCount) {
+    elements.top100RowCount.textContent = `${rows.length} ${rows.length === 1 ? "player" : "players"}`;
+  }
+
+  if (!rows.length) {
+    elements.top100Rows.innerHTML = `<tr><td colspan="9" class="muted">No active MLB Top 100 players match the current filters.</td></tr>`;
+    return;
+  }
+
+  elements.top100Rows.innerHTML = rows.map((player) => {
+    const selected = String(player.player_id) === String(state.selectedId) ? "selected" : "";
+    return `
+      <tr class="${selected}" data-player-id="${escapeHtml(player.player_id)}">
+        <td><strong>${escapeHtml(player.prospect_rank ?? "-")}</strong></td>
+        <td>
+          <span class="player-name">
+            <strong>${escapeHtml(player.player_name)}</strong>
+            <span>${escapeHtml(playerTypeBadge(player))} · Age ${escapeHtml(player.age ?? "-")}</span>
+          </span>
+        </td>
+        <td>${escapeHtml(player.org ?? "-")}</td>
+        <td>${escapeHtml(player.position ?? "-")}</td>
+        <td>${escapeHtml(player.level ?? "-")}</td>
+        <td><span class="score-pill ${scoreClass(player.callup_score)}">${escapeHtml(player.callup_score)}%</span></td>
+        <td>${escapeHtml(onDeckCatalyst(player))}</td>
+        <td>${rankTrend(player)}</td>
+        <td>${escapeHtml(top100ComparisonReason(player))}</td>
+      </tr>
+    `;
+  }).join("");
+
+  elements.top100Rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openPlayerProfile(row.dataset.playerId, { scroll: false });
+    });
+  });
+}
+
+function top100ComparisonReason(player) {
+  if (isCalledUp(player)) return "Already reached MLB; reference only.";
+  if (isOnDeckBoardPlayer(player)) return `On Deck Top 10: ${onDeckCatalyst(player)}.`;
+  const bubble = bubblePlayers().find((candidate) => String(candidate.player_id) === String(player.player_id));
+  if (bubble) return bubbleMissReason(player);
+  if (Number(player.opportunity_score) < 45) return "Path needs to open.";
+  if (Number(player.performance_score) < 55) return "Current form needs to improve.";
+  if (Number(player.readiness_score) < 55) return "Timeline is less immediate.";
+  return "Behind the current Top 10 score cutoff.";
 }
 
 function renderScorebook() {

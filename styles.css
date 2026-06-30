@@ -1833,6 +1833,21 @@ body[data-view="scorebook"] #scorebook {
   order: 2;
 }
 
+.reference-panel {
+  margin: 18px 0;
+}
+
+.reference-panel .list-controls {
+  border-bottom: 1px solid var(--line);
+}
+
+.reference-panel tbody td:last-child {
+  min-width: 220px;
+  color: #d8def6;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .table-panel {
   overflow: hidden;
 }
