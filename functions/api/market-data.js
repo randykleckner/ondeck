@@ -1,6 +1,7 @@
 const SOLD_COMPS_API_URL = "https://api.sold-comps.com/v1/scrape";
 const BENCHMARK_CARD = "Bowman Chrome 1st Auto";
 const MARKET_CACHE_SECONDS = 60 * 60 * 24 * 7;
+const MARKET_CACHE_VERSION = "v2";
 const EXCLUDED_TITLE_TERMS = [
   "refractor",
   "sapphire",
@@ -74,8 +75,10 @@ export async function onRequestGet(context) {
       "Cache-Control": `public, max-age=300, s-maxage=${MARKET_CACHE_SECONDS}`,
       "X-Market-Cache": "MISS",
     });
-    await writeMarketDatabase(context, summary);
-    await writeMarketCache(context, keyword, response.clone());
+    if (hasMarketComps(summary)) {
+      await writeMarketDatabase(context, summary);
+      await writeMarketCache(context, keyword, response.clone());
+    }
     return response;
   } catch (error) {
     return jsonResponse({
@@ -114,6 +117,7 @@ async function readMarketDatabase(context, keyword, options = {}) {
     const row = await statement.first();
     if (!row?.response_json) return null;
     const data = JSON.parse(row.response_json);
+    if (!hasMarketComps(data)) return null;
     data.cache = {
       source: options.freshOnly ? "D1 fresh" : "D1 stale",
       fetchedAt: row.fetched_at,
@@ -198,6 +202,8 @@ async function readMarketCache(context, keyword) {
   if (!globalThis.caches?.default) return null;
   const response = await globalThis.caches.default.match(marketCacheRequest(context, keyword));
   if (!response) return null;
+  const data = await response.clone().json().catch(() => null);
+  if (!hasMarketComps(data)) return null;
   const headers = new Headers(response.headers);
   headers.set("X-Market-Cache", "HIT");
   return new Response(response.body, {
@@ -228,6 +234,7 @@ function marketCacheRequest(context, keyword) {
   requestUrl.search = "";
   requestUrl.searchParams.set("keyword", keyword);
   requestUrl.searchParams.set("week", marketCacheWeek());
+  requestUrl.searchParams.set("version", MARKET_CACHE_VERSION);
   return new Request(requestUrl.toString(), { method: "GET" });
 }
 
@@ -426,4 +433,12 @@ function timestamp(value) {
 
 function roundMoney(value) {
   return Math.round(value * 100) / 100;
+}
+
+function hasMarketComps(summary) {
+  if (!summary || typeof summary !== "object") return false;
+  const lastSale = numberFrom(summary.lastSale ?? summary.last_sale);
+  const sales30 = Number(summary.sales?.days30 ?? summary.sales_30);
+  const avg30 = numberFrom(summary.averages?.days30 ?? summary.avg_30);
+  return Number.isFinite(lastSale) || (Number.isFinite(avg30) && Number.isFinite(sales30) && sales30 > 0);
 }
