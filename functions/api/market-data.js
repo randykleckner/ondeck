@@ -2,6 +2,9 @@ const SOLD_COMPS_API_URL = "https://api.sold-comps.com/v1/scrape";
 const BENCHMARK_CARD = "Bowman Chrome 1st Auto";
 const MARKET_CACHE_SECONDS = 60 * 60 * 24 * 7;
 const MARKET_CACHE_VERSION = "v2";
+const PLAYER_SEARCH_ALIASES = new Map([
+  ["joshua baez", "Joshua Báez"],
+]);
 const EXCLUDED_TITLE_TERMS = [
   "refractor",
   "sapphire",
@@ -245,7 +248,8 @@ function marketCacheWeek(date = new Date()) {
 }
 
 function buildCanonicalKeyword(player) {
-  return `${player} ${BENCHMARK_CARD}`;
+  const searchName = PLAYER_SEARCH_ALIASES.get(normalizeText(player)) || player;
+  return `${searchName} ${BENCHMARK_CARD}`;
 }
 
 function buildSoldCompsUrl(keyword) {
