@@ -8,6 +8,8 @@ const state = {
   cardMarket: [],
   mlbPlayerFlags: [],
   scorebook: [],
+  liveMarketData: new Map(),
+  liveMarketRequests: new Set(),
   allScored: [],
   scored: [],
   calledUp: [],
@@ -1231,33 +1233,100 @@ function renderCard(player) {
     return;
   }
 
+  const profilePlayer = withLiveMarketData(player);
   elements.contentGrid.classList.add("profile-open");
   elements.cardPanel.hidden = false;
   elements.playerCard.className = "player-card";
   elements.playerCard.innerHTML = `
     <div class="card-title">
       <div>
-        <p class="card-kicker">${escapeHtml(player.org ?? "-")} · ${escapeHtml(player.level ?? "-")} · ${escapeHtml(player.position ?? "-")}</p>
-        <h3>${escapeHtml(player.player_name)}</h3>
-        <p class="muted">Top 10 rank ${escapeHtml(top10Rank(player))} · Prospect rank ${escapeHtml(player.prospect_rank ?? "-")} · Age ${escapeHtml(player.age ?? "-")} · ETA ${escapeHtml(player.eta ?? "-")}</p>
+        <p class="card-kicker">${escapeHtml(profilePlayer.org ?? "-")} · ${escapeHtml(profilePlayer.level ?? "-")} · ${escapeHtml(profilePlayer.position ?? "-")}</p>
+        <h3>${escapeHtml(profilePlayer.player_name)}</h3>
+        <p class="muted">Top 10 rank ${escapeHtml(top10Rank(profilePlayer))} · Prospect rank ${escapeHtml(profilePlayer.prospect_rank ?? "-")} · Age ${escapeHtml(profilePlayer.age ?? "-")} · ETA ${escapeHtml(profilePlayer.eta ?? "-")}</p>
       </div>
-    <span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}% move score</span>
+    <span class="score-pill ${scoreClass(profilePlayer.callup_score)}">${profilePlayer.callup_score}% move score</span>
     </div>
 
     <div class="breakdown">
-      ${bar("Path", player.opportunity_score)}
-      ${bar("Readiness", player.readiness_score)}
-      ${bar("Performance", player.performance_score)}
-      ${bar("Card Signal", cardMarketScore(player))}
+      ${bar("Path", profilePlayer.opportunity_score)}
+      ${bar("Readiness", profilePlayer.readiness_score)}
+      ${bar("Performance", profilePlayer.performance_score)}
+      ${bar("Card Signal", cardMarketScore(profilePlayer))}
     </div>
 
-    ${profileResearchReport(player)}
-    ${profileStatsPanel(player)}
-    ${teamPathPanel(player)}
-    ${scoutingSnapshotPanel(player)}
-    ${isOnDeckBoardPlayer(player) ? marketPanel(player) : ""}
+    ${profileResearchReport(profilePlayer)}
+    ${profileStatsPanel(profilePlayer)}
+    ${teamPathPanel(profilePlayer)}
+    ${scoutingSnapshotPanel(profilePlayer)}
+    ${isOnDeckBoardPlayer(profilePlayer) ? marketPanel(profilePlayer) : ""}
   `;
 
+  if (isOnDeckBoardPlayer(profilePlayer)) {
+    requestLiveMarketData(profilePlayer);
+  }
+}
+
+function withLiveMarketData(player) {
+  const live = state.liveMarketData.get(String(player.player_id));
+  return live ? { ...player, ...live } : player;
+}
+
+async function requestLiveMarketData(player) {
+  const playerId = String(player.player_id);
+  if (state.liveMarketData.has(playerId) || state.liveMarketRequests.has(playerId)) return;
+  state.liveMarketRequests.add(playerId);
+  const params = new URLSearchParams({ player: player.player_name || "" });
+  if (player.card_code) params.set("cardCode", player.card_code);
+  if (player.card_name) params.set("cardName", player.card_name);
+
+  try {
+    const response = await fetch(`/api/market-data?${params.toString()}`, { headers: { Accept: "application/json" } });
+    if (!response.ok) return;
+    const data = await response.json();
+    const live = normalizeLiveMarketData(data);
+    if (!live) return;
+    state.liveMarketData.set(playerId, live);
+    if (String(state.selectedId) === playerId) {
+      renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
+    }
+  } catch (error) {
+    // Static localhost runs do not have /api available. Manual CSV comps remain the fallback.
+  } finally {
+    state.liveMarketRequests.delete(playerId);
+  }
+}
+
+function normalizeLiveMarketData(data) {
+  if (!data || typeof data !== "object") return null;
+  const buyLow = data.buyZone?.low ?? data.buy_low;
+  const buyHigh = data.buyZone?.high ?? data.buy_high;
+  const row = compactMarketRow({
+    card_name: data.cardName || data.card_name || "",
+    card_code: data.cardCode || data.card_code || "",
+    last_sale: data.lastSale ?? data.last_sale ?? "",
+    last_sale_date: data.lastSaleDate ?? data.last_sale_date ?? "",
+    avg_7: data.averages?.days7 ?? data.avg_7 ?? "",
+    avg_14: data.averages?.days14 ?? data.avg_14 ?? "",
+    avg_30: data.averages?.days30 ?? data.avg_30 ?? "",
+    sales_7: data.sales?.days7 ?? data.sales_7 ?? "",
+    sales_14: data.sales?.days14 ?? data.sales_14 ?? "",
+    sales_30: data.sales?.days30 ?? data.sales_30 ?? "",
+    active_listings: data.activeListings ?? data.active_listings ?? "",
+    sell_through: data.sellThrough ?? data.sell_through ?? "",
+    buy_low: buyLow ?? "",
+    buy_high: buyHigh ?? "",
+    market_signal: data.marketSignal || data.market_signal || data.recommendation?.signal || "",
+    market_note: data.marketNote || data.market_note || data.recommendation?.note || "",
+    data_source: data.source || data.data_source || "SoldComps API",
+    source_url: data.sourceUrl || data.source_url || "",
+    last_updated: data.lastUpdated || data.last_updated || "",
+  });
+  if (!row.market_signal && data.recommendation?.label) row.market_signal = data.recommendation.label;
+  return row;
+}
+
+function compactMarketRow(row) {
+  return Object.fromEntries(Object.entries(row).filter(([, value]) => value !== "" && value != null));
 }
 
 function profileStatsPanel(player) {

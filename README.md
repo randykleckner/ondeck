@@ -42,6 +42,25 @@ The homepage card-market section is the On Deck Board. `data/card-market.csv` pl
 
 The card target is the Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv` when the generated initials are not enough.
 
+## Secure SoldComps API proxy
+
+Vercel deployments can use `api/market-data.js` as a serverless function. The browser calls our own endpoint:
+
+```sh
+GET /api/market-data?player=Felnin%20Celesten
+```
+
+Set these environment variables in Vercel:
+
+```sh
+SOLD_COMPS_API_KEY=your_soldcomps_key
+SOLD_COMPS_API_URL=https://api.soldcomps.com/v1/market-data
+```
+
+`SOLD_COMPS_API_URL` is optional and exists so the upstream SoldComps endpoint can be adjusted without changing frontend code. The function sends `Authorization: Bearer <key>` to SoldComps, summarizes last sale, 7/14/30-day averages, sales counts, optional active listings, buy zone, and recommendation, then returns only the summary to the frontend. The API key is never included in browser code.
+
+When running as a plain static site with `python3 -m http.server`, `/api/market-data` will not exist. The profile falls back to `data/card-market-manual.csv` until you run through Vercel or another backend host.
+
 Generate cleaner eBay sold comps with API access:
 
 ```sh
