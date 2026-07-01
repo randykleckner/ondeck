@@ -541,6 +541,8 @@ function applyCardTargets(players) {
       card_code: target.card_code || player.card_code,
       card_query: target.card_query || player.card_query,
       card_name: target.card_name || player.card_name,
+      sell_through_30: target.sell_through_30 || player.sell_through_30,
+      sell_through_90: target.sell_through_90 || player.sell_through_90,
     };
   });
 }
@@ -1573,6 +1575,8 @@ function normalizeLiveMarketData(data) {
     sales_30: data.sales?.days30 ?? data.sales_30 ?? "",
     active_listings: data.activeListings ?? data.active_listings ?? "",
     sell_through: data.sellThrough ?? data.sell_through ?? "",
+    sell_through_30: data.sellThrough30 ?? data.sell_through_30 ?? data.sellThrough ?? data.sell_through ?? "",
+    sell_through_90: data.sellThrough90 ?? data.sell_through_90 ?? "",
     buy_low: buyLow ?? "",
     buy_high: buyHigh ?? "",
     market_signal: data.marketSignal || data.market_signal || data.recommendation?.signal || "",
@@ -1849,6 +1853,7 @@ function marketPanel(player) {
       <div class="market-readout ${marketStatusClass(player)}">
         <strong>${escapeHtml(marketStatus(player))}</strong>
         <span>${escapeHtml(marketStatusInsight(player))}</span>
+        <span>${escapeHtml(liquidityInsight(player))}</span>
       </div>
       ${marketHistoryPanel(player)}
       <p>${escapeHtml(player.market_note ?? "")}</p>
@@ -1873,6 +1878,7 @@ function marketMetricCells(player) {
     { label: "14D Sales", value: countValue(player.sales_14) },
     { label: "7D Sales", value: countValue(player.sales_7) },
     { label: "Card Grade", value: marketGrade(player) },
+    { label: "Liquidity", value: liquidityGrade(player) },
     { label: "Market Read", value: marketStatus(player) },
     { label: "Buy Zone", value: buyZone(player) },
   ];
@@ -1881,8 +1887,16 @@ function marketMetricCells(player) {
   if (Number.isFinite(active) && active > 0) {
     cells.splice(7, 0, { label: "Active Listings", value: countValue(active) });
     if (Number.isFinite(sold)) {
-      cells.splice(8, 0, { label: "Sell-through", value: `${Math.round((sold / (sold + active)) * 100)}%` });
+      cells.splice(8, 0, { label: "Live Sell-through", value: `${Math.round((sold / (sold + active)) * 100)}%` });
     }
+  }
+  const sellThrough30 = sellThroughValue(player, 30);
+  const sellThrough90 = sellThroughValue(player, 90);
+  if (Number.isFinite(sellThrough30)) {
+    cells.splice(7, 0, { label: "30D Sell-through", value: `${sellThrough30.toFixed(1)}%` });
+  }
+  if (Number.isFinite(sellThrough90)) {
+    cells.splice(8, 0, { label: "90D Sell-through", value: `${sellThrough90.toFixed(1)}%` });
   }
   return cells;
 }
@@ -1981,7 +1995,7 @@ function recommendationLabel(player) {
 }
 
 function marketGrade(player) {
-  const score = cardMarketScore(player);
+  const score = cardMarketScore(player) + liquidityScoreAdjustment(player);
   if (score >= 70) return "A";
   if (score >= 55) return "B";
   if (score >= 40) return "C";
@@ -1994,6 +2008,43 @@ function marketGradeClass(player) {
   if (grade === "A" || grade === "B") return "grade-strong";
   if (grade === "C") return "grade-watch";
   return "grade-risk";
+}
+
+function liquidityGrade(player) {
+  const value = sellThroughValue(player, 30);
+  if (!Number.isFinite(value)) return "N/A";
+  if (value >= 70) return "A";
+  if (value >= 50) return "B";
+  if (value >= 30) return "C";
+  if (value >= 15) return "D";
+  return "F";
+}
+
+function liquidityScoreAdjustment(player) {
+  const value = sellThroughValue(player, 30);
+  if (!Number.isFinite(value)) return 0;
+  if (value >= 70) return 10;
+  if (value >= 50) return 5;
+  if (value >= 30) return 0;
+  if (value >= 15) return -7;
+  return -14;
+}
+
+function sellThroughValue(player, days = 30) {
+  const field = days === 90 ? player.sell_through_90 : player.sell_through_30;
+  const explicit = percentNumber(field);
+  if (Number.isFinite(explicit)) return explicit;
+  if (days === 30) {
+    const fallback = percentNumber(player.sell_through);
+    if (Number.isFinite(fallback)) return fallback;
+  }
+  return NaN;
+}
+
+function percentNumber(value) {
+  if (value === "" || value == null) return NaN;
+  const numeric = Number(String(value).replaceAll(/[^0-9.-]/g, ""));
+  return Number.isFinite(numeric) ? numeric : NaN;
 }
 
 function marketStatusInsight(player) {
@@ -2020,6 +2071,22 @@ function marketStatusInsight(player) {
     return "Sales volume is thin, so one comp can distort the read.";
   }
   return "Current sales data is still loading or incomplete.";
+}
+
+function liquidityInsight(player) {
+  const value30 = sellThroughValue(player, 30);
+  const value90 = sellThroughValue(player, 90);
+  if (!Number.isFinite(value30)) return "Liquidity data is not loaded yet.";
+  if (Number.isFinite(value90) && value30 >= value90 + 10) {
+    return `Liquidity is heating up: 30-day sell-through is ${value30.toFixed(1)}% versus ${value90.toFixed(1)}% over 90 days.`;
+  }
+  if (Number.isFinite(value90) && value30 <= value90 - 10) {
+    return `Liquidity is cooling: 30-day sell-through is ${value30.toFixed(1)}% versus ${value90.toFixed(1)}% over 90 days.`;
+  }
+  if (value30 >= 70) return `Liquidity is strong at ${value30.toFixed(1)}%; similar listings are clearing quickly.`;
+  if (value30 >= 50) return `Liquidity is healthy at ${value30.toFixed(1)}%; buyers are still absorbing supply.`;
+  if (value30 >= 30) return `Liquidity is average at ${value30.toFixed(1)}%; entry price matters.`;
+  return `Liquidity is weak at ${value30.toFixed(1)}%; the risk is getting stuck with inventory.`;
 }
 
 function cardDescription(player) {
@@ -2075,6 +2142,11 @@ function marketReasonBullets(player) {
     } else if (sales30 > 0) {
       reasons.push(`${Math.round(sales30)} sales over 30 days is a thinner market, so one sale can move the read quickly.`);
     }
+  }
+
+  const liquidity = liquidityGrade(player);
+  if (liquidity !== "N/A") {
+    reasons.push(`Liquidity grade is ${liquidity}. ${liquidityInsight(player)}`);
   }
 
   if (movement != null) {
@@ -2355,7 +2427,9 @@ function marketScore(player) {
   const last = numericMoney(player.last_sale);
   const avg30 = numericMoney(player.avg_30);
   const discount = Number.isFinite(last) && Number.isFinite(avg30) && avg30 > 0 ? Math.max(-15, Math.min(25, ((avg30 - last) / avg30) * 100)) : 0;
-  return signalScore + Number(player.sell_through || 0) * 0.7 + discount + Number(player.callup_score || 0) * 0.15;
+  const liquidity = sellThroughValue(player, 30);
+  const liquidityPoints = Number.isFinite(liquidity) ? liquidity * 0.45 : 0;
+  return signalScore + liquidityPoints + discount + Number(player.callup_score || 0) * 0.15;
 }
 
 function buyZone(player) {

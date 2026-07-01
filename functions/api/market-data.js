@@ -1,7 +1,7 @@
 const SOLD_COMPS_API_URL = "https://api.sold-comps.com/v1/scrape";
 const BENCHMARK_CARD = "Bowman Chrome 1st Auto";
 const MARKET_CACHE_SECONDS = 60 * 60 * 24 * 7;
-const MARKET_CACHE_VERSION = "v2";
+const MARKET_CACHE_VERSION = "v3";
 const PLAYER_SEARCH_ALIASES = new Map([
   ["joshua baez", "Joshua Báez"],
 ]);
@@ -269,10 +269,10 @@ function summarizeMarketData(raw, request) {
   const avg7 = averageForWindow(comps, 7);
   const avg14 = averageForWindow(comps, 14);
   const avg30 = averageForWindow(comps, 30);
-  const activeListings = numberFrom(raw.active_listings ?? raw.activeListings ?? raw.summary?.activeListings);
+  const activeListings = activeListingCount(raw, request.player);
   const sales30 = countForWindow(comps, 30, raw.sales_30 ?? raw.sales30 ?? raw.summary?.sales30);
   const sellThrough = Number.isFinite(activeListings) && activeListings > 0
-    ? Math.round((sales30 / (sales30 + activeListings)) * 100)
+    ? roundPercent((sales30 / (sales30 + activeListings)) * 100)
     : null;
   const buyZone = makeBuyZone(avg30.average || lastComp?.price);
   const recommendation = makeRecommendation({
@@ -301,6 +301,8 @@ function summarizeMarketData(raw, request) {
     },
     activeListings: Number.isFinite(activeListings) ? activeListings : null,
     sellThrough,
+    sellThrough30: sellThrough,
+    sellThrough90: numberFrom(raw.sell_through_90 ?? raw.sellThrough90 ?? raw.summary?.sellThrough90),
     buyZone,
     recommendation,
     marketSignal: recommendation.signal,
@@ -310,6 +312,46 @@ function summarizeMarketData(raw, request) {
     sourceUrl: raw.source_url || raw.sourceUrl || "",
     lastUpdated: new Date().toISOString(),
   };
+}
+
+function activeListingCount(raw, player) {
+  const direct = numberFrom(raw.active_listings ?? raw.activeListings ?? raw.active_count ?? raw.activeCount ?? raw.summary?.activeListings ?? raw.summary?.active_count);
+  if (Number.isFinite(direct)) return direct;
+
+  const listings = raw.active_listings || raw.activeListings || raw.active?.items || raw.active?.results || raw.listings || raw.items_active || raw.data?.activeListings;
+  if (Array.isArray(listings)) {
+    return listings
+      .map(normalizeActiveListing)
+      .filter((listing) => isBenchmarkComp(listing, player))
+      .length;
+  }
+
+  if (listings && typeof listings === "object") {
+    const nested = listings.results || listings.items || listings.data;
+    if (Array.isArray(nested)) {
+      return nested
+        .map(normalizeActiveListing)
+        .filter((listing) => isBenchmarkComp(listing, player))
+        .length;
+    }
+    const count = numberFrom(listings.count ?? listings.total ?? listings.activeCount);
+    if (Number.isFinite(count)) return count;
+  }
+
+  return NaN;
+}
+
+function normalizeActiveListing(listing) {
+  return {
+    title: listing.title || listing.name || listing.itemTitle || "",
+    price: numberFrom(listing.price ?? listing.current_price ?? listing.currentPrice ?? listing.amount ?? listing.value),
+    soldAt: "",
+    url: listing.url || listing.link || "",
+  };
+}
+
+function roundPercent(value) {
+  return Math.round(Number(value) * 10) / 10;
 }
 
 function extractComps(raw) {
