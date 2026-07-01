@@ -1000,7 +1000,7 @@ function buildOrgExposure() {
 
 function renderRows(rows) {
   if (!rows.length) {
-    elements.rows.innerHTML = `<tr><td colspan="11" class="muted">No active Top 10 data loaded yet. Add players in the admin panel to publish the board.</td></tr>`;
+    elements.rows.innerHTML = `<tr><td colspan="10" class="muted">No active Top 10 data loaded yet. Add players in the admin panel to publish the board.</td></tr>`;
     return;
   }
 
@@ -1024,7 +1024,6 @@ function renderRows(rows) {
           <td>${escapeHtml(onDeckCatalyst(player))}</td>
           <td>${escapeHtml(cardBaselineLabel(player))}</td>
           <td><span class="market-status">${escapeHtml(marketStatus(player))}</span></td>
-          <td>${escapeHtml(formatShortDate(player.date_added || player.last_updated) || "-")}</td>
           <td><button class="button ghost row-profile-button" type="button">View</button></td>
         </tr>
       `;
