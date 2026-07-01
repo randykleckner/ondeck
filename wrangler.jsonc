@@ -8,6 +8,11 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page"
   },
+  "triggers": {
+    "crons": [
+      "17 10 * * *"
+    ]
+  },
   // After creating a Cloudflare D1 database, add the real database id here:
   // "d1_databases": [
   //   {

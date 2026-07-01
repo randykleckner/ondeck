@@ -89,6 +89,32 @@ Once `MARKET_DB` is bound, `/api/market-data` checks D1 before calling SoldComps
 
 When running as a plain static site with `python3 -m http.server`, `/api/market-data` will not exist. The profile will show that SoldComps is unavailable instead of falling back to older manual comps. Run through Vercel or `vercel dev` to test live market data.
 
+## Top 100 rank trend history
+
+Use the same Cloudflare D1 database and `MARKET_DB` binding for prospect-rank history. No second database is required.
+
+Run the migration:
+
+```sh
+wrangler d1 execute ondeck-market --file=migrations/0002_top100_rank_trends.sql
+```
+
+The Cloudflare Worker has a scheduled handler that checks the MLB Top 100 source and writes a rank snapshot only when at least 14 days have passed since the last successful snapshot. `wrangler.jsonc` runs the Worker daily at 10:17 UTC, while the code prevents duplicate 14-day writes.
+
+Manual trigger:
+
+```sh
+node scripts/update-top100-trends.mjs
+```
+
+Force a manual snapshot even inside the 14-day window:
+
+```sh
+node scripts/update-top100-trends.mjs --force
+```
+
+The stored movement is `previous_rank - current_rank`, so rank 42 to 31 stores `+11`, and rank 18 to 24 stores `-6`. The history tables keep every snapshot so future pages can show whether a player has slowly climbed over multiple updates.
+
 Generate cleaner eBay sold comps with API access:
 
 ```sh
