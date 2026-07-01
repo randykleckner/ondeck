@@ -44,17 +44,24 @@ The homepage card-market section is the On Deck Board. Selected On Deck player p
 
 ## Secure SoldComps API proxy
 
-Vercel deployments can use `api/market-data.js` as a serverless function. The browser calls our own endpoint:
+The browser calls our own endpoint:
 
 ```sh
 GET /api/market-data?player=Felnin%20Celesten
 ```
 
-Set these environment variables in Vercel:
+The repo includes both supported serverless entry points:
+
+- `api/market-data.js` for Vercel
+- `functions/api/market-data.js` for Cloudflare Pages
+
+Set this environment variable in the deployment host:
 
 ```sh
 SOLD_COMPS_API_KEY=your_soldcomps_key
 ```
+
+For Cloudflare Pages, add it in Project Settings -> Environment variables. For Vercel, add it in Project Settings -> Environment Variables. The local `.env` file is useful for local tooling, but the hosted site cannot read a root `.env` file unless the host imports it into deployment environment variables.
 
 The function sends `Authorization: Bearer <key>` to SoldComps and calls:
 
