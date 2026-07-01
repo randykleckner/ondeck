@@ -696,8 +696,7 @@ body[data-view="war"] #break-board,
 body[data-view="war"] #graduated,
 body[data-view="war"] #prospects,
 body[data-view="war"] #top-100,
-body[data-view="war"] #methodology,
-body[data-view="war"] #resources {
+body[data-view="war"] #about {
   display: none;
 }
 
@@ -713,8 +712,7 @@ body[data-view="scorebook"] #dugout,
 body[data-view="scorebook"] #graduated,
 body[data-view="scorebook"] #prospects,
 body[data-view="scorebook"] #top-100,
-body[data-view="scorebook"] #methodology,
-body[data-view="scorebook"] #resources {
+body[data-view="scorebook"] #about {
   display: none;
 }
 
@@ -729,8 +727,7 @@ body[data-view="graduated"] #break-board,
 body[data-view="graduated"] #dugout,
 body[data-view="graduated"] #prospects,
 body[data-view="graduated"] #top-100,
-body[data-view="graduated"] #methodology,
-body[data-view="graduated"] #resources,
+body[data-view="graduated"] #about,
 body[data-view="graduated"] #scorebook {
   display: none;
 }
@@ -2205,6 +2202,63 @@ tbody tr {
   font-weight: 800;
 }
 
+.grade-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 32px;
+  border-radius: 8px;
+  color: #06101b;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.grade-pill.grade-strong {
+  background: var(--green);
+}
+
+.grade-pill.grade-watch {
+  background: var(--yellow);
+}
+
+.grade-pill.grade-risk {
+  color: #fff;
+  background: var(--red);
+}
+
+.market-readout {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(4, 7, 18, 0.52);
+}
+
+.market-readout strong {
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.market-readout span {
+  color: #d8def6;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.market-readout.positive {
+  border-color: rgba(83, 255, 177, 0.35);
+}
+
+.market-readout.caution {
+  border-color: rgba(255, 211, 106, 0.35);
+}
+
+.market-readout.negative {
+  border-color: rgba(255, 88, 88, 0.35);
+}
+
 .history-link {
   min-height: 32px;
   padding: 6px 11px;
@@ -2676,6 +2730,22 @@ tbody tr {
 .market-status {
   color: var(--cyan);
   font-weight: 950;
+}
+
+.market-status.positive {
+  color: var(--green);
+}
+
+.market-status.caution {
+  color: var(--yellow);
+}
+
+.market-status.negative {
+  color: var(--red);
+}
+
+.market-status.neutral {
+  color: var(--cyan);
 }
 
 .row-profile-button {

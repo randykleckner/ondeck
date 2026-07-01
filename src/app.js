@@ -142,6 +142,7 @@ elements.exportCsv.addEventListener("click", () => {
     card_avg_7: player.avg_7 ?? "",
     card_avg_14: player.avg_14 ?? "",
     card_avg_30: player.avg_30 ?? "",
+    card_grade: marketGrade(player),
     card_sales_7: player.sales_7 ?? "",
     card_sales_14: player.sales_14 ?? "",
     card_sales_30: player.sales_30 ?? "",
@@ -1115,7 +1116,7 @@ function renderRows(rows) {
           <td><span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}%</span></td>
           <td>${escapeHtml(onDeckCatalyst(player))}</td>
           <td>${escapeHtml(cardBaselineLabel(player))}</td>
-          <td><span class="market-status">${escapeHtml(marketStatus(player))}</span></td>
+          <td><span class="market-status ${marketStatusClass(player)}">${escapeHtml(marketStatus(player))}</span></td>
           <td><button class="button ghost row-profile-button" type="button">View</button></td>
         </tr>
       `;
@@ -1325,7 +1326,7 @@ function pendingTable(rows) {
               <th>Move Score</th>
               <th>Card Baseline</th>
               <th>Latest Card</th>
-              <th>Market Status</th>
+              <th>Market Read</th>
             </tr>
           </thead>
           <tbody>
@@ -1447,7 +1448,7 @@ function renderCard(player) {
       ${bar("Path", profilePlayer.opportunity_score)}
       ${bar("Readiness", profilePlayer.readiness_score)}
       ${bar("Performance", profilePlayer.performance_score)}
-      ${bar("Card Signal", cardMarketScore(profilePlayer))}
+      ${bar("Card Grade", cardMarketScore(profilePlayer))}
     </div>
 
     ${profileResearchReport(profilePlayer)}
@@ -1767,13 +1768,36 @@ function marketStatus(player) {
   if (state.liveMarketRequests.has(playerId)) return "Loading";
   if (state.liveMarketErrors.has(playerId)) return "API Pending";
   const signal = String(player.market_status || player.market_signal || "").toLowerCase();
+  const shortTrend = shortWindowMarketMove(player);
   if (signal.includes("spiked")) return "Spiked";
-  if (signal.includes("strong") || signal.includes("buy")) return "Moving";
-  if (signal.includes("watch")) return "Early";
-  if (signal.includes("flat")) return "Flat";
+  if (shortTrend >= 8 || signal.includes("strong") || signal.includes("buy")) return "Moving Up";
+  if (shortTrend <= -8) return "Cooling";
+  if (signal.includes("watch")) return "Early Entry";
+  if (signal.includes("flat")) return "Stable";
   if (signal.includes("priced")) return "Priced In";
   if (signal.includes("illiquid")) return "Illiquid";
-  return player.card_name || player.avg_30 ? "Early" : "Awaiting API";
+  return player.card_name || player.avg_30 ? "Early Entry" : "Awaiting API";
+}
+
+function marketStatusClass(player) {
+  const status = marketStatus(player).toLowerCase();
+  if (status.includes("moving") || status.includes("early")) return "positive";
+  if (status.includes("cooling") || status.includes("priced")) return "caution";
+  if (status.includes("illiquid") || status.includes("api")) return "negative";
+  return "neutral";
+}
+
+function shortWindowMarketMove(player) {
+  const avg7 = numericMoney(player.avg_7);
+  const avg30 = numericMoney(player.avg_30);
+  if (Number.isFinite(avg7) && Number.isFinite(avg30) && avg30 > 0) {
+    return ((avg7 - avg30) / avg30) * 100;
+  }
+  const avg14 = numericMoney(player.avg_14);
+  if (Number.isFinite(avg14) && Number.isFinite(avg30) && avg30 > 0) {
+    return ((avg14 - avg30) / avg30) * 100;
+  }
+  return 0;
 }
 
 function cardMarketScore(player) {
@@ -1808,7 +1832,7 @@ function marketPanel(player) {
     <section class="card-market-panel">
       <div class="panel-heading compact">
         <h3>Card Market Box Score</h3>
-        <span>${escapeHtml(player.market_signal)}</span>
+        <span class="grade-pill ${marketGradeClass(player)}">${escapeHtml(marketGrade(player))}</span>
       </div>
       <div class="card-market-grid">
         ${marketMetricCells(player).map((cell) => `
@@ -1821,6 +1845,10 @@ function marketPanel(player) {
       <div class="market-source">
         <span>${escapeHtml(cardDescription(player))}</span>
         <button class="button ghost history-link" type="button" data-market-history>Historical Data</button>
+      </div>
+      <div class="market-readout ${marketStatusClass(player)}">
+        <strong>${escapeHtml(marketStatus(player))}</strong>
+        <span>${escapeHtml(marketStatusInsight(player))}</span>
       </div>
       ${marketHistoryPanel(player)}
       <p>${escapeHtml(player.market_note ?? "")}</p>
@@ -1844,7 +1872,8 @@ function marketMetricCells(player) {
     { label: "30D Sales", value: countValue(player.sales_30) },
     { label: "14D Sales", value: countValue(player.sales_14) },
     { label: "7D Sales", value: countValue(player.sales_7) },
-    { label: "Recommendation", value: recommendationLabel(player) },
+    { label: "Card Grade", value: marketGrade(player) },
+    { label: "Market Read", value: marketStatus(player) },
     { label: "Buy Zone", value: buyZone(player) },
   ];
   const active = Number(player.active_listings);
@@ -1948,11 +1977,49 @@ function marketHistoryChart(points) {
 }
 
 function recommendationLabel(player) {
-  const signal = String(player.market_signal || "").toLowerCase();
-  if (signal.includes("priced")) return "Watch";
-  if (signal.includes("buy")) return "Good buy";
-  if (signal.includes("moving") || signal.includes("momentum")) return "Momentum watch";
-  return "Watch";
+  return marketGrade(player);
+}
+
+function marketGrade(player) {
+  const score = cardMarketScore(player);
+  if (score >= 70) return "A";
+  if (score >= 55) return "B";
+  if (score >= 40) return "C";
+  if (score >= 25) return "D";
+  return "F";
+}
+
+function marketGradeClass(player) {
+  const grade = marketGrade(player);
+  if (grade === "A" || grade === "B") return "grade-strong";
+  if (grade === "C") return "grade-watch";
+  return "grade-risk";
+}
+
+function marketStatusInsight(player) {
+  const status = marketStatus(player);
+  if (status === "Early Entry") {
+    return "The market has comps, but the move has not fully shown up in short-window pricing yet.";
+  }
+  if (status === "Moving Up") {
+    return "Recent sales are running above the 30-day baseline, so demand is already lifting.";
+  }
+  if (status === "Cooling") {
+    return "Recent sales are below the 30-day baseline, so patience matters unless the baseball catalyst strengthens.";
+  }
+  if (status === "Priced In") {
+    return "The card has already reacted; upside now needs a bigger baseball catalyst.";
+  }
+  if (status === "Stable") {
+    return "Pricing is steady. The grade depends more on path, volume, and current player momentum.";
+  }
+  if (status === "Spiked") {
+    return "The card has already jumped. Treat the grade as a heat check, not a hidden entry.";
+  }
+  if (status === "Illiquid") {
+    return "Sales volume is thin, so one comp can distort the read.";
+  }
+  return "Current sales data is still loading or incomplete.";
 }
 
 function cardDescription(player) {
@@ -2020,8 +2087,8 @@ function marketReasonBullets(player) {
     }
   }
 
-  reasons.push(`${player.callup_score}% move score keeps the card case tied to a baseball event, not just raw card comps.`);
-  reasons.push(`Recommended action: ${recommendationLabel(player).toLowerCase()} at ${buyZone(player)}.`);
+  reasons.push(`${player.callup_score}% move score keeps the card grade tied to a baseball event, not just raw card comps.`);
+  reasons.push(`Card grade: ${marketGrade(player)}. ${marketStatusInsight(player)}`);
   return reasons;
 }
 
@@ -2176,7 +2243,7 @@ function whyOnDeckBullets(player) {
   const blockers = blockerNames(player).slice(0, 2);
   if (blockers.length) bullets.push(`The current MLB lane runs through ${blockers.join(" and ")}.`);
   if (rankMovement(player) > 0) bullets.push(`Top 100 ranking momentum is positive: ${rankTrendText(player)}.`);
-  if (player.market_signal) bullets.push(`Primary tracked card shows a ${marketStatus(player).toLowerCase()} market status.`);
+  if (player.market_signal) bullets.push(`Primary tracked card shows a ${marketStatus(player).toLowerCase()} market read.`);
   if (!bullets.length) bullets.push(`${player.player_name}'s board case is built around ${onDeckCatalyst(player).toLowerCase()} and organizational fit.`);
   return bullets;
 }
