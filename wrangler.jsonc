@@ -8,6 +8,14 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page"
   },
+  // After creating a Cloudflare D1 database, add the real database id here:
+  // "d1_databases": [
+  //   {
+  //     "binding": "MARKET_DB",
+  //     "database_name": "ondeck-market",
+  //     "database_id": "replace-with-cloudflare-d1-database-id"
+  //   }
+  // ],
   "observability": {
     "enabled": true
   }

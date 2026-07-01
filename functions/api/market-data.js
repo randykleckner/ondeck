@@ -35,13 +35,18 @@ export async function onRequestGet(context) {
     return jsonResponse({ error: "Missing required player query parameter." }, 400);
   }
 
+  const keyword = buildCanonicalKeyword(player);
+  const storedFresh = await readMarketDatabase(context, keyword, { freshOnly: true });
+  if (storedFresh) return storedFresh;
+
   const apiKey = context.env?.SOLD_COMPS_API_KEY || globalThis.process?.env?.SOLD_COMPS_API_KEY;
   if (!apiKey) {
+    const storedStale = await readMarketDatabase(context, keyword, { freshOnly: false });
+    if (storedStale) return storedStale;
     return jsonResponse({ error: "SOLD_COMPS_API_KEY is not configured." }, 503);
   }
 
   try {
-    const keyword = buildCanonicalKeyword(player);
     const cachedResponse = await readMarketCache(context, keyword);
     if (cachedResponse) return cachedResponse;
 
@@ -64,10 +69,12 @@ export async function onRequestGet(context) {
       }, upstreamResponse.status);
     }
 
-    const response = jsonResponse(summarizeMarketData(raw, { player, keyword }), 200, {
+    const summary = summarizeMarketData(raw, { player, keyword });
+    const response = jsonResponse(summary, 200, {
       "Cache-Control": `public, max-age=300, s-maxage=${MARKET_CACHE_SECONDS}`,
       "X-Market-Cache": "MISS",
     });
+    await writeMarketDatabase(context, summary);
     await writeMarketCache(context, keyword, response.clone());
     return response;
   } catch (error) {
@@ -93,6 +100,98 @@ function jsonResponse(body, status = 200, headers = {}) {
       ...headers,
     },
   });
+}
+
+async function readMarketDatabase(context, keyword, options = {}) {
+  const db = context.env?.MARKET_DB;
+  if (!db) return null;
+  try {
+    const minFetchedAt = new Date(Date.now() - MARKET_CACHE_SECONDS * 1000).toISOString();
+    const query = options.freshOnly
+      ? `select response_json, fetched_at from market_snapshots where keyword = ? and fetched_at >= ? order by fetched_at desc limit 1`
+      : `select response_json, fetched_at from market_snapshots where keyword = ? order by fetched_at desc limit 1`;
+    const statement = options.freshOnly ? db.prepare(query).bind(keyword, minFetchedAt) : db.prepare(query).bind(keyword);
+    const row = await statement.first();
+    if (!row?.response_json) return null;
+    const data = JSON.parse(row.response_json);
+    data.cache = {
+      source: options.freshOnly ? "D1 fresh" : "D1 stale",
+      fetchedAt: row.fetched_at,
+    };
+    return jsonResponse(data, 200, {
+      "Cache-Control": options.freshOnly ? `public, max-age=300, s-maxage=${MARKET_CACHE_SECONDS}` : "public, max-age=60",
+      "X-Market-Store": options.freshOnly ? "D1-HIT" : "D1-STALE",
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+async function writeMarketDatabase(context, summary) {
+  const db = context.env?.MARKET_DB;
+  if (!db) return;
+  const fetchedAt = new Date().toISOString();
+  try {
+    await db.prepare(`
+    insert into market_snapshots (
+      player,
+      keyword,
+      card_name,
+      last_sale,
+      last_sale_date,
+      avg_7,
+      avg_14,
+      avg_30,
+      sales_7,
+      sales_14,
+      sales_30,
+      market_signal,
+      recommendation,
+      response_json,
+      fetched_at,
+      cache_week
+    )
+    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    on conflict(keyword, cache_week) do update set
+      player = excluded.player,
+      card_name = excluded.card_name,
+      last_sale = excluded.last_sale,
+      last_sale_date = excluded.last_sale_date,
+      avg_7 = excluded.avg_7,
+      avg_14 = excluded.avg_14,
+      avg_30 = excluded.avg_30,
+      sales_7 = excluded.sales_7,
+      sales_14 = excluded.sales_14,
+      sales_30 = excluded.sales_30,
+      market_signal = excluded.market_signal,
+      recommendation = excluded.recommendation,
+      response_json = excluded.response_json,
+      fetched_at = excluded.fetched_at
+  `).bind(
+    summary.player,
+    summary.keyword,
+    summary.cardName,
+    nullable(summary.lastSale),
+    nullable(summary.lastSaleDate),
+    nullable(summary.averages?.days7),
+    nullable(summary.averages?.days14),
+    nullable(summary.averages?.days30),
+    nullable(summary.sales?.days7),
+    nullable(summary.sales?.days14),
+    nullable(summary.sales?.days30),
+    summary.marketSignal,
+    nullable(summary.recommendation?.label),
+    JSON.stringify(summary),
+    fetchedAt,
+    marketCacheWeek(new Date(fetchedAt)),
+  ).run();
+  } catch (error) {
+    // Missing migrations or transient D1 errors should not burn the profile request.
+  }
+}
+
+function nullable(value) {
+  return value === undefined ? null : value;
 }
 
 async function readMarketCache(context, keyword) {

@@ -75,6 +75,18 @@ The frontend sends only the player name to `/api/market-data`. Backend code buil
 
 Market-data responses are cached server-side for one week per player/search keyword. On Cloudflare Workers, the first request for a player in a weekly cache window may call SoldComps; repeat clicks and visitors should reuse the cached JSON and avoid spending additional SoldComps quota.
 
+## Market history database
+
+The Worker can optionally persist every weekly SoldComps pull to Cloudflare D1. This turns 30-day SoldComps windows into our own long-term historical dataset.
+
+Create a D1 database in Cloudflare named `ondeck-market`, run `migrations/0001_market_snapshots.sql`, then bind it to the Worker as:
+
+```sh
+MARKET_DB
+```
+
+Once `MARKET_DB` is bound, `/api/market-data` checks D1 before calling SoldComps. If a fresh row exists, it returns that. If the API key is temporarily missing but an older row exists, it returns stale stored data instead of failing.
+
 When running as a plain static site with `python3 -m http.server`, `/api/market-data` will not exist. The profile will show that SoldComps is unavailable instead of falling back to older manual comps. Run through Vercel or `vercel dev` to test live market data.
 
 Generate cleaner eBay sold comps with API access:
