@@ -1,3 +1,5 @@
+import { HISTORICAL_CARD_SALES_CSV } from "./historical-card-sales-data.js";
+
 export async function onRequest(context) {
   if (context.request.method !== "GET") {
     return jsonResponse({ error: "Method not allowed" }, 405, { Allow: "GET" });
@@ -19,10 +21,10 @@ export async function onRequest(context) {
     return marketHistoryFromStaticCsv(context, { player, cardCode, days, since });
   }
 
-  const where = cardCode
-    ? "card_code = ? AND sale_date >= ?"
-    : "player_key = ? AND sale_date >= ?";
-  const value = cardCode || playerKey;
+  const where = player
+    ? "player_key = ? AND sale_date >= ?"
+    : "card_code = ? AND sale_date >= ?";
+  const value = player ? playerKey : cardCode;
 
   try {
     const rows = await db.prepare(`
@@ -51,13 +53,19 @@ export async function onRequest(context) {
       WHERE ${where}
     `).bind(value, since).first();
 
+    const points = rows.results || [];
+    const hasRows = Number(summary?.rows_count || 0) > 0 || points.length > 0;
+    if (!hasRows) {
+      return marketHistoryFromStaticCsv(context, { player, cardCode, days, since });
+    }
+
     return jsonResponse({
       player,
       cardCode,
       days,
       source: "D1",
       summary: summary || {},
-      points: rows.results || [],
+      points,
     });
   } catch {
     return marketHistoryFromStaticCsv(context, { player, cardCode, days, since });
@@ -74,8 +82,8 @@ async function marketHistoryFromStaticCsv(context, { player, cardCode, days, sin
   const rows = parseCsv(csv)
     .filter((row) => {
       if (row.sale_date < since) return false;
-      if (cardCode) return normalizeCode(row.card_code) === normalizeCode(cardCode);
-      return row.player_key === playerKey;
+      if (player) return row.player_key === playerKey;
+      return normalizeCode(row.card_code) === normalizeCode(cardCode);
     })
     .map((row) => ({
       sale_date: row.sale_date,
@@ -136,6 +144,8 @@ async function marketHistoryFromStaticCsv(context, { player, cardCode, days, sin
 }
 
 async function readStaticHistoryCsv(context) {
+  if (HISTORICAL_CARD_SALES_CSV) return HISTORICAL_CARD_SALES_CSV;
+
   const requestUrl = new URL(context.request.url);
   requestUrl.pathname = "/data/historical-card-sales.csv";
   requestUrl.search = "";
