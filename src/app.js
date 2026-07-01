@@ -6,10 +6,12 @@ const state = {
   stats: [],
   depthCharts: [],
   cardMarket: [],
+  cardTargets: [],
   mlbPlayerFlags: [],
   scorebook: [],
   liveMarketData: new Map(),
   liveMarketRequests: new Set(),
+  liveMarketErrors: new Map(),
   allScored: [],
   scored: [],
   calledUp: [],
@@ -257,7 +259,7 @@ async function loadTop100Prospects() {
     ...player,
     prospect_source: player.prospect_source || "MLB Top 100",
   }));
-  const [orgProspects, stats, savantStats, depthCharts, enrichment, news, rankHistory, cardMarket, manualCardMarket, mlbPlayerFlags, scorebook] = await Promise.all([
+  const [orgProspects, stats, savantStats, depthCharts, enrichment, news, rankHistory, cardTargets, mlbPlayerFlags, scorebook] = await Promise.all([
     loadOptionalCsv("./data/org-prospects.csv?v=20260630-1"),
     loadOptionalCsv("./data/current-stats.csv?v=20260626-2"),
     loadOptionalCsv("./data/savant-stats.csv?v=20260626-1"),
@@ -265,8 +267,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/player-enrichment.csv"),
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
-    loadOptionalCsv("./data/card-market.csv?v=20260630-1"),
-    loadOptionalCsv("./data/card-market-manual.csv?v=20260630-2"),
+    loadOptionalCsv("./data/card-targets.csv?v=20260701-1"),
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
     loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
   ]);
@@ -274,7 +275,8 @@ async function loadTop100Prospects() {
   state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
   state.stats = mergeRowsByPlayerId(stats, savantStats);
   state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
-  state.cardMarket = mergeRowsByPlayerId(cardMarket, manualCardMarket);
+  state.cardMarket = [];
+  state.cardTargets = cardTargets;
   state.mlbPlayerFlags = mlbPlayerFlags;
   state.scorebook = scorebook;
   state.selectedId = null;
@@ -343,7 +345,7 @@ function mergeNonBlank(base, overlay) {
 }
 
 function refreshScoredData() {
-  const allScored = applyCardMarket(mergeProspectData(state.prospects, state.stats, state.depthCharts)).sort((a, b) => b.callup_score - a.callup_score);
+  const allScored = applyCardTargets(mergeProspectData(state.prospects, state.stats, state.depthCharts)).sort((a, b) => b.callup_score - a.callup_score);
   state.allScored = allScored;
   state.calledUp = allScored.filter(isCalledUp);
   state.scored = allScored.filter((player) => !isCalledUp(player));
@@ -436,9 +438,20 @@ function getFilteredRows() {
   });
 }
 
-function applyCardMarket(players) {
-  const byId = new Map(state.cardMarket.map((row) => [String(row.player_id), row]));
-  return players.map((player) => ({ ...player, ...(byId.get(String(player.player_id)) ?? {}) }));
+function applyCardTargets(players) {
+  const byId = new Map(state.cardTargets
+    .filter((row) => String(row.enabled ?? "true").toLowerCase() !== "false")
+    .map((row) => [String(row.player_id), row]));
+  return players.map((player) => {
+    const target = byId.get(String(player.player_id));
+    if (!target) return player;
+    return {
+      ...player,
+      card_code: target.card_code || player.card_code,
+      card_query: target.card_query || player.card_query,
+      card_name: target.card_name || player.card_name,
+    };
+  });
 }
 
 function renderTeamBoard() {
@@ -1234,6 +1247,9 @@ function renderCard(player) {
   }
 
   const profilePlayer = withLiveMarketData(player);
+  if (isOnDeckBoardPlayer(profilePlayer)) {
+    requestLiveMarketData(profilePlayer);
+  }
   elements.contentGrid.classList.add("profile-open");
   elements.cardPanel.hidden = false;
   elements.playerCard.className = "player-card";
@@ -1261,9 +1277,6 @@ function renderCard(player) {
     ${isOnDeckBoardPlayer(profilePlayer) ? marketPanel(profilePlayer) : ""}
   `;
 
-  if (isOnDeckBoardPlayer(profilePlayer)) {
-    requestLiveMarketData(profilePlayer);
-  }
 }
 
 function withLiveMarketData(player) {
@@ -1273,24 +1286,34 @@ function withLiveMarketData(player) {
 
 async function requestLiveMarketData(player) {
   const playerId = String(player.player_id);
-  if (state.liveMarketData.has(playerId) || state.liveMarketRequests.has(playerId)) return;
+  if (state.liveMarketData.has(playerId) || state.liveMarketRequests.has(playerId) || state.liveMarketErrors.has(playerId)) return;
   state.liveMarketRequests.add(playerId);
   const params = new URLSearchParams({ player: player.player_name || "" });
   if (player.card_code) params.set("cardCode", player.card_code);
-  if (player.card_name) params.set("cardName", player.card_name);
+  params.set("cardName", player.card_query || player.card_name || "Bowman Chrome Prospect Auto");
 
   try {
     const response = await fetch(`/api/market-data?${params.toString()}`, { headers: { Accept: "application/json" } });
-    if (!response.ok) return;
+    if (!response.ok) {
+      state.liveMarketErrors.set(playerId, `SoldComps unavailable (${response.status})`);
+      if (String(state.selectedId) === playerId) {
+        renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
+      }
+      return;
+    }
     const data = await response.json();
     const live = normalizeLiveMarketData(data);
     if (!live) return;
     state.liveMarketData.set(playerId, live);
+    state.liveMarketErrors.delete(playerId);
     if (String(state.selectedId) === playerId) {
       renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
     }
   } catch (error) {
-    // Static localhost runs do not have /api available. Manual CSV comps remain the fallback.
+    state.liveMarketErrors.set(playerId, "SoldComps API is not available in this local/static run.");
+    if (String(state.selectedId) === playerId) {
+      renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
+    }
   } finally {
     state.liveMarketRequests.delete(playerId);
   }
@@ -1524,14 +1547,17 @@ function playerPathRead(player, lane) {
 }
 
 function marketPanel(player) {
+  const playerId = String(player.player_id);
+  const isLoading = state.liveMarketRequests.has(playerId);
+  const error = state.liveMarketErrors.get(playerId);
   if (!player.market_signal) {
     return `
       <section class="card-market-panel">
         <div class="panel-heading compact">
           <h3>Card Market</h3>
-          <span>Awaiting comps</span>
+          <span>${isLoading ? "Loading SoldComps" : error ? "API unavailable" : "SoldComps API"}</span>
         </div>
-        <p class="muted">No manual Chrome Prospect Auto comp row is loaded yet for ${escapeHtml(player.player_name)}. Add a row to data/card-market-manual.csv when you have a reliable weekly comp.</p>
+        <p class="muted">${escapeHtml(error || `Loading current SoldComps sales for ${player.player_name}. Card data is API-only, so stale manual comps are not shown.`)}</p>
       </section>
     `;
   }
@@ -1574,7 +1600,7 @@ function marketMetricCells(player) {
     { label: "7D Sales", value: countValue(player.sales_7) },
     { label: "Recommendation", value: recommendationLabel(player) },
     { label: "Buy Zone", value: buyZone(player) },
-    { label: "Source", value: player.data_source || "Manual comp" },
+    { label: "Source", value: player.data_source || "SoldComps API" },
   ];
   const active = Number(player.active_listings);
   const sold = Number(player.sales_30);
@@ -1596,7 +1622,7 @@ function recommendationLabel(player) {
 }
 
 function cardDescription(player) {
-  return [player.card_name, player.card_code].filter(Boolean).join(" · ") || "Bowman 1st Auto";
+  return [player.card_name || player.card_query, player.card_code].filter(Boolean).join(" · ") || "Bowman Chrome Prospect Auto";
 }
 
 function formatShortDate(value) {

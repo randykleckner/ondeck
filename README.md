@@ -38,9 +38,9 @@ Break Board and Team War Room are secondary top-nav tools, not default landing-p
 
 ## Card market data
 
-The homepage card-market section is the On Deck Board. `data/card-market.csv` plus `data/card-market-manual.csv` are used inside selected player profiles and exports. Manual rows win over generated rows, so weekly seller-page comps can be entered without waiting on eBay automation.
+The homepage card-market section is the On Deck Board. Selected On Deck player profiles load card-market pricing from the secure SoldComps API proxy. Stale manual comp rows are not shown as current market data.
 
-The card target is the Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv` when the generated initials are not enough.
+`data/card-targets.csv` stores only search targets and card-code hints for the API. It does not store prices. The card target is the Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv` when the generated initials are not enough.
 
 ## Secure SoldComps API proxy
 
@@ -59,7 +59,7 @@ SOLD_COMPS_API_URL=https://api.soldcomps.com/v1/market-data
 
 `SOLD_COMPS_API_URL` is optional and exists so the upstream SoldComps endpoint can be adjusted without changing frontend code. The function sends `Authorization: Bearer <key>` to SoldComps, summarizes last sale, 7/14/30-day averages, sales counts, optional active listings, buy zone, and recommendation, then returns only the summary to the frontend. The API key is never included in browser code.
 
-When running as a plain static site with `python3 -m http.server`, `/api/market-data` will not exist. The profile falls back to `data/card-market-manual.csv` until you run through Vercel or another backend host.
+When running as a plain static site with `python3 -m http.server`, `/api/market-data` will not exist. The profile will show that SoldComps is unavailable instead of falling back to older manual comps. Run through Vercel or `vercel dev` to test live market data.
 
 Generate cleaner eBay sold comps with API access:
 
