@@ -89,6 +89,43 @@ Once `MARKET_DB` is bound, `/api/market-data` checks D1 before calling SoldComps
 
 When running as a plain static site with `python3 -m http.server`, `/api/market-data` will not exist. The profile will show that SoldComps is unavailable instead of falling back to older manual comps. Run through Vercel or `vercel dev` to test live market data.
 
+## Historical card sales import
+
+Historical player-card sales use the same D1 database and `MARKET_DB` binding. No second database is required.
+
+Run the migration:
+
+```sh
+wrangler d1 execute ondeck-market --file=migrations/0003_card_sales_history.sql
+```
+
+Export the Numbers document as CSV with one CSV per player sheet. Put those files here:
+
+```text
+data/historical-card-sales-raw/
+```
+
+The parser uses the sheet/file name as the player name when a player column is not present. It keeps useful fields such as listing title, sold date, sold price, sales count, card code, and URL. It ignores noisy fields such as preview image, full size image, average shipping, total sold, and bids.
+
+Normalize the export:
+
+```sh
+node scripts/normalize-historical-card-sales.mjs
+```
+
+This writes:
+
+- `data/historical-card-sales.csv`
+- `data/historical-card-sales-import.sql`
+
+Import the generated SQL:
+
+```sh
+wrangler d1 execute ondeck-market --file=data/historical-card-sales-import.sql
+```
+
+The player profile Card Market panel replaces the old `Source` metric with a `Historical Data` button. When clicked, it calls `/api/market-history` and renders average price as a line chart over sales-count bars.
+
 ## Top 100 rank trend history
 
 Use the same Cloudflare D1 database and `MARKET_DB` binding for prospect-rank history. No second database is required.

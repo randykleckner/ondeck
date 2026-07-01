@@ -14,6 +14,9 @@ const state = {
   liveMarketData: new Map(),
   liveMarketRequests: new Set(),
   liveMarketErrors: new Map(),
+  marketHistoryData: new Map(),
+  marketHistoryRequests: new Set(),
+  marketHistoryErrors: new Map(),
   allScored: [],
   scored: [],
   calledUp: [],
@@ -1455,11 +1458,52 @@ function renderCard(player) {
     ${isOnDeckBoardPlayer(profilePlayer) || isGraduated(profilePlayer) ? marketPanel(profilePlayer) : ""}
   `;
 
+  attachProfileActions(profilePlayer);
 }
 
 function withLiveMarketData(player) {
   const live = state.liveMarketData.get(String(player.player_id));
   return live ? { ...player, ...live } : player;
+}
+
+function attachProfileActions(player) {
+  elements.playerCard.querySelector("[data-market-history]")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    requestMarketHistory(player);
+  });
+}
+
+async function requestMarketHistory(player) {
+  const playerId = String(player.player_id);
+  if (state.marketHistoryRequests.has(playerId)) return;
+  if (state.marketHistoryData.has(playerId)) {
+    renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
+    return;
+  }
+
+  state.marketHistoryRequests.add(playerId);
+  state.marketHistoryErrors.delete(playerId);
+  renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
+
+  const params = new URLSearchParams({ player: player.player_name || "", days: "365" });
+  if (player.card_code) params.set("cardCode", player.card_code);
+
+  try {
+    const response = await fetch(`/api/market-history?${params.toString()}`, { headers: { Accept: "application/json" } });
+    if (!response.ok) {
+      state.marketHistoryErrors.set(playerId, `History unavailable (${response.status})`);
+    } else {
+      state.marketHistoryData.set(playerId, await response.json());
+    }
+  } catch {
+    state.marketHistoryErrors.set(playerId, "History is unavailable in this local/static run.");
+  } finally {
+    state.marketHistoryRequests.delete(playerId);
+    if (String(state.selectedId) === playerId) {
+      renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
+    }
+  }
 }
 
 async function requestLiveMarketData(player, options = {}) {
@@ -1775,7 +1819,11 @@ function marketPanel(player) {
           </div>
         `).join("")}
       </div>
-      <p class="market-source">${escapeHtml(cardDescription(player))}</p>
+      <div class="market-source">
+        <span>${escapeHtml(cardDescription(player))}</span>
+        <button class="button ghost history-link" type="button" data-market-history>Historical Data</button>
+      </div>
+      ${marketHistoryPanel(player)}
       <p>${escapeHtml(player.market_note ?? "")}</p>
       <div class="market-reasons">
         <h4>Why this signal</h4>
@@ -1799,7 +1847,6 @@ function marketMetricCells(player) {
     { label: "7D Sales", value: countValue(player.sales_7) },
     { label: "Recommendation", value: recommendationLabel(player) },
     { label: "Buy Zone", value: buyZone(player) },
-    { label: "Source", value: player.data_source || "SoldComps API" },
   ];
   const active = Number(player.active_listings);
   const sold = Number(player.sales_30);
@@ -1810,6 +1857,95 @@ function marketMetricCells(player) {
     }
   }
   return cells;
+}
+
+function marketHistoryPanel(player) {
+  const playerId = String(player.player_id);
+  if (state.marketHistoryRequests.has(playerId)) {
+    return `<div class="market-history-panel"><p class="muted">Loading historical sales...</p></div>`;
+  }
+  const error = state.marketHistoryErrors.get(playerId);
+  if (error) {
+    return `<div class="market-history-panel"><p class="muted">${escapeHtml(error)}</p></div>`;
+  }
+  const history = state.marketHistoryData.get(playerId);
+  if (!history) return "";
+  const points = Array.isArray(history.points) ? history.points : [];
+  if (!points.length) {
+    return `<div class="market-history-panel"><p class="muted">No historical sales rows are loaded for this player yet.</p></div>`;
+  }
+  return `
+    <div class="market-history-panel">
+      <div class="panel-heading compact">
+        <h3>Price History</h3>
+        <span>${escapeHtml(points.length)} sale dates</span>
+      </div>
+      ${marketHistoryChart(points)}
+      <div class="market-history-summary">
+        <span>Avg ${currency(history.summary?.avg_price)}</span>
+        <span>Sales ${countValue(history.summary?.sales_count)}</span>
+        <span>${escapeHtml(formatShortDate(history.summary?.first_sale_date))} - ${escapeHtml(formatShortDate(history.summary?.last_sale_date))}</span>
+      </div>
+    </div>
+  `;
+}
+
+function marketHistoryChart(points) {
+  const prices = points.map((point) => numericMoney(point.avg_price)).filter(Number.isFinite);
+  const counts = points.map((point) => Number(point.sales_count)).filter(Number.isFinite);
+  if (prices.length < 2) {
+    return `<p class="muted">At least two historical dates are needed for a chart.</p>`;
+  }
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const maxSales = Math.max(1, ...counts);
+  const width = 640;
+  const height = 230;
+  const pad = { top: 16, right: 18, bottom: 30, left: 48 };
+  const chartWidth = width - pad.left - pad.right;
+  const chartHeight = height - pad.top - pad.bottom;
+  const priceRange = maxPrice - minPrice || 1;
+  const plotted = points.map((point, index) => {
+    const x = pad.left + (index / Math.max(1, points.length - 1)) * chartWidth;
+    const price = numericMoney(point.avg_price);
+    const sales = Number(point.sales_count) || 0;
+    const y = pad.top + (1 - ((price - minPrice) / priceRange)) * chartHeight;
+    const barHeight = (sales / maxSales) * chartHeight;
+    return {
+      x,
+      y,
+      sales,
+      barHeight,
+      date: point.sale_date,
+      price,
+    };
+  });
+  const line = plotted.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+  const barWidth = Math.max(3, Math.min(16, chartWidth / points.length - 2));
+  const bars = plotted.map((point) => `
+    <rect x="${(point.x - barWidth / 2).toFixed(1)}" y="${(pad.top + chartHeight - point.barHeight).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${point.barHeight.toFixed(1)}">
+      <title>${escapeHtml(point.date)} · ${escapeHtml(currency(point.price))} · ${escapeHtml(point.sales)} sales</title>
+    </rect>
+  `).join("");
+  const circles = plotted.map((point) => `
+    <circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3.5">
+      <title>${escapeHtml(point.date)} · ${escapeHtml(currency(point.price))}</title>
+    </circle>
+  `).join("");
+
+  return `
+    <svg class="history-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Historical card price and sales chart">
+      <line class="axis" x1="${pad.left}" y1="${pad.top + chartHeight}" x2="${width - pad.right}" y2="${pad.top + chartHeight}" />
+      <line class="axis" x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + chartHeight}" />
+      <text x="${pad.left}" y="${height - 8}">${escapeHtml(formatShortDate(points[0].sale_date))}</text>
+      <text x="${width - pad.right}" y="${height - 8}" text-anchor="end">${escapeHtml(formatShortDate(points.at(-1).sale_date))}</text>
+      <text x="8" y="${pad.top + 6}">${escapeHtml(currency(maxPrice))}</text>
+      <text x="8" y="${pad.top + chartHeight}">${escapeHtml(currency(minPrice))}</text>
+      <g class="history-bars">${bars}</g>
+      <polyline class="history-line" points="${line}" />
+      <g class="history-points">${circles}</g>
+    </svg>
+  `;
 }
 
 function recommendationLabel(player) {

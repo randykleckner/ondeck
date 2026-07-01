@@ -2196,9 +2196,78 @@ tbody tr {
 }
 
 .card-market-panel .market-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.history-link {
+  min-height: 32px;
+  padding: 6px 11px;
+  font-size: 0.76rem;
+}
+
+.market-history-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(4, 7, 18, 0.48);
+}
+
+.history-chart {
+  width: 100%;
+  min-height: 220px;
+  overflow: visible;
+}
+
+.history-chart text {
+  fill: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.history-chart .axis {
+  stroke: rgba(151, 170, 255, 0.22);
+  stroke-width: 1;
+}
+
+.history-bars rect {
+  fill: rgba(117, 62, 255, 0.35);
+}
+
+.history-line {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(82, 240, 255, 0.55));
+}
+
+.history-points circle {
+  fill: #06101b;
+  stroke: var(--cyan);
+  stroke-width: 2;
+}
+
+.market-history-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.market-history-summary span {
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #d8def6;
+  background: rgba(151, 170, 255, 0.08);
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
 .card-market-panel a,

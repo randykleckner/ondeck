@@ -1,4 +1,5 @@
 import { onRequest } from "../functions/api/market-data.js";
+import { onRequest as onMarketHistoryRequest } from "../functions/api/market-history.js";
 import { onRequest as onRankTrendsRequest, runTop100TrendUpdate } from "../functions/api/rank-trends.js";
 
 export default {
@@ -7,6 +8,10 @@ export default {
 
     if (url.pathname === "/api/market-data") {
       return onRequest({ request, env, ctx });
+    }
+
+    if (url.pathname === "/api/market-history") {
+      return onMarketHistoryRequest({ request, env, ctx });
     }
 
     if (url.pathname === "/api/rank-trends") {
