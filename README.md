@@ -54,6 +54,7 @@ The repo includes both supported serverless entry points:
 
 - `api/market-data.js` for Vercel
 - `functions/api/market-data.js` for Cloudflare Pages
+- `netlify/functions/market-data.js` plus `netlify.toml` for Netlify
 
 Set this environment variable in the deployment host:
 
@@ -61,7 +62,7 @@ Set this environment variable in the deployment host:
 SOLD_COMPS_API_KEY=your_soldcomps_key
 ```
 
-For Cloudflare Pages, add it in Project Settings -> Environment variables. For Vercel, add it in Project Settings -> Environment Variables. The local `.env` file is useful for local tooling, but the hosted site cannot read a root `.env` file unless the host imports it into deployment environment variables.
+For Cloudflare Pages, add it in Project Settings -> Environment variables. For Vercel, add it in Project Settings -> Environment Variables. For Netlify, add it in Site configuration -> Environment variables. The local `.env` file is useful for local tooling, but the hosted site cannot read a root `.env` file unless the host imports it into deployment environment variables.
 
 The function sends `Authorization: Bearer <key>` to SoldComps and calls:
 
