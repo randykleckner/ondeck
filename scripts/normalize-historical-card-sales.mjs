@@ -65,6 +65,7 @@ function normalizeSaleRow(row, context) {
     "date",
     "sold date",
     "last sold",
+    "date last sold",
     "end date",
     "period_start",
     "period start",
@@ -85,6 +86,7 @@ function normalizeSaleRow(row, context) {
     "quantity",
     "qty",
     "count",
+    "total sold",
     "# of sales",
     "number of sales",
   ])) || 1;
@@ -116,6 +118,7 @@ function isBenchmarkCard(title, playerName) {
   if (!text.includes("bowman")) return false;
   if (!text.includes("auto") && !text.includes("autograph")) return false;
   if (!text.includes("1st") && !text.includes("first")) return false;
+  if (!text.includes("chrome") && !/\b(CPA|CDA)-[A-Z0-9]+\b/i.test(cleanText(title))) return false;
   const exclusions = [
     "refractor",
     "sapphire",
@@ -136,8 +139,13 @@ function isBenchmarkCard(title, playerName) {
     "digital",
     "reprint",
     "custom",
+    "in person",
+    "guaranteed auth",
+    "ip auto",
+    "ip autograph",
   ];
-  return !exclusions.some((term) => text.includes(term));
+  const padded = ` ${text} `;
+  return !exclusions.some((term) => padded.includes(` ${term} `));
 }
 
 async function discoverCsvFiles(input) {
@@ -153,6 +161,7 @@ async function discoverCsvFiles(input) {
 
 function playerNameFromFile(file) {
   return path.basename(file, path.extname(file))
+    .replace(/\s*-\s*table\s+\d+$/i, "")
     .replaceAll(/[_-]+/g, " ")
     .replaceAll(/\s+/g, " ")
     .trim();
