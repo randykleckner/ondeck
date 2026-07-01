@@ -1289,8 +1289,6 @@ async function requestLiveMarketData(player) {
   if (state.liveMarketData.has(playerId) || state.liveMarketRequests.has(playerId) || state.liveMarketErrors.has(playerId)) return;
   state.liveMarketRequests.add(playerId);
   const params = new URLSearchParams({ player: player.player_name || "" });
-  if (player.card_code) params.set("cardCode", player.card_code);
-  params.set("cardName", player.card_query || player.card_name || "Bowman Chrome Prospect Auto");
 
   try {
     const response = await fetch(`/api/market-data?${params.toString()}`, { headers: { Accept: "application/json" } });

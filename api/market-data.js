@@ -1,4 +1,30 @@
-const DEFAULT_SOLD_COMPS_API_URL = "https://api.soldcomps.com/v1/market-data";
+const SOLD_COMPS_API_URL = "https://api.sold-comps.com/v1/scrape";
+const BENCHMARK_CARD = "Bowman Chrome 1st Auto";
+const EXCLUDED_TITLE_TERMS = [
+  "refractor",
+  "sapphire",
+  "purple",
+  "blue",
+  "gold",
+  "orange",
+  "green",
+  "mojo",
+  "wave",
+  "speckle",
+  "paper",
+  "numbered",
+  "insert",
+  "lot",
+  "lots",
+  "break",
+  "breaks",
+  "case break",
+  "case breaks",
+  "pick your player",
+  "digital",
+  "reprint",
+  "custom",
+];
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -7,8 +33,6 @@ module.exports = async function handler(req, res) {
   }
 
   const player = String(req.query.player || "").trim();
-  const cardCode = String(req.query.cardCode || req.query.card_code || "").trim();
-  const cardName = String(req.query.cardName || req.query.card_name || "").trim();
 
   if (!player) {
     return res.status(400).json({ error: "Missing required player query parameter." });
@@ -20,7 +44,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const upstreamUrl = buildSoldCompsUrl({ player, cardCode, cardName });
+    const keyword = buildCanonicalKeyword(player);
+    const upstreamUrl = buildSoldCompsUrl(keyword);
     const upstreamResponse = await fetch(upstreamUrl, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -39,7 +64,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    return res.status(200).json(summarizeMarketData(raw, { player, cardCode, cardName }));
+    return res.status(200).json(summarizeMarketData(raw, { player, keyword }));
   } catch (error) {
     return res.status(500).json({
       error: "Unable to load market data.",
@@ -48,20 +73,20 @@ module.exports = async function handler(req, res) {
   }
 };
 
-function buildSoldCompsUrl({ player, cardCode, cardName }) {
-  const baseUrl = process.env.SOLD_COMPS_API_URL || DEFAULT_SOLD_COMPS_API_URL;
-  const url = new URL(baseUrl);
-  const query = [player, cardCode, cardName].filter(Boolean).join(" ");
-  url.searchParams.set("player", player);
-  url.searchParams.set("q", query);
-  if (cardCode) url.searchParams.set("cardCode", cardCode);
-  if (cardName) url.searchParams.set("cardName", cardName);
+function buildCanonicalKeyword(player) {
+  return `${player} ${BENCHMARK_CARD}`;
+}
+
+function buildSoldCompsUrl(keyword) {
+  const url = new URL(process.env.SOLD_COMPS_API_URL || SOLD_COMPS_API_URL);
+  url.searchParams.set("keyword", keyword);
   return url;
 }
 
 function summarizeMarketData(raw, request) {
   const comps = extractComps(raw)
     .map(normalizeComp)
+    .filter((comp) => isBenchmarkComp(comp, request.player))
     .filter((comp) => Number.isFinite(comp.price))
     .sort((a, b) => timestamp(b.soldAt) - timestamp(a.soldAt));
 
@@ -84,8 +109,9 @@ function summarizeMarketData(raw, request) {
 
   return {
     player: request.player,
-    cardCode: request.cardCode || raw.card_code || raw.cardCode || "",
-    cardName: request.cardName || raw.card_name || raw.cardName || "",
+    keyword: request.keyword,
+    cardCode: "",
+    cardName: BENCHMARK_CARD,
     lastSale: lastComp?.price ?? null,
     lastSaleDate: lastComp?.soldAt ?? null,
     averages: {
@@ -104,6 +130,7 @@ function summarizeMarketData(raw, request) {
     recommendation,
     marketSignal: recommendation.signal,
     marketNote: recommendation.note,
+    excludedTerms: EXCLUDED_TITLE_TERMS,
     source: "SoldComps API",
     sourceUrl: raw.source_url || raw.sourceUrl || "",
     lastUpdated: new Date().toISOString(),
@@ -112,7 +139,7 @@ function summarizeMarketData(raw, request) {
 
 function extractComps(raw) {
   if (Array.isArray(raw)) return raw;
-  return raw.results || raw.data || raw.comps || raw.sales || raw.items || [];
+  return raw.results || raw.data?.results || raw.data?.items || raw.data || raw.comps || raw.sales || raw.items || [];
 }
 
 function normalizeComp(comp) {
@@ -122,6 +149,29 @@ function normalizeComp(comp) {
     title: comp.title || comp.name || "",
     url: comp.url || comp.link || "",
   };
+}
+
+function isBenchmarkComp(comp, player) {
+  const title = String(comp.title || "").toLowerCase();
+  if (!title) return true;
+  const normalizedPlayer = normalizeText(player);
+  const normalizedTitle = normalizeText(title);
+  const playerTokens = normalizedPlayer.split(" ").filter(Boolean);
+  const hasPlayer = playerTokens.every((token) => normalizedTitle.includes(token));
+  const hasBowman = normalizedTitle.includes("bowman");
+  const hasChrome = normalizedTitle.includes("chrome");
+  const hasAuto = /\b(auto|autograph)\b/.test(normalizedTitle);
+  const hasFirst = /\b(1st|first)\b/.test(normalizedTitle);
+  const hasExcludedTerm = EXCLUDED_TITLE_TERMS.some((term) => normalizedTitle.includes(term));
+  const hasNumberedPattern = /(^|[^a-z0-9])\/\d{1,4}([^a-z0-9]|$)|\b\d{1,4}\s*\/\s*\d{1,4}\b/.test(normalizedTitle);
+  return hasPlayer && hasBowman && hasChrome && hasAuto && hasFirst && !hasExcludedTerm && !hasNumberedPattern;
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 function averageForWindow(comps, days) {
@@ -198,7 +248,9 @@ function safeErrorDetail(raw) {
 }
 
 function numberFrom(value) {
-  const numeric = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+  const cleaned = String(value ?? "").replace(/[^0-9.-]/g, "");
+  if (!cleaned) return NaN;
+  const numeric = Number(cleaned);
   return Number.isFinite(numeric) ? numeric : NaN;
 }
 
