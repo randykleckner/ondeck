@@ -1487,7 +1487,6 @@ async function requestMarketHistory(player) {
   renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
 
   const params = new URLSearchParams({ player: player.player_name || "", days: "365" });
-  if (player.card_code) params.set("cardCode", player.card_code);
 
   try {
     const response = await fetch(`/api/market-history?${params.toString()}`, { headers: { Accept: "application/json" } });
