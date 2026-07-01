@@ -857,7 +857,7 @@ function laneSort(role) {
 }
 
 function renderMarketBoard() {
-  const tracked = onDeckPlayers();
+  const tracked = onDeckPlayers().map(withLiveMarketData);
   const bubble = bubblePlayers();
   elements.marketCount.textContent = `Top ${tracked.length}`;
   if (!tracked.length) {
@@ -889,6 +889,10 @@ function renderMarketBoard() {
         activate(event);
       }
     });
+  });
+
+  tracked.forEach((player) => {
+    requestLiveMarketData(player, { refreshBoard: true });
   });
 }
 
@@ -1001,7 +1005,8 @@ function renderRows(rows) {
   }
 
   elements.rows.innerHTML = rows
-    .map((player, index) => {
+    .map((rowPlayer, index) => {
+      const player = withLiveMarketData(rowPlayer);
       const selected = String(player.player_id) === String(state.selectedId) ? "selected" : "";
       return `
         <tr class="${selected}" data-player-id="${escapeHtml(player.player_id)}">
@@ -1092,17 +1097,20 @@ function renderScorebook() {
   const officialHits = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "hit");
   const historical = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "historical");
   const missed = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "missed");
-  const pending = onDeckPlayers().map((player, index) => ({
-    player_id: player.player_id,
-    player_name: player.player_name,
-    team: player.org,
-    date_added: player.date_added || player.last_updated || "Manual baseline needed",
+  const pending = onDeckPlayers().map((rowPlayer, index) => {
+    const player = withLiveMarketData(rowPlayer);
+    return {
+      player_id: player.player_id,
+      player_name: player.player_name,
+      team: player.org,
+      date_added: player.date_added || player.last_updated || "Manual baseline needed",
     current_rank: index + 1,
     ondeck_score: player.callup_score,
     card_baseline: cardBaselineLabel(player),
     latest_value: latestCardValue(player),
     market_status: marketStatus(player),
-  }));
+    };
+  });
 
   elements.scorebookBoard.innerHTML = `
     <div class="scorebook-summary">
@@ -1284,7 +1292,7 @@ function withLiveMarketData(player) {
   return live ? { ...player, ...live } : player;
 }
 
-async function requestLiveMarketData(player) {
+async function requestLiveMarketData(player, options = {}) {
   const playerId = String(player.player_id);
   const recentError = state.liveMarketErrors.get(playerId);
   if (state.liveMarketData.has(playerId) || state.liveMarketRequests.has(playerId) || isRecentMarketError(recentError)) return;
@@ -1309,6 +1317,11 @@ async function requestLiveMarketData(player) {
     if (!live) return;
     state.liveMarketData.set(playerId, live);
     state.liveMarketErrors.delete(playerId);
+    if (options.refreshBoard) {
+      renderMarketBoard();
+      renderRows(getFilteredRows());
+      renderScorebook();
+    }
     if (String(state.selectedId) === playerId) {
       renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
     }
@@ -1518,11 +1531,14 @@ function playerTypeBadge(player) {
 }
 
 function cardBaselineLabel(player) {
+  const playerId = String(player.player_id ?? "");
+  if (state.liveMarketRequests.has(playerId)) return "Loading...";
+  if (state.liveMarketErrors.has(playerId)) return "API pending";
   const avg30 = numericMoney(player.avg_30);
   if (Number.isFinite(avg30)) return currency(avg30);
   const baseline = numericMoney(player.baseline_value);
   if (Number.isFinite(baseline)) return currency(baseline);
-  return player.market_signal ? "Manual comp needed" : "No clean market";
+  return player.market_signal ? "API pending" : "Awaiting API";
 }
 
 function latestCardValue(player) {
@@ -1534,6 +1550,9 @@ function latestCardValue(player) {
 }
 
 function marketStatus(player) {
+  const playerId = String(player.player_id ?? "");
+  if (state.liveMarketRequests.has(playerId)) return "Loading";
+  if (state.liveMarketErrors.has(playerId)) return "API Pending";
   const signal = String(player.market_status || player.market_signal || "").toLowerCase();
   if (signal.includes("spiked")) return "Spiked";
   if (signal.includes("strong") || signal.includes("buy")) return "Moving";
@@ -1541,7 +1560,7 @@ function marketStatus(player) {
   if (signal.includes("flat")) return "Flat";
   if (signal.includes("priced")) return "Priced In";
   if (signal.includes("illiquid")) return "Illiquid";
-  return player.card_name || player.avg_30 ? "Early" : "No Clean Market";
+  return player.card_name || player.avg_30 ? "Early" : "Awaiting API";
 }
 
 function cardMarketScore(player) {
