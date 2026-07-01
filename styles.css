@@ -693,7 +693,9 @@ tbody tr.selected {
 body[data-view="war"] .hero-panel,
 body[data-view="war"] #top-10,
 body[data-view="war"] #break-board,
+body[data-view="war"] #graduated,
 body[data-view="war"] #prospects,
+body[data-view="war"] #top-100,
 body[data-view="war"] #methodology,
 body[data-view="war"] #resources {
   display: none;
@@ -708,13 +710,32 @@ body[data-view="scorebook"] .hero-panel,
 body[data-view="scorebook"] #top-10,
 body[data-view="scorebook"] #break-board,
 body[data-view="scorebook"] #dugout,
+body[data-view="scorebook"] #graduated,
 body[data-view="scorebook"] #prospects,
+body[data-view="scorebook"] #top-100,
 body[data-view="scorebook"] #methodology,
 body[data-view="scorebook"] #resources {
   display: none;
 }
 
 body[data-view="scorebook"] #scorebook {
+  display: block;
+  min-height: calc(100vh - 132px);
+}
+
+body[data-view="graduated"] .hero-panel,
+body[data-view="graduated"] #top-10,
+body[data-view="graduated"] #break-board,
+body[data-view="graduated"] #dugout,
+body[data-view="graduated"] #prospects,
+body[data-view="graduated"] #top-100,
+body[data-view="graduated"] #methodology,
+body[data-view="graduated"] #resources,
+body[data-view="graduated"] #scorebook {
+  display: none;
+}
+
+body[data-view="graduated"] #graduated {
   display: block;
   min-height: calc(100vh - 132px);
 }
@@ -2260,7 +2281,8 @@ tbody tr {
 }
 
 .info-panel,
-.scorebook-page {
+.scorebook-page,
+.graduated-page {
   margin-top: 18px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -2337,11 +2359,13 @@ tbody tr {
   color: var(--cyan);
 }
 
-.scorebook-page {
+.scorebook-page,
+.graduated-page {
   margin-top: 0;
 }
 
-.scorebook-hero {
+.scorebook-hero,
+.graduated-hero {
   min-height: 300px;
   padding: clamp(26px, 5vw, 54px);
   border-bottom: 1px solid var(--line);
@@ -2351,7 +2375,8 @@ tbody tr {
     linear-gradient(135deg, rgba(238, 167, 54, 0.16), rgba(82, 240, 255, 0.06));
 }
 
-.scorebook-hero h2 {
+.scorebook-hero h2,
+.graduated-hero h2 {
   max-width: 760px;
   margin-bottom: 12px;
   color: #fff;
@@ -2359,33 +2384,38 @@ tbody tr {
   line-height: 0.95;
 }
 
-.scorebook-hero p:last-child {
+.scorebook-hero p:last-child,
+.graduated-hero p:last-child {
   max-width: 660px;
   margin: 0;
   color: #d8def6;
   line-height: 1.55;
 }
 
-.scorebook-board {
+.scorebook-board,
+.graduated-board {
   display: grid;
   gap: 14px;
   padding: 14px;
 }
 
-.scorebook-summary {
+.scorebook-summary,
+.graduated-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.scorebook-summary article {
+.scorebook-summary article,
+.graduated-summary article {
   padding: 16px;
   border: 1px solid rgba(151, 170, 255, 0.18);
   border-radius: 10px;
   background: rgba(4, 7, 18, 0.58);
 }
 
-.scorebook-summary span {
+.scorebook-summary span,
+.graduated-summary span {
   display: block;
   color: var(--muted);
   font-size: 0.72rem;
@@ -2393,11 +2423,151 @@ tbody tr {
   text-transform: uppercase;
 }
 
-.scorebook-summary strong {
+.scorebook-summary strong,
+.graduated-summary strong {
   display: block;
   margin-top: 6px;
   color: white;
   font-size: 2rem;
+}
+
+.graduated-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.graduated-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.graduate-card,
+.graduated-empty,
+.graduation-timeline {
+  border: 1px solid rgba(151, 170, 255, 0.18);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(82, 240, 255, 0.12), transparent 11rem),
+    rgba(4, 7, 18, 0.64);
+}
+
+.graduate-card {
+  display: grid;
+  gap: 14px;
+  min-height: 250px;
+  padding: 16px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.graduate-card:hover {
+  border-color: rgba(82, 240, 255, 0.42);
+  transform: translateY(-1px);
+}
+
+.graduate-card-title,
+.profile-badges {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-badges {
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.graduate-card h3 {
+  margin: 8px 0 3px;
+  color: #fff;
+  font-size: 1.15rem;
+}
+
+.graduate-card p,
+.graduate-card dl,
+.graduate-card dd,
+.graduate-card dt {
+  margin: 0;
+}
+
+.graduate-card dl {
+  display: grid;
+  gap: 10px;
+}
+
+.graduate-card dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.graduate-card dd {
+  margin-top: 3px;
+  color: #f6f8ff;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.graduate-badge,
+.profile-link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: #06101b;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  font-size: 0.7rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.profile-link {
+  color: var(--cyan);
+  background: rgba(82, 240, 255, 0.1);
+}
+
+.graduation-timeline {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.graduation-timeline h3,
+.graduated-empty h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.graduation-timeline div {
+  border-left: 2px solid var(--cyan);
+  padding-left: 12px;
+}
+
+.graduation-timeline span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.graduation-timeline p,
+.graduated-empty p {
+  margin: 5px 0 0;
+  color: #d8def6;
+  line-height: 1.45;
+}
+
+.graduated-empty {
+  padding: 20px;
 }
 
 .scorebook-section {
@@ -2483,6 +2653,8 @@ tbody tr {
   .edge-board,
   .method-grid,
   .scorebook-summary,
+  .graduated-summary,
+  .graduated-grid,
   .resource-list,
   .bubble-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2560,6 +2732,8 @@ tbody tr {
 
   .method-grid,
   .scorebook-summary,
+  .graduated-summary,
+  .graduated-grid,
   .resource-list,
   .bubble-grid,
   .profile-stat-grid {

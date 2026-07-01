@@ -9,12 +9,15 @@ const state = {
   cardTargets: [],
   mlbPlayerFlags: [],
   scorebook: [],
+  latestTop100Keys: new Set(),
+  previousTop100Keys: new Set(),
   liveMarketData: new Map(),
   liveMarketRequests: new Set(),
   liveMarketErrors: new Map(),
   allScored: [],
   scored: [],
   calledUp: [],
+  graduated: [],
   selectedId: null,
   selectedOrg: null,
   activeTool: "dashboard",
@@ -106,6 +109,7 @@ const elements = {
   marketBoard: document.querySelector("#market-board"),
   marketCount: document.querySelector("#market-count"),
   scorebookBoard: document.querySelector("#scorebook-board"),
+  graduatedBoard: document.querySelector("#graduated-board"),
   deckPrev: document.querySelector("#deck-prev"),
   deckNext: document.querySelector("#deck-next"),
   navLinks: document.querySelectorAll(".main-nav a"),
@@ -238,7 +242,7 @@ window.addEventListener("popstate", () => {
 
 document.addEventListener("click", (event) => {
   if (!state.selectedId) return;
-  if (event.target.closest("#player-card, #prospect-rows tr[data-player-id], #top100-rows tr[data-player-id], .market-card[data-player-id], .bubble-card[data-player-id], .war-prospect[data-player-id], [data-open-war-room], .tool-page-nav")) {
+  if (event.target.closest("#player-card, #prospect-rows tr[data-player-id], #top100-rows tr[data-player-id], .market-card[data-player-id], .bubble-card[data-player-id], .graduate-card[data-player-id], .war-prospect[data-player-id], [data-open-war-room], .tool-page-nav")) {
     return;
   }
   state.selectedId = null;
@@ -271,8 +275,11 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
     loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
   ]);
-  state.prospects = mergeProspectUniverse(top100Prospects, orgProspects);
-  state.prospects = applyProspectEnrichment(state.prospects, mergeRowsByPlayerId(enrichment, rankHistory));
+  const enrichmentRows = mergeRowsByPlayerId(enrichment, rankHistory);
+  state.latestTop100Keys = buildPlayerKeySet(top100Prospects);
+  state.previousTop100Keys = buildPlayerKeySet(rankHistory);
+  state.prospects = mergeProspectUniverse(top100Prospects, orgProspects, enrichmentRows);
+  state.prospects = applyProspectEnrichment(state.prospects, enrichmentRows);
   state.stats = mergeRowsByPlayerId(stats, savantStats);
   state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
   state.cardMarket = [];
@@ -318,7 +325,73 @@ function mergeRowsByPlayerId(primaryRows, overlayRows) {
   return [...byId.values()];
 }
 
-function mergeProspectUniverse(top100Prospects, orgProspects) {
+function buildPlayerKeySet(rows) {
+  const keys = new Set();
+  for (const row of rows) {
+    playerComparisonKeys(row).forEach((key) => keys.add(key));
+  }
+  return keys;
+}
+
+function playerComparisonKeys(player) {
+  return [
+    player.player_id ? `id:${String(player.player_id)}` : "",
+    player.mlbam_id ? `mlbam:${String(player.mlbam_id)}` : "",
+    player.player_name ? `name:${normalizeName(player.player_name)}` : "",
+  ].filter(Boolean);
+}
+
+function isMissingFromLatestTop100(player) {
+  return !playerComparisonKeys(player).some((key) => state.latestTop100Keys.has(key));
+}
+
+function wasPreviouslyTop100(player) {
+  if (String(player.was_top100 ?? player.previous_top100 ?? "").toLowerCase() === "true") return true;
+  if (player.previous_rank) return true;
+  return playerComparisonKeys(player).some((key) => state.previousTop100Keys.has(key));
+}
+
+function applyGraduationStatus(player) {
+  if (isGraduated(player)) return player;
+  if (!hasMlbStatus(player) || !wasPreviouslyTop100(player) || !isMissingFromLatestTop100(player)) {
+    return {
+      ...player,
+      onTop100: !isMissingFromLatestTop100(player),
+    };
+  }
+
+  return {
+    ...player,
+    lifecycleStatus: "Graduated",
+    graduated: true,
+    graduatedDate: player.graduatedDate || player.graduated_date || todayIsoDate(),
+    graduated_date: player.graduated_date || player.graduatedDate || todayIsoDate(),
+    onTop100: false,
+    on_top100: false,
+    onDeckBoard: false,
+    on_deck_board: false,
+    prospectWatchBoard: false,
+    prospect_watch_board: false,
+    timeline_event_graduated: graduationTimelineMessage(),
+    timeline_events: appendTimelineEvent(player.timeline_events, graduationTimelineMessage()),
+  };
+}
+
+function appendTimelineEvent(events, message) {
+  const existing = String(events ?? "").trim();
+  if (!existing) return message;
+  return existing.includes(message) ? existing : `${existing} | ${message}`;
+}
+
+function graduationTimelineMessage() {
+  return "Moved to Graduated after MLB status and removal from Top 100.";
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function mergeProspectUniverse(top100Prospects, orgProspects, enrichmentRows = []) {
   const byId = new Map(top100Prospects.map((player) => [String(player.player_id), player]));
   for (const player of orgProspects) {
     if (!player.player_id || !player.player_name) continue;
@@ -327,6 +400,15 @@ function mergeProspectUniverse(top100Prospects, orgProspects) {
       ...(byId.get(key) ?? {}),
       ...player,
       prospect_source: player.prospect_source || byId.get(key)?.prospect_source || "Org Top Prospect",
+    });
+  }
+  for (const player of enrichmentRows) {
+    if (!player.player_id || !player.player_name || byId.has(String(player.player_id))) continue;
+    byId.set(String(player.player_id), {
+      ...player,
+      level: player.current_level || player.level,
+      org: player.org || player.current_team || "",
+      prospect_source: player.prospect_source || "Previous Top 100",
     });
   }
   return [...byId.values()];
@@ -345,10 +427,13 @@ function mergeNonBlank(base, overlay) {
 }
 
 function refreshScoredData() {
-  const allScored = applyCardTargets(mergeProspectData(state.prospects, state.stats, state.depthCharts)).sort((a, b) => b.callup_score - a.callup_score);
+  const allScored = applyCardTargets(mergeProspectData(state.prospects, state.stats, state.depthCharts))
+    .map(applyGraduationStatus)
+    .sort((a, b) => b.callup_score - a.callup_score);
   state.allScored = allScored;
-  state.calledUp = allScored.filter(isCalledUp);
-  state.scored = allScored.filter((player) => !isCalledUp(player));
+  state.graduated = allScored.filter(isGraduated);
+  state.calledUp = allScored.filter((player) => isCalledUp(player) && !isGraduated(player));
+  state.scored = allScored.filter((player) => !isCalledUp(player) && !isGraduated(player));
   if (state.selectedId && !state.allScored.some((player) => String(player.player_id) === String(state.selectedId))) {
     state.selectedId = null;
   }
@@ -369,7 +454,7 @@ function hydrateOrgFilter() {
 function hydrateTop100OrgFilter() {
   if (!elements.top100OrgFilter) return;
   const current = state.top100Filters.org;
-  const orgs = [...new Set(state.allScored.filter(isTop100Prospect).map((player) => player.org).filter(Boolean))].sort();
+  const orgs = [...new Set(state.allScored.filter((player) => isTop100Prospect(player) && !isGraduated(player)).map((player) => player.org).filter(Boolean))].sort();
   elements.top100OrgFilter.innerHTML = `<option value="all">All orgs</option>${orgs.map((org) => `<option value="${escapeHtml(org)}">${escapeHtml(org)}</option>`).join("")}`;
   elements.top100OrgFilter.value = orgs.includes(current) ? current : "all";
   state.top100Filters.org = elements.top100OrgFilter.value;
@@ -383,6 +468,7 @@ function render() {
   renderRows(rows);
   renderTop100Rows();
   renderScorebook();
+  renderGraduated();
   elements.rowCount.textContent = rows.length ? `Top ${rows.length}` : "No active Top 10 data loaded";
   const selected = state.selectedId ? state.allScored.find((player) => String(player.player_id) === String(state.selectedId)) : null;
   renderCard(selected);
@@ -394,6 +480,7 @@ function getTop100Rows() {
   const bubbleIds = new Set(bubblePlayers().map((player) => String(player.player_id)));
   return state.allScored
     .filter(isTop100Prospect)
+    .filter((player) => !isGraduated(player))
     .filter((player) => {
       const searchBlob = normalizeName(`${player.player_name ?? ""} ${player.org ?? ""} ${player.position ?? ""}`);
       const matchesSearch = state.top100Filters.search === "" || searchBlob.includes(state.top100Filters.search);
@@ -559,6 +646,8 @@ function syncRouteFromHash() {
     }
   } else if (location.hash === "#scorebook") {
     openTool("scorebook", "#scorebook", false);
+  } else if (location.hash === "#graduated") {
+    openTool("graduated", "#graduated", false);
   } else {
     state.activeTool = "dashboard";
     syncToolVisibility();
@@ -1133,6 +1222,84 @@ function renderScorebook() {
   });
 }
 
+function renderGraduated() {
+  if (!elements.graduatedBoard) return;
+  const rows = state.graduated
+    .map(withLiveMarketData)
+    .sort((a, b) => String(b.graduatedDate || b.graduated_date || "").localeCompare(String(a.graduatedDate || a.graduated_date || "")) || a.player_name.localeCompare(b.player_name));
+
+  if (!rows.length) {
+    elements.graduatedBoard.innerHTML = `
+      <section class="graduated-empty">
+        <h3>No MLB graduates yet</h3>
+        <p class="muted">When a tracked player reaches MLB status and falls off the current Top 100, he will move here automatically without losing profile or market history.</p>
+      </section>
+    `;
+    return;
+  }
+
+  elements.graduatedBoard.innerHTML = `
+    <div class="graduated-summary">
+      ${scorebookMetric("MLB graduates", rows.length)}
+      ${scorebookMetric("With market pulse", rows.filter((player) => player.market_signal || player.avg_30 || player.last_sale).length)}
+      ${scorebookMetric("OnDeck alumni", rows.filter((player) => player.on_deck_board === "true" || player.onDeckBoard === true || player.date_added).length)}
+    </div>
+    <div class="graduated-grid">
+      ${rows.map((player) => graduatedCardMarkup(player)).join("")}
+    </div>
+  `;
+
+  elements.graduatedBoard.querySelectorAll(".graduate-card[data-player-id]").forEach((card) => {
+    const openGraduate = (event) => {
+      event.stopPropagation();
+      state.activeTool = "dashboard";
+      history.pushState(null, "", "#top-10");
+      syncToolVisibility();
+      openPlayerProfile(card.dataset.playerId);
+    };
+    card.addEventListener("click", openGraduate);
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openGraduate(event);
+      }
+    });
+  });
+}
+
+function graduatedCardMarkup(player) {
+  const thesis = player.thesis_outcome || player.result_note || player.market_note || graduationTimelineMessage();
+  return `
+    <article class="graduate-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}">
+      <div class="graduate-card-title">
+        <div>
+          <span class="graduate-badge">MLB Graduate</span>
+          <h3>${escapeHtml(player.player_name)}</h3>
+          <p>${escapeHtml([player.org, player.position].filter(Boolean).join(" · "))}</p>
+        </div>
+        <strong>${escapeHtml(formatShortDate(player.graduatedDate || player.graduated_date) || "-")}</strong>
+      </div>
+      <dl>
+        <div><dt>Original rating</dt><dd>${escapeHtml(originalInvestmentRating(player))}</dd></div>
+        <div><dt>Market pulse</dt><dd>${escapeHtml(lastKnownMarketPulse(player))}</dd></div>
+        <div><dt>Thesis outcome</dt><dd>${escapeHtml(thesis)}</dd></div>
+      </dl>
+      <span class="profile-link">Open full player profile</span>
+    </article>
+  `;
+}
+
+function originalInvestmentRating(player) {
+  return player.original_investment_rating || player.investment_rating || player.market_signal || `${player.callup_score ?? "-"}% move score`;
+}
+
+function lastKnownMarketPulse(player) {
+  const latest = latestCardValue(player);
+  const status = marketStatus(player);
+  if (latest && latest !== "Awaiting API" && latest !== "API pending") return `${status}: ${latest}`;
+  return status || "Market data retained";
+}
+
 function scorebookMetric(label, value) {
   return `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`;
 }
@@ -1267,7 +1434,10 @@ function renderCard(player) {
         <h3>${escapeHtml(profilePlayer.player_name)}</h3>
         <p class="muted">Top 10 rank ${escapeHtml(top10Rank(profilePlayer))} · Prospect rank ${escapeHtml(profilePlayer.prospect_rank ?? "-")} · Age ${escapeHtml(profilePlayer.age ?? "-")} · ETA ${escapeHtml(profilePlayer.eta ?? "-")}</p>
       </div>
-    <span class="score-pill ${scoreClass(profilePlayer.callup_score)}">${profilePlayer.callup_score}% move score</span>
+      <div class="profile-badges">
+        ${isGraduated(profilePlayer) ? `<span class="graduate-badge">MLB Graduate</span>` : ""}
+        <span class="score-pill ${scoreClass(profilePlayer.callup_score)}">${profilePlayer.callup_score}% move score</span>
+      </div>
     </div>
 
     <div class="breakdown">
@@ -1278,10 +1448,11 @@ function renderCard(player) {
     </div>
 
     ${profileResearchReport(profilePlayer)}
+    ${isGraduated(profilePlayer) ? graduationTimelinePanel(profilePlayer) : ""}
     ${profileStatsPanel(profilePlayer)}
     ${teamPathPanel(profilePlayer)}
     ${scoutingSnapshotPanel(profilePlayer)}
-    ${isOnDeckBoardPlayer(profilePlayer) ? marketPanel(profilePlayer) : ""}
+    ${isOnDeckBoardPlayer(profilePlayer) || isGraduated(profilePlayer) ? marketPanel(profilePlayer) : ""}
   `;
 
 }
@@ -1849,6 +2020,19 @@ function profileResearchReport(player) {
   `;
 }
 
+function graduationTimelinePanel(player) {
+  const date = formatShortDate(player.graduatedDate || player.graduated_date) || "Graduated";
+  return `
+    <section class="graduation-timeline">
+      <h3>Timeline</h3>
+      <div>
+        <span>${escapeHtml(date)}</span>
+        <p>${escapeHtml(player.timeline_event_graduated || graduationTimelineMessage())}</p>
+      </div>
+    </section>
+  `;
+}
+
 function whyOnDeckBullets(player) {
   const bullets = [];
   if (Number(player.opportunity_score) >= 65) bullets.push("Organizational path is stronger than the average prospect on this board.");
@@ -2059,9 +2243,17 @@ function orgInitials(org) {
 }
 
 function isCalledUp(player) {
-  const level = String(player.level ?? "").toUpperCase();
   const calledUp = String(player.called_up ?? "").toLowerCase();
-  return level === "MLB" || calledUp === "true" || Boolean(player.mlb_debut_date);
+  return hasMlbStatus(player) || calledUp === "true" || Boolean(player.mlb_debut_date);
+}
+
+function hasMlbStatus(player) {
+  return String(player.level ?? player.current_level ?? "").toUpperCase() === "MLB";
+}
+
+function isGraduated(player) {
+  return String(player.lifecycleStatus ?? player.lifecycle_status ?? "").toLowerCase() === "graduated"
+    || String(player.graduated ?? "").toLowerCase() === "true";
 }
 
 function isOnFortyMan(player) {
@@ -2069,6 +2261,7 @@ function isOnFortyMan(player) {
 }
 
 function isTop100Prospect(player) {
+  if (isGraduated(player) || player.onTop100 === false || String(player.on_top100 ?? "").toLowerCase() === "false") return false;
   return String(player.prospect_source ?? "").toLowerCase().includes("top 100") || String(player.player_id ?? "").startsWith("mlb-top100-");
 }
 
