@@ -1,5 +1,6 @@
 const SOLD_COMPS_API_URL = "https://api.sold-comps.com/v1/scrape";
 const BENCHMARK_CARD = "Bowman Chrome 1st Auto";
+const MARKET_CACHE_SECONDS = 60 * 60 * 24 * 7;
 const EXCLUDED_TITLE_TERMS = [
   "refractor",
   "sapphire",
@@ -64,6 +65,8 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    res.setHeader("Cache-Control", `public, max-age=300, s-maxage=${MARKET_CACHE_SECONDS}`);
+    res.setHeader("X-Market-Cache", "PLATFORM");
     return res.status(200).json(summarizeMarketData(raw, { player, keyword }));
   } catch (error) {
     return res.status(500).json({

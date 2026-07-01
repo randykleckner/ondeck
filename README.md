@@ -73,6 +73,8 @@ https://api.sold-comps.com/v1/scrape?keyword=[Player Name]+Bowman+Chrome+1st+Aut
 
 The frontend sends only the player name to `/api/market-data`. Backend code builds the canonical search query, URL-encodes it, filters out non-benchmark card titles such as refractors, color, numbered cards, paper, lots, breaks, digital, reprints, and custom cards, then summarizes last sale, 7/14/30-day averages, sales counts, optional active listings, buy zone, and recommendation. The API key is never included in browser code.
 
+Market-data responses are cached server-side for one week per player/search keyword. On Cloudflare Workers, the first request for a player in a weekly cache window may call SoldComps; repeat clicks and visitors should reuse the cached JSON and avoid spending additional SoldComps quota.
+
 When running as a plain static site with `python3 -m http.server`, `/api/market-data` will not exist. The profile will show that SoldComps is unavailable instead of falling back to older manual comps. Run through Vercel or `vercel dev` to test live market data.
 
 Generate cleaner eBay sold comps with API access:

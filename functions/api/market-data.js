@@ -1,5 +1,6 @@
 const SOLD_COMPS_API_URL = "https://api.sold-comps.com/v1/scrape";
 const BENCHMARK_CARD = "Bowman Chrome 1st Auto";
+const MARKET_CACHE_SECONDS = 60 * 60 * 24 * 7;
 const EXCLUDED_TITLE_TERMS = [
   "refractor",
   "sapphire",
@@ -41,6 +42,9 @@ export async function onRequestGet(context) {
 
   try {
     const keyword = buildCanonicalKeyword(player);
+    const cachedResponse = await readMarketCache(context, keyword);
+    if (cachedResponse) return cachedResponse;
+
     const upstreamUrl = buildSoldCompsUrl(keyword);
     const upstreamResponse = await fetch(upstreamUrl, {
       headers: {
@@ -60,7 +64,12 @@ export async function onRequestGet(context) {
       }, upstreamResponse.status);
     }
 
-    return jsonResponse(summarizeMarketData(raw, { player, keyword }));
+    const response = jsonResponse(summarizeMarketData(raw, { player, keyword }), 200, {
+      "Cache-Control": `public, max-age=300, s-maxage=${MARKET_CACHE_SECONDS}`,
+      "X-Market-Cache": "MISS",
+    });
+    await writeMarketCache(context, keyword, response.clone());
+    return response;
   } catch (error) {
     return jsonResponse({
       error: "Unable to load market data.",
@@ -84,6 +93,49 @@ function jsonResponse(body, status = 200, headers = {}) {
       ...headers,
     },
   });
+}
+
+async function readMarketCache(context, keyword) {
+  if (!globalThis.caches?.default) return null;
+  const response = await globalThis.caches.default.match(marketCacheRequest(context, keyword));
+  if (!response) return null;
+  const headers = new Headers(response.headers);
+  headers.set("X-Market-Cache", "HIT");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+async function writeMarketCache(context, keyword, response) {
+  if (!globalThis.caches?.default || response.status !== 200) return;
+  const cacheResponse = new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+  const cachePromise = globalThis.caches.default.put(marketCacheRequest(context, keyword), cacheResponse);
+  if (context.waitUntil) {
+    context.waitUntil(cachePromise);
+    return;
+  }
+  await cachePromise;
+}
+
+function marketCacheRequest(context, keyword) {
+  const requestUrl = new URL(context.request.url);
+  requestUrl.pathname = "/api/market-data-cache";
+  requestUrl.search = "";
+  requestUrl.searchParams.set("keyword", keyword);
+  requestUrl.searchParams.set("week", marketCacheWeek());
+  return new Request(requestUrl.toString(), { method: "GET" });
+}
+
+function marketCacheWeek(date = new Date()) {
+  const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const day = Math.floor((date - start) / 86400000);
+  return `${date.getUTCFullYear()}-${String(Math.floor(day / 7) + 1).padStart(2, "0")}`;
 }
 
 function buildCanonicalKeyword(player) {
