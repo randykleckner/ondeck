@@ -1286,14 +1286,19 @@ function withLiveMarketData(player) {
 
 async function requestLiveMarketData(player) {
   const playerId = String(player.player_id);
-  if (state.liveMarketData.has(playerId) || state.liveMarketRequests.has(playerId) || state.liveMarketErrors.has(playerId)) return;
+  const recentError = state.liveMarketErrors.get(playerId);
+  if (state.liveMarketData.has(playerId) || state.liveMarketRequests.has(playerId) || isRecentMarketError(recentError)) return;
   state.liveMarketRequests.add(playerId);
+  state.liveMarketErrors.delete(playerId);
   const params = new URLSearchParams({ player: player.player_name || "" });
 
   try {
     const response = await fetch(`/api/market-data?${params.toString()}`, { headers: { Accept: "application/json" } });
     if (!response.ok) {
-      state.liveMarketErrors.set(playerId, `SoldComps unavailable (${response.status})`);
+      state.liveMarketErrors.set(playerId, {
+        message: `SoldComps unavailable (${response.status})`,
+        at: Date.now(),
+      });
       if (String(state.selectedId) === playerId) {
         renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
       }
@@ -1308,13 +1313,20 @@ async function requestLiveMarketData(player) {
       renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
     }
   } catch (error) {
-    state.liveMarketErrors.set(playerId, "SoldComps API is not available in this local/static run.");
+    state.liveMarketErrors.set(playerId, {
+      message: "SoldComps API is not available in this local/static run.",
+      at: Date.now(),
+    });
     if (String(state.selectedId) === playerId) {
       renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
     }
   } finally {
     state.liveMarketRequests.delete(playerId);
   }
+}
+
+function isRecentMarketError(error) {
+  return error?.at && Date.now() - error.at < 30000;
 }
 
 function normalizeLiveMarketData(data) {
@@ -1547,7 +1559,7 @@ function playerPathRead(player, lane) {
 function marketPanel(player) {
   const playerId = String(player.player_id);
   const isLoading = state.liveMarketRequests.has(playerId);
-  const error = state.liveMarketErrors.get(playerId);
+  const error = state.liveMarketErrors.get(playerId)?.message;
   if (!player.market_signal) {
     return `
       <section class="card-market-panel">
