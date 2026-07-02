@@ -260,7 +260,7 @@ loadTop100Prospects();
 syncRouteFromHash();
 
 async function loadTop100Prospects() {
-  const response = await fetch("./data/mlb-top100-2026.csv");
+  const response = await fetch("./data/mlb-top100-2026.csv?v=20260702-current");
   if (!response.ok) {
     throw new Error(`Could not load MLB Top 100 seed data: ${response.status}`);
   }
@@ -275,7 +275,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/depth-chart-current.csv"),
     loadOptionalCsv("./data/player-enrichment.csv"),
     loadOptionalCsv("./data/player-news.csv"),
-    loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
+    loadOptionalCsv("./data/rank-history.csv?v=20260702-current"),
     loadOptionalCsv("./data/card-targets.csv?v=20260702-2"),
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
     loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
@@ -333,7 +333,7 @@ function applyProspectEnrichment(prospects, enrichment) {
       ...prospect,
       ...overlay,
       level: overlay.current_level || prospect.level,
-      on_40man: overlay.on_40man,
+      on_40man: overlay.on_40man ?? prospect.on_40man,
     };
   });
 }
@@ -548,11 +548,12 @@ function getFilteredRows() {
 }
 
 function applyCardTargets(players) {
-  const byId = new Map(state.cardTargets
-    .filter((row) => String(row.enabled ?? "true").toLowerCase() !== "false")
-    .map((row) => [String(row.player_id), row]));
+  const enabledTargets = state.cardTargets
+    .filter((row) => String(row.enabled ?? "true").toLowerCase() !== "false");
+  const byId = new Map(enabledTargets.map((row) => [String(row.player_id), row]));
+  const byName = new Map(enabledTargets.map((row) => [normalizeName(row.player_name), row]));
   return players.map((player) => {
-    const target = byId.get(String(player.player_id));
+    const target = byId.get(String(player.player_id)) || byName.get(normalizeName(player.player_name));
     if (!target) return player;
     return {
       ...player,

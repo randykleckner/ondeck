@@ -1,4 +1,4 @@
-const DEFAULT_TOP100_SOURCE_URL = "https://www.mlb.com/prospects/stats/top-prospects";
+const DEFAULT_TOP100_SOURCE_URL = "https://www.mlb.com/milb/prospects/top100/";
 const MIN_RUN_INTERVAL_DAYS = 14;
 
 export async function onRequest({ request, env }) {
@@ -68,7 +68,7 @@ export async function runTop100TrendUpdate(env, options = {}) {
 
   const latestPreviousSnapshotDate = await previousSnapshotDate(env, today);
   const previousRanks = latestPreviousSnapshotDate
-    ? await rankMapForSnapshot(env, latestPreviousSnapshotDate)
+    ? await rankLookupMapForSnapshot(env, latestPreviousSnapshotDate)
     : new Map();
 
   await env.MARKET_DB.batch(rankings.map((player) => env.MARKET_DB.prepare(`
@@ -98,7 +98,9 @@ export async function runTop100TrendUpdate(env, options = {}) {
   )));
 
   for (const player of rankings) {
-    const previousRank = previousRanks.get(player.playerKey) ?? null;
+    const previousRank = rankLookupKeys(player)
+      .map((key) => previousRanks.get(key))
+      .find((rank) => rank != null) ?? null;
     const history = await rankHistorySummary(env, player.playerKey);
     await env.MARKET_DB.prepare(`
       INSERT INTO top100_rank_trends (
@@ -217,13 +219,26 @@ async function previousSnapshotDate(env, today) {
   return row?.snapshot_date || null;
 }
 
-async function rankMapForSnapshot(env, snapshotDate) {
+async function rankLookupMapForSnapshot(env, snapshotDate) {
   const rows = await env.MARKET_DB.prepare(`
-    SELECT player_key, rank
+    SELECT player_key, player_id, mlbam_id, player_name, rank
     FROM top100_rank_snapshots
     WHERE snapshot_date = ?
   `).bind(snapshotDate).all();
-  return new Map((rows.results || []).map((row) => [row.player_key, Number(row.rank)]));
+  const map = new Map();
+  for (const row of rows.results || []) {
+    const rank = Number(row.rank);
+    if (!Number.isFinite(rank)) continue;
+    for (const key of rankLookupKeys({
+      playerKey: row.player_key,
+      playerId: row.player_id,
+      mlbamId: row.mlbam_id,
+      playerName: row.player_name,
+    })) {
+      map.set(key, rank);
+    }
+  }
+  return map;
 }
 
 async function rankHistorySummary(env, playerKey) {
@@ -264,10 +279,12 @@ export function extractTop100Rankings(body, contentType = "", sourceUrl = "") {
     return rankingsFromCsv(trimmed);
   }
 
-  const jsonText = contentType.includes("application/json") ? trimmed : nextDataJson(trimmed);
+  const jsonText = contentType.includes("application/json") ? trimmed : embeddedJson(trimmed);
   if (jsonText) {
     try {
-      return rankingsFromJson(JSON.parse(jsonText));
+      const root = JSON.parse(jsonText);
+      const mlbRankings = rankingsFromMlbInitState(root);
+      return mlbRankings.length ? mlbRankings : rankingsFromJson(root);
     } catch {
       return [];
     }
@@ -288,6 +305,49 @@ function rankingsFromCsv(csv) {
       position: row.position || row.pos || row.Position || "",
       raw: row,
     }))
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 100);
+}
+
+function rankingsFromMlbInitState(root) {
+  const payload = root?.payload;
+  const rootQuery = payload?.ROOT_QUERY;
+  if (!payload || !rootQuery) return [];
+
+  const rankingsKey = Object.keys(rootQuery).find((key) => key.startsWith("getPlayerRankingsFromSelection"));
+  const rankings = rankingsKey ? rootQuery[rankingsKey] : [];
+  if (!Array.isArray(rankings)) return [];
+
+  return rankings
+    .map((row) => {
+      const entity = row?.playerEntity || row?.player || {};
+      const person = dereference(payload, entity?.player?.__ref) || {};
+      const rosterTeam = dereference(payload, person?.activeRoster?.__ref) || {};
+      const sport = dereference(payload, rosterTeam?.sport?.__ref) || {};
+      const playerName = [person.useName, person.useLastName].filter(Boolean).join(" ")
+        || person.fullName
+        || entity.playerName
+        || "";
+      const org = rosterTeam.parentOrgName || rosterTeam.name || entity.teamName || entity.org || "";
+      return normalizeRanking({
+        rank: row.rank,
+        playerName,
+        playerId: person.id || entity.playerId || "",
+        mlbamId: person.id || entity.mlbamId || "",
+        org,
+        position: entity.position || person.primaryPosition?.abbreviation || "",
+        raw: {
+          rank: row.rank,
+          playerId: person.id || "",
+          playerName,
+          org,
+          position: entity.position || person.primaryPosition?.abbreviation || "",
+          level: sport.abbreviation || "",
+          eta: entity.eta || "",
+        },
+      });
+    })
     .filter(Boolean)
     .sort((a, b) => a.rank - b.rank)
     .slice(0, 100);
@@ -343,6 +403,28 @@ function normalizeRanking({ rank, playerName, playerId = "", mlbamId = "", org =
 function nextDataJson(html) {
   const match = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
   return match?.[1] ? decodeHtml(match[1]) : "";
+}
+
+function initStateJson(html) {
+  const match = html.match(/<span[^>]+data-init-state="([\s\S]*?)"><\/span>/i);
+  return match?.[1] ? decodeHtml(match[1]) : "";
+}
+
+function embeddedJson(html) {
+  return nextDataJson(html) || initStateJson(html);
+}
+
+function dereference(payload, ref) {
+  return ref ? payload?.[ref] : null;
+}
+
+function rankLookupKeys(player) {
+  return [
+    player.playerKey,
+    player.mlbamId ? `mlbam:${cleanText(player.mlbamId)}` : "",
+    player.playerId ? `id:${cleanText(player.playerId)}` : "",
+    player.playerName ? `name:${normalizeName(player.playerName)}` : "",
+  ].filter(Boolean);
 }
 
 function walk(value, visitor) {

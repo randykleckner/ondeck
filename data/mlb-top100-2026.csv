@@ -1,101 +1,101 @@
-player_id,player_name,org,position,age,level,prospect_rank,bats,throws,on_40man,eta,height_weight,source,source_url
-mlb-top100-1,Jesús Made,Milwaukee Brewers,SS,19,AA,1,S,R,,2026,"6' 1"" / 221 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-2,Leo De Vries,Athletics,SS,19,AA,2,S,R,,2026,"6' 0"" / 183 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-3,Seth Hernandez,Pittsburgh Pirates,RHP,19,A+,3,R,R,,2028,"6' 4"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-4,Eli Willits,Washington Nationals,SS,18,A+,4,S,R,,2028,"6' 1"" / 180 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-5,Colt Emerson,Seattle Mariners,SS,20,MLB,5,L,R,true,2026,"6' 0"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-6,Kade Anderson,Seattle Mariners,LHP,21,AA,6,L,L,,2027,"6' 2"" / 179 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-7,Max Clark,Detroit Tigers,OF,21,AAA,7,L,L,,2026,"5' 11"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-8,Josue De Paula,Los Angeles Dodgers,OF,21,AA,8,L,L,,2027,"6' 3"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-9,Sebastian Walcott,Texas Rangers,SS/3B,20,AA,9,R,R,,2027,"6' 4"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-10,Franklin Arias,Boston Red Sox,SS,20,AA,10,R,R,,2027,"5' 11"" / 170 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-11,Walker Jenkins,Minnesota Twins,OF,21,AAA,11,L,R,,2026,"6' 3"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-12,Thomas White,Miami Marlins,LHP,21,AAA,12,L,L,,2026,"6' 5"" / 240 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-13,Caleb Bonemer,Chicago White Sox,3B/SS,20,AA,13,R,R,,2028,"6' 1"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-14,Aidan Miller,Philadelphia Phillies,SS,22,AAA,14,R,R,,2026,"6' 1"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-15,Ethan Holliday,Colorado Rockies,SS,19,A,15,L,R,,2029,"6' 2"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-16,Luis Peña,Milwaukee Brewers,INF,19,A+,16,R,R,,2028,"5' 11"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-17,Zyhir Hope,Los Angeles Dodgers,OF,21,AA,17,L,L,,2027,"5' 10"" / 193 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-18,George Lombard Jr.,New York Yankees,INF,21,AAA,18,R,R,,2027,"6' 2"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-19,Ryan Sloan,Seattle Mariners,RHP,20,AA,19,R,R,,2028,"6' 5"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-20,Liam Doyle,St. Louis Cardinals,LHP,22,AA,20,R,L,,2027,"6' 2"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-21,Braden Montgomery,Chicago White Sox,OF,23,MLB,21,S,R,true,2026,"6' 2"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-22,Rainiel Rodriguez,St. Louis Cardinals,C,19,AA,22,R,R,,2028,"5' 10"" / 197 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-23,Alfredo Duno,Cincinnati Reds,C,20,A+,23,R,R,,2028,"6' 2"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-24,Noah Schultz,Chicago White Sox,LHP,22,AAA,24,L,L,,2026,"6' 10"" / 240 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-25,Robby Snelling,Miami Marlins,LHP,22,MLB,25,R,L,true,2026,"6' 3"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-26,Jamie Arnold,Athletics,LHP,22,AA,26,L,L,,2027,"6' 1"" / 188 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-27,Lazaro Montes,Seattle Mariners,OF,21,AA,27,L,R,,2027,"6' 5"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-28,Josuar Gonzalez,San Francisco Giants,SS,18,ROK,28,S,R,,2029,"5' 10"" / 178 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-29,JoJo Parker,Toronto Blue Jays,SS,19,A,29,L,R,,2029,"6' 2"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-30,Ryan Waldschmidt,Arizona Diamondbacks,OF,23,AAA,30,R,R,,2026,"6' 0"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-31,Aiva Arquette,Miami Marlins,SS,22,AA,31,R,R,,2028,"6' 5"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-32,Jonah Tong,New York Mets,RHP,23,AAA,32,R,R,,2026,"6' 1"" / 180 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-33,Edward Florentino,Pittsburgh Pirates,OF/1B,19,A+,33,L,R,,2028,"6' 3"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-34,Eduardo Quintero,Los Angeles Dodgers,OF,20,A+,34,R,R,,2028,"6' 1"" / 175 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-35,Kaelen Culpepper,Minnesota Twins,SS,23,AAA,35,R,R,,2027,"5' 10"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-36,Travis Sykora,Washington Nationals,RHP,22,AA,36,R,R,,2028,"6' 6"" / 232 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-37,Gage Jump,Athletics,LHP,23,MLB,37,L,L,true,2026,"6' 0"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-38,Mike Sirota,Los Angeles Dodgers,OF,23,AA,38,R,R,,2027,"6' 2"" / 188 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-39,Theo Gillen,Tampa Bay Rays,OF,20,AA,39,L,R,,2028,"6' 2"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-40,Eduardo Tait,Minnesota Twins,C,19,A+,40,L,R,,2028,"6' 0"" / 175 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-41,Bryce Rainer,Detroit Tigers,SS,20,A+,41,L,R,,2028,"6' 3"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-42,Angel Genao,Cleveland Guardians,SS,22,AAA,42,S,R,,2026,"5' 11"" / 150 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-43,Michael Arroyo,Seattle Mariners,2B/OF,21,AA,43,R,R,,2026,"5' 10"" / 160 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-44,Cam Caminiti,Atlanta Braves,LHP,19,A+,44,L,L,,2027,"6' 2"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-45,Hagen Smith,Chicago White Sox,LHP,22,AAA,45,L,L,,2026,"6' 3"" / 235 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-46,Tyler Bremner,Los Angeles Angels,RHP,22,A+,46,R,R,,2026,"6' 2"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-47,Ethan Salas,San Diego Padres,C,20,AA,47,L,R,,2027,"6' 1"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-48,Billy Carlson,Chicago White Sox,SS,19,A,48,R,R,,2029,"6' 1"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-49,Emmanuel Rodriguez,Minnesota Twins,OF,23,AAA,49,L,L,,2026,"5' 11"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-50,Blake Mitchell,Kansas City Royals,C,21,A+,50,L,R,,2027,"6' 0"" / 202 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-51,Arjun Nimmala,Toronto Blue Jays,SS,20,ROK,51,R,R,,2028,"6' 0"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-52,Emil Morales,Los Angeles Dodgers,SS,19,A+,52,R,R,,2029,"6' 3"" / 191 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-53,Luis Hernández,San Francisco Giants,SS,17,ROK,53,R,R,,2030,"5' 10"" / 172 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-54,Ralphy Velazquez,Cleveland Guardians,1B/OF,21,AAA,54,L,R,,2027,"6' 1"" / 240 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-55,Jett Williams,Milwaukee Brewers,3B/SS/OF,22,AAA,55,R,R,,2026,"5' 7"" / 179 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-56,JR Ritchie,Atlanta Braves,RHP,23,AAA,56,R,R,,2026,"6' 2"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-57,Jarlin Susana,Washington Nationals,RHP,22,AA,57,R,R,,2027,"6' 6"" / 235 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-58,Elmer Rodríguez,New York Yankees,RHP,22,AAA,58,L,R,,2026,"6' 4"" / 177 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-59,Jhonny Level,San Francisco Giants,SS,19,A+,59,S,R,,2029,"5' 8"" / 186 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-60,Steele Hall,Cincinnati Reds,SS,18,ROK,60,R,R,,2029,"5' 10"" / 180 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-61,Cooper Pratt,Milwaukee Brewers,SS,21,MLB,61,R,R,true,2026,"6' 4"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-62,Josue Briceño,Detroit Tigers,C/1B,21,AA,62,L,R,,2027,"6' 4"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-63,Joshua Báez,St. Louis Cardinals,OF,22,AAA,63,R,R,,2026,"6' 3"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-64,Nate George,Baltimore Orioles,OF,20,A+,64,R,R,,2028,"6' 0"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-65,Dax Kilby,New York Yankees,SS,19,A,65,L,R,,2028,"6' 2"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-66,Gage Wood,Philadelphia Phillies,RHP,22,AA,66,R,R,,2027,"6' 0"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-67,Anthony Eyanson,Boston Red Sox,RHP,21,AA,67,R,R,,2027,"6' 2"" / 208 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-68,Cooper Ingle,Cleveland Guardians,C,24,AAA,68,L,R,,2026,"5' 8"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-69,Jonny Farmelo,Seattle Mariners,OF,21,A+,69,L,R,,2028,"6' 1"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-70,Charlie Condon,Colorado Rockies,1B/OF,23,AAA,70,R,R,,2026,"6' 5"" / 216 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-71,Carlos Lagrange,New York Yankees,RHP,23,AAA,71,R,R,,2026,"6' 7"" / 248 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-72,Caden Scarborough,Texas Rangers,RHP,21,A+,72,R,R,,2027,"6' 5"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-73,Kendry Chourio,Kansas City Royals,RHP,18,A+,73,R,R,,2029,"6' 0"" / 160 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-74,Kevin Alvarez,Houston Astros,OF,18,A,74,L,L,,2029,"6' 3"" / 184 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-75,River Ryan,Los Angeles Dodgers,RHP,27,AAA,75,R,R,,2026,"6' 2"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-76,Roldy Brito,Colorado Rockies,OF/2B,19,A,76,S,R,,2028,"5' 11"" / 183 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-77,Kayson Cunningham,Arizona Diamondbacks,SS,20,A+,77,L,R,,2029,"5' 10"" / 182 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-78,Jefferson Rojas,Chicago Cubs,SS,21,AA,78,R,R,,2027,"5' 11"" / 150 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-79,Brody Hopkins,Tampa Bay Rays,RHP,24,AAA,79,R,R,,2026,"6' 4"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-80,Pedro Ramírez,Chicago Cubs,3B/2B,22,MLB,80,S,R,true,2026,"5' 9"" / 165 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-81,Kyson Witherspoon,Boston Red Sox,RHP,21,A+,81,R,R,,2027,"6' 2"" / 206 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-82,Jurrangelo Cijntje,St. Louis Cardinals,RHP,23,AA,82,S,S,,2026,"5' 11"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-83,Jaxon Wiggins,Chicago Cubs,RHP,24,A+,83,R,R,,2026,"6' 6"" / 225 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-84,Nathan Flewelling,Tampa Bay Rays,C,19,A+,84,L,R,,2028,"6' 2"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-85,Ronny Cruz,Washington Nationals,INF,19,A+,85,R,R,,2029,"6' 2"" / 170 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-86,Kruz Schoolcraft,San Diego Padres,LHP,19,A,86,L,L,,2029,"6' 8"" / 229 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-87,Ike Irish,Baltimore Orioles,OF/1B,22,A+,87,L,R,,2028,"6' 2"" / 201 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-88,Wei-En Lin,Athletics,LHP,20,AAA,88,L,L,,2027,"6' 2"" / 179 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-89,Luis Lara,Milwaukee Brewers,OF,21,AAA,89,S,R,,2026,"5' 7"" / 169 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-90,Josh Hammond,Kansas City Royals,SS/3B,19,A,90,R,R,,2029,"6' 1"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-91,Justin Gonzales,Boston Red Sox,OF,19,A+,91,R,R,,2028,"6' 5"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-92,Charles Davalan,Los Angeles Dodgers,OF,22,A+,92,L,R,,2028,"5' 9"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-93,Xavier Neyens,Houston Astros,3B/SS,19,A,93,L,R,,2029,"6' 3"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-94,Edwin Arroyo,Cincinnati Reds,SS,22,MLB,94,S,R,true,2026,"5' 11"" / 173 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-95,Devin Fitz-Gerald,Washington Nationals,INF,20,AA,95,S,R,,2028,"5' 10"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-96,Felnin Celesten,Seattle Mariners,SS,20,A+,96,S,R,,2028,"6' 1"" / 175 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-97,Seaver King,Washington Nationals,SS,23,AAA,97,R,R,,2027,"6' 0"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-98,Karson Milbrandt,Miami Marlins,RHP,22,AAA,98,R,R,,2027,"6' 2"" / 230 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-99,Josiah Hartshorn,Chicago Cubs,OF/1B,19,A+,99,S,L,,2028,"6' 0"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
-mlb-top100-100,Eric Hartman,Atlanta Braves,OF,20,A+,100,L,R,,2029,"6' 1"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+player_id,mlbam_id,player_name,org,position,age,level,prospect_rank,bats,throws,on_40man,eta,height_weight,source,source_url
+mlb-top100-1,815908,Jesús Made,Milwaukee Brewers,SS,19,AA,1,S,R,,2026,"6' 1"" / 221 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-2,815888,Leo De Vries,Athletics,SS,19,AA,2,S,R,,2026,"6' 0"" / 183 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-4,816113,Eli Willits,Washington Nationals,SS,18,A+,3,S,R,,2028,"6' 1"" / 180 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-8,800543,Josue De Paula,Los Angeles Dodgers,OF,21,AA,4,L,L,,2027,"6' 3"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-6,807739,Kade Anderson,Seattle Mariners,LHP,21,AA,5,L,L,,2027,"6' 2"" / 179 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-3,815825,Seth Hernandez,Pittsburgh Pirates,RHP,20,A+,6,R,R,,2028,"6' 4"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-10,808265,Franklin Arias,Boston Red Sox,SS,20,AA,7,R,R,,2027,"5' 11"" / 170 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-19,815549,Ryan Sloan,Seattle Mariners,RHP,20,AA,8,R,R,,2028,"6' 5"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-39,815394,Theo Gillen,Tampa Bay Rays,OF,20,AA,9,L,R,,2028,"6' 2"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-9,806964,Sebastian Walcott,Texas Rangers,SS/3B,20,AA,10,R,R,,2027,"6' 4"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-38,701527,Mike Sirota,Los Angeles Dodgers,OF,23,AA,11,R,R,,2027,"6' 2"" / 188 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-22,823787,Rainiel Rodriguez,St. Louis Cardinals,C,19,AA,12,R,R,,2028,"5' 10"" / 197 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-7,703601,Max Clark,Detroit Tigers,OF,21,AAA,13,L,L,,2026,"5' 11"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-11,805805,Walker Jenkins,Minnesota Twins,OF,21,AAA,14,L,R,,2026,"6' 3"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-28,829034,Josuar Gonzalez,San Francisco Giants,SS,18,ROK,15,S,R,,2029,"5' 10"" / 178 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-13,815352,Caleb Bonemer,Chicago White Sox,3B/SS,20,AA,16,R,R,,2028,"6' 1"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-15,815787,Ethan Holliday,Colorado Rockies,SS,19,A,17,L,R,,2029,"6' 2"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-16,821270,Luis Peña,Milwaukee Brewers,INF,19,A+,18,R,R,,2028,"5' 11"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-17,814307,Zyhir Hope,Los Angeles Dodgers,OF,21,AA,19,L,L,,2027,"5' 10"" / 193 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-18,806146,George Lombard Jr.,New York Yankees,INF,21,AAA,20,R,R,,2027,"6' 2"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-12,806258,Thomas White,Miami Marlins,LHP,21,AAA,21,L,L,,2026,"6' 5"" / 240 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-20,824604,Liam Doyle,St. Louis Cardinals,LHP,22,AA,22,R,L,,2027,"6' 2"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-21,695731,Braden Montgomery,Chicago White Sox,OF,23,MLB,23,S,R,true,2026,"6' 2"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-23,806957,Alfredo Duno,Cincinnati Reds,C,20,AA,24,R,R,,2028,"6' 2"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-24,702273,Noah Schultz,Chicago White Sox,LHP,22,MLB,25,L,L,true,2026,"6' 10"" / 240 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-26,701364,Jamie Arnold,Athletics,LHP,22,AA,26,L,L,,2027,"6' 1"" / 188 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-27,703155,Lazaro Montes,Seattle Mariners,OF,21,AA,27,L,R,,2027,"6' 5"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-29,828098,JoJo Parker,Toronto Blue Jays,SS,19,A,28,L,R,,2029,"6' 2"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-30,814439,Ryan Waldschmidt,Arizona Diamondbacks,OF,23,AAA,29,R,R,,2026,"6' 0"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-14,805795,Aidan Miller,Philadelphia Phillies,SS,22,AAA,30,R,R,,2026,"6' 1"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-33,821273,Edward Florentino,Pittsburgh Pirates,OF/1B,19,A+,31,L,R,,2028,"6' 3"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-34,808234,Eduardo Quintero,Los Angeles Dodgers,OF,20,A+,32,R,R,,2028,"6' 1"" / 175 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-35,701785,Kaelen Culpepper,Minnesota Twins,SS,23,AAA,33,R,R,,2027,"5' 10"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-47,806956,Ethan Salas,San Diego Padres,C,20,AA,34,L,R,,2027,"6' 1"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-53,836582,Luis Hernández,San Francisco Giants,SS,17,ROK,35,R,R,,2030,"5' 10"" / 172 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-36,805809,Travis Sykora,Washington Nationals,RHP,22,AA,36,R,R,,2028,"6' 6"" / 232 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-37,695611,Gage Jump,Athletics,LHP,23,MLB,37,L,L,true,2026,"6' 0"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-54,806252,Ralphy Velazquez,Cleveland Guardians,1B/OF,21,AAA,38,L,R,,2027,"6' 1"" / 240 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-25,702281,Robby Snelling,Miami Marlins,LHP,22,MLB,39,R,L,true,2026,"6' 3"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-40,806953,Eduardo Tait,Minnesota Twins,C,19,A+,40,L,R,,2028,"6' 0"" / 175 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-41,800614,Bryce Rainer,Detroit Tigers,SS,20,A+,41,L,R,,2028,"6' 3"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-31,804109,Aiva Arquette,Miami Marlins,SS,22,AA,42,R,R,,2028,"6' 5"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-42,694197,Angel Genao,Cleveland Guardians,SS,22,AAA,43,S,R,,2026,"5' 11"" / 150 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-43,703197,Michael Arroyo,Seattle Mariners,2B/OF,21,AA,44,R,R,,2026,"5' 10"" / 160 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-44,807284,Cam Caminiti,Atlanta Braves,LHP,19,A+,45,L,L,,2027,"6' 2"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-46,803285,Tyler Bremner,Los Angeles Angels,RHP,22,A+,46,R,R,,2026,"6' 2"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-51,805796,Arjun Nimmala,Toronto Blue Jays,SS,20,A,47,R,R,,2028,"6' 0"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-52,815896,Emil Morales,Los Angeles Dodgers,SS,19,A+,48,R,R,,2029,"6' 3"" / 191 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-63,695491,Joshua Báez,St. Louis Cardinals,OF,23,AAA,49,R,R,,2026,"6' 3"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-56,702275,JR Ritchie,Atlanta Braves,RHP,23,AAA,50,R,R,,2026,"6' 2"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-57,703186,Jarlin Susana,Washington Nationals,RHP,22,AA,51,R,R,,2027,"6' 6"" / 235 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-59,815929,Jhonny Level,San Francisco Giants,SS,19,A+,52,S,R,,2029,"5' 8"" / 186 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-60,829162,Steele Hall,Cincinnati Reds,SS,18,ROK,53,R,R,,2029,"5' 10"" / 180 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-66,805906,Gage Wood,Philadelphia Phillies,RHP,22,AA,54,R,R,,2027,"6' 0"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-67,809254,Anthony Eyanson,Boston Red Sox,RHP,21,AA,55,R,R,,2027,"6' 2"" / 208 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-45,696146,Hagen Smith,Chicago White Sox,LHP,22,AAA,56,L,L,,2026,"6' 3"" / 235 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-61,806198,Cooper Pratt,Milwaukee Brewers,SS,21,MLB,57,R,R,true,2026,"6' 4"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-49,691181,Emmanuel Rodriguez,Minnesota Twins,OF,23,AAA,58,L,L,,2026,"5' 11"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-62,800522,Josue Briceño,Detroit Tigers,C/1B,21,A,59,L,R,,2027,"6' 4"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-64,825582,Nate George,Baltimore Orioles,OF,20,A+,60,R,R,,2028,"6' 0"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-48,815814,Billy Carlson,Chicago White Sox,SS,19,A,61,R,R,,2029,"6' 1"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-65,828076,Dax Kilby,New York Yankees,SS,19,A,62,L,R,,2028,"6' 2"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-68,694876,Cooper Ingle,Cleveland Guardians,C,24,MLB,63,L,R,true,2026,"5' 8"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-69,806071,Jonny Farmelo,Seattle Mariners,OF,21,A+,64,L,R,,2028,"6' 1"" / 205 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-70,809707,Charlie Condon,Colorado Rockies,1B/OF,23,AAA,65,R,R,,2026,"6' 5"" / 216 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-72,807291,Caden Scarborough,Texas Rangers,RHP,21,A+,66,R,R,,2027,"6' 5"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-78,800473,Jefferson Rojas,Chicago Cubs,SS,21,AA,67,R,R,,2027,"5' 11"" / 150 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-89,800325,Luis Lara,Milwaukee Brewers,OF,21,AAA,68,S,R,,2026,"5' 7"" / 169 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-73,830402,Kendry Chourio,Kansas City Royals,RHP,18,A+,69,R,R,,2029,"6' 0"" / 160 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-74,829037,Kevin Alvarez,Houston Astros,OF,18,A,70,L,L,,2029,"6' 3"" / 184 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-75,689981,River Ryan,Los Angeles Dodgers,RHP,27,AAA,71,R,R,,2026,"6' 2"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-76,821041,Roldy Brito,Colorado Rockies,OF/2B,19,A,72,S,R,,2028,"5' 11"" / 183 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-77,815617,Kayson Cunningham,Arizona Diamondbacks,SS,20,A+,73,L,R,,2029,"5' 10"" / 182 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-80,699393,Pedro Ramírez,Chicago Cubs,3B/2B,22,MLB,74,S,R,true,2026,"5' 9"" / 165 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-96,806958,Felnin Celesten,Seattle Mariners,SS,20,A+,75,S,R,,2028,"6' 1"" / 175 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-84,807083,Nathan Flewelling,Tampa Bay Rays,C,19,A+,76,L,R,,2028,"6' 2"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-98,703596,Karson Milbrandt,Miami Marlins,RHP,22,AAA,77,R,R,,2027,"6' 2"" / 230 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-58,695684,Elmer Rodríguez,New York Yankees,RHP,22,AAA,78,L,R,,2026,"6' 4"" / 177 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-99,815824,Josiah Hartshorn,Chicago Cubs,OF/1B,19,A+,79,S,L,,2028,"6' 0"" / 220 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-85,826723,Ronny Cruz,Washington Nationals,INF,19,A+,80,R,R,,2029,"6' 2"" / 170 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-100,807080,Eric Hartman,Atlanta Braves,OF,20,A+,81,L,R,,2029,"6' 1"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-32,804636,Jonah Tong,New York Mets,RHP,23,AAA,82,R,R,,2026,"6' 1"" / 180 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-55,702518,Jett Williams,Milwaukee Brewers,3B/SS/OF,22,AAA,83,R,R,,2026,"5' 7"" / 179 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-87,702610,Ike Irish,Baltimore Orioles,OF/1B,22,A+,84,L,R,,2028,"6' 2"" / 201 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-71,801739,Carlos Lagrange,New York Yankees,RHP,23,AAA,85,R,R,,2026,"6' 7"" / 248 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-90,815843,Josh Hammond,Kansas City Royals,SS/3B,19,A,86,R,R,,2029,"6' 1"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-91,821100,Justin Gonzales,Boston Red Sox,OF,19,A+,87,R,R,,2028,"6' 5"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-92,804560,Charles Davalan,Los Angeles Dodgers,OF,22,A+,88,L,R,,2028,"5' 9"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-93,815832,Xavier Neyens,Houston Astros,3B/SS,19,A,89,L,R,,2029,"6' 3"" / 210 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-94,695490,Edwin Arroyo,Cincinnati Reds,SS/2B,22,MLB,90,S,R,true,2026,"5' 11"" / 173 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-christian-zazueta,800537,Christian Zazueta,Los Angeles Dodgers,RHP,21,AA,91,R,R,,2028,"6' 3"" / 163 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-95,803849,Devin Fitz-Gerald,Washington Nationals,INF,20,AA,92,S,R,,2028,"5' 10"" / 185 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-97,814409,Seaver King,Washington Nationals,SS,23,AAA,93,R,R,,2027,"6' 0"" / 195 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-83,694393,Jaxon Wiggins,Chicago Cubs,RHP,24,A+,94,R,R,,2026,"6' 6"" / 225 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-francisco-renteria,836353,Francisco Renteria,Philadelphia Phillies,OF,17,ROK,95,R,R,,2031,"6' 3"" / 216 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-josh-adamczewski,815304,Josh Adamczewski,Milwaukee Brewers,OF,21,AA,96,L,R,,2028,"5' 11"" / 190 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-james-tibbs-iii,696486,James Tibbs III,Los Angeles Dodgers,1B/OF,23,AAA,97,L,L,,2027,"5' 11"" / 201 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-caden-bodine,805207,Caden Bodine,Tampa Bay Rays,C,22,AA,98,S,R,,2029,"5' 10"" / 200 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-braylon-doughty,815785,Braylon Doughty,Cleveland Guardians,RHP,20,AA,99,R,R,,2028,"6' 0"" / 203 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/
+mlb-top100-logan-henderson,701656,Logan Henderson,Milwaukee Brewers,RHP,24,AAA,100,R,R,,2026,"6' 0"" / 209 lbs",MLB Pipeline Top 100 2026,https://www.mlb.com/milb/prospects/top100/

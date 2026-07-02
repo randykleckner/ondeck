@@ -1,67 +1,101 @@
-player_id,previous_rank,previous_rank_date,rank_trend_note
-mlb-top100-1,4,previous,"Jesús Made moved up from No. 4 to No. 1, a positive rank trend."
-mlb-top100-2,3,previous,"Leo De Vries moved up from No. 3 to No. 2, a positive rank trend."
-mlb-top100-3,27,previous,"Seth Hernandez moved up from No. 27 to No. 3, a positive rank trend."
-mlb-top100-4,15,previous,"Eli Willits moved up from No. 15 to No. 4, a positive rank trend."
-mlb-top100-5,9,previous,"Colt Emerson moved up from No. 9 to No. 5, a positive rank trend."
-mlb-top100-6,23,previous,"Kade Anderson moved up from No. 23 to No. 6, a positive rank trend."
-mlb-top100-7,8,previous,"Max Clark moved up from No. 8 to No. 7, a positive rank trend."
-mlb-top100-8,13,previous,"Josue De Paula moved up from No. 13 to No. 8, a positive rank trend."
-mlb-top100-9,6,previous,"Sebastian Walcott moved down from No. 6 to No. 9, a negative rank trend."
-mlb-top100-10,24,previous,"Franklin Arias moved up from No. 24 to No. 10, a positive rank trend."
-mlb-top100-11,10,previous,"Walker Jenkins moved down from No. 10 to No. 11, a negative rank trend."
-mlb-top100-12,22,previous,"Thomas White moved up from No. 22 to No. 12, a positive rank trend."
-mlb-top100-13,73,previous,"Caleb Bonemer moved up from No. 73 to No. 13, a positive rank trend."
-mlb-top100-14,32,previous,"Aidan Miller moved up from No. 32 to No. 14, a positive rank trend."
-mlb-top100-15,19,previous,"Ethan Holliday moved up from No. 19 to No. 15, a positive rank trend."
-mlb-top100-16,18,previous,"Luis Peña moved up from No. 18 to No. 16, a positive rank trend."
-mlb-top100-17,20,previous,"Zyhir Hope moved up from No. 20 to No. 17, a positive rank trend."
-mlb-top100-18,25,previous,"George Lombard Jr. moved up from No. 25 to No. 18, a positive rank trend."
-mlb-top100-19,44,previous,"Ryan Sloan moved up from No. 44 to No. 19, a positive rank trend."
-mlb-top100-20,36,previous,"Liam Doyle moved up from No. 36 to No. 20, a positive rank trend."
-mlb-top100-21,35,previous,"Braden Montgomery moved up from No. 35 to No. 21, a positive rank trend."
-mlb-top100-22,55,previous,"Rainiel Rodriguez moved up from No. 55 to No. 22, a positive rank trend."
-mlb-top100-23,48,previous,"Alfredo Duno moved up from No. 48 to No. 23, a positive rank trend."
-mlb-top100-24,40,previous,"Noah Schultz moved up from No. 40 to No. 24, a positive rank trend."
-mlb-top100-25,51,previous,"Robby Snelling moved up from No. 51 to No. 25, a positive rank trend."
-mlb-top100-26,38,previous,"Jamie Arnold moved up from No. 38 to No. 26, a positive rank trend."
-mlb-top100-27,29,previous,"Lazaro Montes moved up from No. 29 to No. 27, a positive rank trend."
-mlb-top100-28,82,previous,"Josuar Gonzalez moved up from No. 82 to No. 28, a positive rank trend."
-mlb-top100-29,43,previous,"JoJo Parker moved up from No. 43 to No. 29, a positive rank trend."
-mlb-top100-30,66,previous,"Ryan Waldschmidt moved up from No. 66 to No. 30, a positive rank trend."
-mlb-top100-31,41,previous,"Aiva Arquette moved up from No. 41 to No. 31, a positive rank trend."
-mlb-top100-32,46,previous,"Jonah Tong moved up from No. 46 to No. 32, a positive rank trend."
-mlb-top100-33,81,previous,"Edward Florentino moved up from No. 81 to No. 33, a positive rank trend."
-mlb-top100-34,34,previous,Eduardo Quintero held steady at No. 34.
-mlb-top100-35,52,previous,"Kaelen Culpepper moved up from No. 52 to No. 35, a positive rank trend."
-mlb-top100-36,49,previous,"Travis Sykora moved up from No. 49 to No. 36, a positive rank trend."
-mlb-top100-37,60,previous,"Gage Jump moved up from No. 60 to No. 37, a positive rank trend."
-mlb-top100-38,64,previous,"Mike Sirota moved up from No. 64 to No. 38, a positive rank trend."
-mlb-top100-39,65,previous,"Theo Gillen moved up from No. 65 to No. 39, a positive rank trend."
-mlb-top100-40,57,previous,"Eduardo Tait moved up from No. 57 to No. 40, a positive rank trend."
-mlb-top100-41,37,previous,"Bryce Rainer moved down from No. 37 to No. 41, a negative rank trend."
-mlb-top100-42,59,previous,"Angel Genao moved up from No. 59 to No. 42, a positive rank trend."
-mlb-top100-43,63,previous,"Michael Arroyo moved up from No. 63 to No. 43, a positive rank trend."
-mlb-top100-44,72,previous,"Cam Caminiti moved up from No. 72 to No. 44, a positive rank trend."
-mlb-top100-45,88,previous,"Hagen Smith moved up from No. 88 to No. 45, a positive rank trend."
-mlb-top100-46,91,previous,"Tyler Bremner moved up from No. 91 to No. 46, a positive rank trend."
-mlb-top100-47,77,previous,"Ethan Salas moved up from No. 77 to No. 47, a positive rank trend."
-mlb-top100-48,71,previous,"Billy Carlson moved up from No. 71 to No. 48, a positive rank trend."
-mlb-top100-49,69,previous,"Emmanuel Rodriguez moved up from No. 69 to No. 49, a positive rank trend."
-mlb-top100-50,62,previous,"Blake Mitchell moved up from No. 62 to No. 50, a positive rank trend."
-mlb-top100-51,68,previous,"Arjun Nimmala moved up from No. 68 to No. 51, a positive rank trend."
-mlb-top100-52,100,previous,"Emil Morales moved up from No. 100 to No. 52, a positive rank trend."
-mlb-top100-55,30,previous,"Jett Williams moved down from No. 30 to No. 55, a negative rank trend."
-mlb-top100-56,86,previous,"JR Ritchie moved up from No. 86 to No. 56, a positive rank trend."
-mlb-top100-57,87,previous,"Jarlin Susana moved up from No. 87 to No. 57, a positive rank trend."
-mlb-top100-58,97,previous,"Elmer Rodríguez moved up from No. 97 to No. 58, a positive rank trend."
-mlb-top100-60,79,previous,"Steele Hall moved up from No. 79 to No. 60, a positive rank trend."
-mlb-top100-61,56,previous,"Cooper Pratt moved down from No. 56 to No. 61, a negative rank trend."
-mlb-top100-62,33,previous,"Josue Briceño moved down from No. 33 to No. 62, a negative rank trend."
-mlb-top100-69,75,previous,"Jonny Farmelo moved up from No. 75 to No. 69, a positive rank trend."
-mlb-top100-70,61,previous,"Charlie Condon moved down from No. 61 to No. 70, a negative rank trend."
-mlb-top100-71,74,previous,"Carlos Lagrange moved up from No. 74 to No. 71, a positive rank trend."
-mlb-top100-81,89,previous,"Kyson Witherspoon moved up from No. 89 to No. 81, a positive rank trend."
-mlb-top100-82,90,previous,"Jurrangelo Cijntje moved up from No. 90 to No. 82, a positive rank trend."
-mlb-top100-83,67,previous,"Jaxon Wiggins moved down from No. 67 to No. 83, a negative rank trend."
-mlb-top100-86,95,previous,"Kruz Schoolcraft moved up from No. 95 to No. 86, a positive rank trend."
+player_id,player_name,level,previous_rank,previous_rank_date,rank_trend_note,was_top100
+mlb-top100-1,Jesús Made,,1,2026-07-02,Jesús Made held steady at No. 1.,true
+mlb-top100-2,Leo De Vries,,2,2026-07-02,Leo De Vries held steady at No. 2.,true
+mlb-top100-4,Eli Willits,,4,2026-07-02,"Eli Willits moved up from No. 4 to No. 3, a positive rank trend.",true
+mlb-top100-8,Josue De Paula,,8,2026-07-02,"Josue De Paula moved up from No. 8 to No. 4, a positive rank trend.",true
+mlb-top100-6,Kade Anderson,,6,2026-07-02,"Kade Anderson moved up from No. 6 to No. 5, a positive rank trend.",true
+mlb-top100-3,Seth Hernandez,,3,2026-07-02,"Seth Hernandez moved down from No. 3 to No. 6, a negative rank trend.",true
+mlb-top100-10,Franklin Arias,,10,2026-07-02,"Franklin Arias moved up from No. 10 to No. 7, a positive rank trend.",true
+mlb-top100-19,Ryan Sloan,,19,2026-07-02,"Ryan Sloan moved up from No. 19 to No. 8, a positive rank trend.",true
+mlb-top100-39,Theo Gillen,,39,2026-07-02,"Theo Gillen moved up from No. 39 to No. 9, a positive rank trend.",true
+mlb-top100-9,Sebastian Walcott,,9,2026-07-02,"Sebastian Walcott moved down from No. 9 to No. 10, a negative rank trend.",true
+mlb-top100-38,Mike Sirota,,38,2026-07-02,"Mike Sirota moved up from No. 38 to No. 11, a positive rank trend.",true
+mlb-top100-22,Rainiel Rodriguez,,22,2026-07-02,"Rainiel Rodriguez moved up from No. 22 to No. 12, a positive rank trend.",true
+mlb-top100-7,Max Clark,,7,2026-07-02,"Max Clark moved down from No. 7 to No. 13, a negative rank trend.",true
+mlb-top100-11,Walker Jenkins,,11,2026-07-02,"Walker Jenkins moved down from No. 11 to No. 14, a negative rank trend.",true
+mlb-top100-28,Josuar Gonzalez,,28,2026-07-02,"Josuar Gonzalez moved up from No. 28 to No. 15, a positive rank trend.",true
+mlb-top100-13,Caleb Bonemer,,13,2026-07-02,"Caleb Bonemer moved down from No. 13 to No. 16, a negative rank trend.",true
+mlb-top100-15,Ethan Holliday,,15,2026-07-02,"Ethan Holliday moved down from No. 15 to No. 17, a negative rank trend.",true
+mlb-top100-16,Luis Peña,,16,2026-07-02,"Luis Peña moved down from No. 16 to No. 18, a negative rank trend.",true
+mlb-top100-17,Zyhir Hope,,17,2026-07-02,"Zyhir Hope moved down from No. 17 to No. 19, a negative rank trend.",true
+mlb-top100-18,George Lombard Jr.,,18,2026-07-02,"George Lombard Jr. moved down from No. 18 to No. 20, a negative rank trend.",true
+mlb-top100-12,Thomas White,,12,2026-07-02,"Thomas White moved down from No. 12 to No. 21, a negative rank trend.",true
+mlb-top100-20,Liam Doyle,,20,2026-07-02,"Liam Doyle moved down from No. 20 to No. 22, a negative rank trend.",true
+mlb-top100-21,Braden Montgomery,,21,2026-07-02,"Braden Montgomery moved down from No. 21 to No. 23, a negative rank trend.",true
+mlb-top100-23,Alfredo Duno,,23,2026-07-02,"Alfredo Duno moved down from No. 23 to No. 24, a negative rank trend.",true
+mlb-top100-24,Noah Schultz,,24,2026-07-02,"Noah Schultz moved down from No. 24 to No. 25, a negative rank trend.",true
+mlb-top100-26,Jamie Arnold,,26,2026-07-02,Jamie Arnold held steady at No. 26.,true
+mlb-top100-27,Lazaro Montes,,27,2026-07-02,Lazaro Montes held steady at No. 27.,true
+mlb-top100-29,JoJo Parker,,29,2026-07-02,"JoJo Parker moved up from No. 29 to No. 28, a positive rank trend.",true
+mlb-top100-30,Ryan Waldschmidt,,30,2026-07-02,"Ryan Waldschmidt moved up from No. 30 to No. 29, a positive rank trend.",true
+mlb-top100-14,Aidan Miller,,14,2026-07-02,"Aidan Miller moved down from No. 14 to No. 30, a negative rank trend.",true
+mlb-top100-33,Edward Florentino,,33,2026-07-02,"Edward Florentino moved up from No. 33 to No. 31, a positive rank trend.",true
+mlb-top100-34,Eduardo Quintero,,34,2026-07-02,"Eduardo Quintero moved up from No. 34 to No. 32, a positive rank trend.",true
+mlb-top100-35,Kaelen Culpepper,,35,2026-07-02,"Kaelen Culpepper moved up from No. 35 to No. 33, a positive rank trend.",true
+mlb-top100-47,Ethan Salas,,47,2026-07-02,"Ethan Salas moved up from No. 47 to No. 34, a positive rank trend.",true
+mlb-top100-53,Luis Hernández,,53,2026-07-02,"Luis Hernández moved up from No. 53 to No. 35, a positive rank trend.",true
+mlb-top100-36,Travis Sykora,,36,2026-07-02,Travis Sykora held steady at No. 36.,true
+mlb-top100-37,Gage Jump,,37,2026-07-02,Gage Jump held steady at No. 37.,true
+mlb-top100-54,Ralphy Velazquez,,54,2026-07-02,"Ralphy Velazquez moved up from No. 54 to No. 38, a positive rank trend.",true
+mlb-top100-25,Robby Snelling,,25,2026-07-02,"Robby Snelling moved down from No. 25 to No. 39, a negative rank trend.",true
+mlb-top100-40,Eduardo Tait,,40,2026-07-02,Eduardo Tait held steady at No. 40.,true
+mlb-top100-41,Bryce Rainer,,41,2026-07-02,Bryce Rainer held steady at No. 41.,true
+mlb-top100-31,Aiva Arquette,,31,2026-07-02,"Aiva Arquette moved down from No. 31 to No. 42, a negative rank trend.",true
+mlb-top100-42,Angel Genao,,42,2026-07-02,"Angel Genao moved down from No. 42 to No. 43, a negative rank trend.",true
+mlb-top100-43,Michael Arroyo,,43,2026-07-02,"Michael Arroyo moved down from No. 43 to No. 44, a negative rank trend.",true
+mlb-top100-44,Cam Caminiti,,44,2026-07-02,"Cam Caminiti moved down from No. 44 to No. 45, a negative rank trend.",true
+mlb-top100-46,Tyler Bremner,,46,2026-07-02,Tyler Bremner held steady at No. 46.,true
+mlb-top100-51,Arjun Nimmala,,51,2026-07-02,"Arjun Nimmala moved up from No. 51 to No. 47, a positive rank trend.",true
+mlb-top100-52,Emil Morales,,52,2026-07-02,"Emil Morales moved up from No. 52 to No. 48, a positive rank trend.",true
+mlb-top100-63,Joshua Báez,,63,2026-07-02,"Joshua Báez moved up from No. 63 to No. 49, a positive rank trend.",true
+mlb-top100-56,JR Ritchie,,56,2026-07-02,"JR Ritchie moved up from No. 56 to No. 50, a positive rank trend.",true
+mlb-top100-57,Jarlin Susana,,57,2026-07-02,"Jarlin Susana moved up from No. 57 to No. 51, a positive rank trend.",true
+mlb-top100-59,Jhonny Level,,59,2026-07-02,"Jhonny Level moved up from No. 59 to No. 52, a positive rank trend.",true
+mlb-top100-60,Steele Hall,,60,2026-07-02,"Steele Hall moved up from No. 60 to No. 53, a positive rank trend.",true
+mlb-top100-66,Gage Wood,,66,2026-07-02,"Gage Wood moved up from No. 66 to No. 54, a positive rank trend.",true
+mlb-top100-67,Anthony Eyanson,,67,2026-07-02,"Anthony Eyanson moved up from No. 67 to No. 55, a positive rank trend.",true
+mlb-top100-45,Hagen Smith,,45,2026-07-02,"Hagen Smith moved down from No. 45 to No. 56, a negative rank trend.",true
+mlb-top100-61,Cooper Pratt,,61,2026-07-02,"Cooper Pratt moved up from No. 61 to No. 57, a positive rank trend.",true
+mlb-top100-49,Emmanuel Rodriguez,,49,2026-07-02,"Emmanuel Rodriguez moved down from No. 49 to No. 58, a negative rank trend.",true
+mlb-top100-62,Josue Briceño,,62,2026-07-02,"Josue Briceño moved up from No. 62 to No. 59, a positive rank trend.",true
+mlb-top100-64,Nate George,,64,2026-07-02,"Nate George moved up from No. 64 to No. 60, a positive rank trend.",true
+mlb-top100-48,Billy Carlson,,48,2026-07-02,"Billy Carlson moved down from No. 48 to No. 61, a negative rank trend.",true
+mlb-top100-65,Dax Kilby,,65,2026-07-02,"Dax Kilby moved up from No. 65 to No. 62, a positive rank trend.",true
+mlb-top100-68,Cooper Ingle,,68,2026-07-02,"Cooper Ingle moved up from No. 68 to No. 63, a positive rank trend.",true
+mlb-top100-69,Jonny Farmelo,,69,2026-07-02,"Jonny Farmelo moved up from No. 69 to No. 64, a positive rank trend.",true
+mlb-top100-70,Charlie Condon,,70,2026-07-02,"Charlie Condon moved up from No. 70 to No. 65, a positive rank trend.",true
+mlb-top100-72,Caden Scarborough,,72,2026-07-02,"Caden Scarborough moved up from No. 72 to No. 66, a positive rank trend.",true
+mlb-top100-78,Jefferson Rojas,,78,2026-07-02,"Jefferson Rojas moved up from No. 78 to No. 67, a positive rank trend.",true
+mlb-top100-89,Luis Lara,,89,2026-07-02,"Luis Lara moved up from No. 89 to No. 68, a positive rank trend.",true
+mlb-top100-73,Kendry Chourio,,73,2026-07-02,"Kendry Chourio moved up from No. 73 to No. 69, a positive rank trend.",true
+mlb-top100-74,Kevin Alvarez,,74,2026-07-02,"Kevin Alvarez moved up from No. 74 to No. 70, a positive rank trend.",true
+mlb-top100-75,River Ryan,,75,2026-07-02,"River Ryan moved up from No. 75 to No. 71, a positive rank trend.",true
+mlb-top100-76,Roldy Brito,,76,2026-07-02,"Roldy Brito moved up from No. 76 to No. 72, a positive rank trend.",true
+mlb-top100-77,Kayson Cunningham,,77,2026-07-02,"Kayson Cunningham moved up from No. 77 to No. 73, a positive rank trend.",true
+mlb-top100-80,Pedro Ramírez,,80,2026-07-02,"Pedro Ramírez moved up from No. 80 to No. 74, a positive rank trend.",true
+mlb-top100-96,Felnin Celesten,,96,2026-07-02,"Felnin Celesten moved up from No. 96 to No. 75, a positive rank trend.",true
+mlb-top100-84,Nathan Flewelling,,84,2026-07-02,"Nathan Flewelling moved up from No. 84 to No. 76, a positive rank trend.",true
+mlb-top100-98,Karson Milbrandt,,98,2026-07-02,"Karson Milbrandt moved up from No. 98 to No. 77, a positive rank trend.",true
+mlb-top100-58,Elmer Rodríguez,,58,2026-07-02,"Elmer Rodríguez moved down from No. 58 to No. 78, a negative rank trend.",true
+mlb-top100-99,Josiah Hartshorn,,99,2026-07-02,"Josiah Hartshorn moved up from No. 99 to No. 79, a positive rank trend.",true
+mlb-top100-85,Ronny Cruz,,85,2026-07-02,"Ronny Cruz moved up from No. 85 to No. 80, a positive rank trend.",true
+mlb-top100-100,Eric Hartman,,100,2026-07-02,"Eric Hartman moved up from No. 100 to No. 81, a positive rank trend.",true
+mlb-top100-32,Jonah Tong,,32,2026-07-02,"Jonah Tong moved down from No. 32 to No. 82, a negative rank trend.",true
+mlb-top100-55,Jett Williams,,55,2026-07-02,"Jett Williams moved down from No. 55 to No. 83, a negative rank trend.",true
+mlb-top100-87,Ike Irish,,87,2026-07-02,"Ike Irish moved up from No. 87 to No. 84, a positive rank trend.",true
+mlb-top100-71,Carlos Lagrange,,71,2026-07-02,"Carlos Lagrange moved down from No. 71 to No. 85, a negative rank trend.",true
+mlb-top100-90,Josh Hammond,,90,2026-07-02,"Josh Hammond moved up from No. 90 to No. 86, a positive rank trend.",true
+mlb-top100-91,Justin Gonzales,,91,2026-07-02,"Justin Gonzales moved up from No. 91 to No. 87, a positive rank trend.",true
+mlb-top100-92,Charles Davalan,,92,2026-07-02,"Charles Davalan moved up from No. 92 to No. 88, a positive rank trend.",true
+mlb-top100-93,Xavier Neyens,,93,2026-07-02,"Xavier Neyens moved up from No. 93 to No. 89, a positive rank trend.",true
+mlb-top100-94,Edwin Arroyo,,94,2026-07-02,"Edwin Arroyo moved up from No. 94 to No. 90, a positive rank trend.",true
+mlb-top100-95,Devin Fitz-Gerald,,95,2026-07-02,"Devin Fitz-Gerald moved up from No. 95 to No. 92, a positive rank trend.",true
+mlb-top100-97,Seaver King,,97,2026-07-02,"Seaver King moved up from No. 97 to No. 93, a positive rank trend.",true
+mlb-top100-83,Jaxon Wiggins,,83,2026-07-02,"Jaxon Wiggins moved down from No. 83 to No. 94, a negative rank trend.",true
+mlb-top100-5,Colt Emerson,MLB,5,2026-07-02,Colt Emerson dropped off the current MLB Top 100 after previously ranking No. 5.,true
+mlb-top100-50,Blake Mitchell,A+,50,2026-07-02,Blake Mitchell dropped off the current MLB Top 100 after previously ranking No. 50.,true
+mlb-top100-79,Brody Hopkins,AAA,79,2026-07-02,Brody Hopkins dropped off the current MLB Top 100 after previously ranking No. 79.,true
+mlb-top100-81,Kyson Witherspoon,A+,81,2026-07-02,Kyson Witherspoon dropped off the current MLB Top 100 after previously ranking No. 81.,true
+mlb-top100-82,Jurrangelo Cijntje,AA,82,2026-07-02,Jurrangelo Cijntje dropped off the current MLB Top 100 after previously ranking No. 82.,true
+mlb-top100-86,Kruz Schoolcraft,A,86,2026-07-02,Kruz Schoolcraft dropped off the current MLB Top 100 after previously ranking No. 86.,true
+mlb-top100-88,Wei-En Lin,AAA,88,2026-07-02,Wei-En Lin dropped off the current MLB Top 100 after previously ranking No. 88.,true
