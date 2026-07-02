@@ -1,0 +1,9 @@
+.git/
+.wrangler/
+.env
+.env.*
+.DS_Store
+**/.DS_Store
+node_modules/
+README.md
+*.log
