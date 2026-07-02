@@ -59,7 +59,13 @@ export async function onMarketDataRequest(context) {
       FROM market_player_snapshots
       ORDER BY rank ASC
     `).all();
-    return jsonResponse({ snapshots: (rows.results || []).map(snapshotRowToApi) }, 200, {
+    const cardTargets = await readCsvAsset(context, "/data/card-targets.csv").catch(() => []);
+    const cardByPlayerId = new Map(cardTargets.map((row) => [String(row.player_id), row]));
+    const cardByName = new Map(cardTargets.map((row) => [normalizeName(row.player_name), row]));
+    const snapshots = (rows.results || [])
+      .filter((row) => snapshotTargetIsDisplayable(row, cardByPlayerId, cardByName))
+      .map(snapshotRowToApi);
+    return jsonResponse({ snapshots }, 200, {
       "Cache-Control": "public, max-age=300",
     });
   } catch (error) {
@@ -107,8 +113,9 @@ export async function onRefreshTop100MarketRequest(context) {
     readCsvAsset(context, "/data/mlb-top100-2026.csv"),
     readCsvAsset(context, "/data/card-targets.csv"),
   ]);
-  const cardByPlayerId = new Map(cardTargets.map((row) => [String(row.player_id), row]));
-  const cardByName = new Map(cardTargets.map((row) => [normalizeName(row.player_name), row]));
+  const enabledCardTargets = cardTargets.filter(isEnabledCardTarget);
+  const cardByPlayerId = new Map(enabledCardTargets.map((row) => [String(row.player_id), row]));
+  const cardByName = new Map(enabledCardTargets.map((row) => [normalizeName(row.player_name), row]));
 
   for (const player of players.slice(0, limit)) {
     summary.playersProcessed += 1;
@@ -463,6 +470,15 @@ async function writeSnapshot(db, row) {
 
 async function readSnapshot(db, playerId) {
   return db.prepare(`SELECT * FROM market_player_snapshots WHERE player_id = ?`).bind(playerId).first();
+}
+
+function snapshotTargetIsDisplayable(row, cardByPlayerId, cardByName) {
+  const target = cardByPlayerId.get(String(row.player_id)) || cardByName.get(normalizeName(row.player_name));
+  return !target || isEnabledCardTarget(target);
+}
+
+function isEnabledCardTarget(row) {
+  return String(row?.enabled ?? "true").toLowerCase() !== "false" && String(row?.card_code || "").trim() !== "";
 }
 
 function snapshotRowToApi(row) {
