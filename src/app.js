@@ -276,7 +276,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/player-enrichment.csv"),
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
-    loadOptionalCsv("./data/card-targets.csv?v=20260702-1"),
+    loadOptionalCsv("./data/card-targets.csv?v=20260702-2"),
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
     loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
   ]);
