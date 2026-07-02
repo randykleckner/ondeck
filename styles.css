@@ -1866,6 +1866,10 @@ body[data-view="graduated"] #graduated {
   line-height: 1.4;
 }
 
+.reference-panel table {
+  min-width: 1540px;
+}
+
 .table-panel {
   overflow: hidden;
 }
@@ -2197,6 +2201,13 @@ tbody tr {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.card-market-panel .market-query {
+  overflow-wrap: anywhere;
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;

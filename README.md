@@ -38,24 +38,29 @@ Break Board and Team War Room are secondary top-nav tools, not default landing-p
 
 ## Card market data
 
-The homepage card-market section is the On Deck Board. Selected On Deck player profiles load card-market pricing from the secure SoldComps API proxy. Stale manual comp rows are not shown as current market data.
+The homepage card-market section is the On Deck Board. Normal page loads read cached card-market snapshots from D1 through `/api/top100-market-data`; they do not call SoldComps. Player profiles show the cached Market Pulse when a snapshot exists, and show pending states when the player still needs a refresh.
 
-`data/card-targets.csv` stores only search targets and card-code hints for the API. It does not store prices. The card target is the Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv` when the generated initials are not enough.
+`data/card-targets.csv` stores only search targets and card-code hints for the API. It does not store prices. The card target is the raw Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv`; players without a benchmark code are skipped by the bulk refresh and reported in the summary.
 
 ## Secure SoldComps API proxy
 
-The browser calls our own endpoint:
+The browser reads cached Top 100 market snapshots through our own endpoint:
 
 ```sh
-GET /api/market-data?player=Felnin%20Celesten
+GET /api/top100-market-data
 ```
 
-The repo includes both supported serverless entry points:
+The admin refresh endpoint is the only Top 100 flow that calls SoldComps:
+
+```sh
+POST /api/admin/refresh-top100-market
+```
+
+The repo includes these serverless entry points:
 
 - `worker/index.js` plus `wrangler.jsonc` for Cloudflare Workers with Static Assets
-- `api/market-data.js` for Vercel
-- `functions/api/market-data.js` for Cloudflare Pages
-- `netlify/functions/market-data.js` plus `netlify.toml` for Netlify
+- `functions/api/market-data.js` for the older single-player proxy
+- `functions/api/top100-market.js` for cached Top 100 market snapshots and bulk refresh
 
 Set this environment variable in the deployment host:
 
@@ -63,17 +68,17 @@ Set this environment variable in the deployment host:
 SOLD_COMPS_API_KEY=your_soldcomps_key
 ```
 
-For Cloudflare Workers with Static Assets, this repo must deploy with `wrangler.jsonc` and `worker/index.js`; that Worker intercepts `/api/market-data` and serves all other static files from `env.ASSETS`. Add `SOLD_COMPS_API_KEY` as a Worker variable/secret after the Worker entrypoint is active. For Cloudflare Pages, add it in Project Settings -> Environment variables. For Vercel, add it in Project Settings -> Environment Variables. For Netlify, add it in Site configuration -> Environment variables. The local `.env` file is useful for local tooling, but the hosted site cannot read a root `.env` file unless the host imports it into deployment environment variables.
+For Cloudflare Workers with Static Assets, this repo must deploy with `wrangler.jsonc` and `worker/index.js`; that Worker intercepts `/api/top100-market-data`, `/api/admin/refresh-top100-market`, and the older `/api/market-data`, then serves all other static files from `env.ASSETS`. Add `SOLD_COMPS_API_KEY` as a Worker variable/secret after the Worker entrypoint is active. The local `.env` file is useful for local tooling, but the hosted site cannot read a root `.env` file unless the host imports it into deployment environment variables.
 
-The function sends `Authorization: Bearer <key>` to SoldComps and calls:
+The Top 100 refresh function sends `Authorization: Bearer <key>` to SoldComps and calls:
 
 ```sh
-https://api.sold-comps.com/v1/scrape?keyword=[Player Name]+Bowman+Chrome+1st+Auto
+https://api.sold-comps.com/v1/scrape?keyword=%22Player+Name%22+CPA-XX+Bowman+Chrome+Auto
 ```
 
-The frontend sends only the player name to `/api/market-data`. Backend code builds the canonical search query, URL-encodes it, filters out non-benchmark card titles such as refractors, color, numbered cards, paper, lots, breaks, digital, reprints, and custom cards, then summarizes last sale, 7/14/30-day averages, sales counts, optional active listings, buy zone, and recommendation. The API key is never included in browser code.
+Backend code builds the canonical search query, URL-encodes it, filters out non-benchmark card titles such as graded cards, refractors, Sapphire, color, numbered cards, paper, lots, breaks, digital, reprints, and custom cards, then saves sold records, active listing data when present, and calculated market snapshots. The API key is never included in browser code.
 
-Market-data responses are cached server-side for one week per player/search keyword. On Cloudflare Workers, the first request for a player in a weekly cache window may call SoldComps; repeat clicks and visitors should reuse the cached JSON and avoid spending additional SoldComps quota.
+Bulk refresh uses cached sold data for seven days and active listing data for 24 hours. Re-running the refresh immediately should skip fresh players and spend few or no additional API calls.
 
 ## Market history database
 
@@ -85,9 +90,7 @@ Create a D1 database in Cloudflare named `ondeck-market`, run `migrations/0001_m
 MARKET_DB
 ```
 
-Once `MARKET_DB` is bound, `/api/market-data` checks D1 before calling SoldComps. If a fresh row exists, it returns that. If the API key is temporarily missing but an older row exists, it returns stale stored data instead of failing.
-
-When running as a plain static site with `python3 -m http.server`, `/api/market-data` will not exist. The profile will show that SoldComps is unavailable instead of falling back to older manual comps. Run through Vercel or `vercel dev` to test live market data.
+Once `MARKET_DB` is bound, run `migrations/0004_top100_market_snapshots.sql` to add the Top 100 snapshot tables. `/api/top100-market-data` reads D1 only and never calls SoldComps. When running as a plain static site with `python3 -m http.server`, API routes will not exist, so profiles show pending market snapshots until the Cloudflare Worker is deployed.
 
 ## Historical card sales import
 

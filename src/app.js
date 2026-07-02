@@ -11,6 +11,7 @@ const state = {
   scorebook: [],
   latestTop100Keys: new Set(),
   previousTop100Keys: new Set(),
+  marketSnapshots: new Map(),
   liveMarketData: new Map(),
   liveMarketRequests: new Set(),
   liveMarketErrors: new Map(),
@@ -275,7 +276,7 @@ async function loadTop100Prospects() {
     loadOptionalCsv("./data/player-enrichment.csv"),
     loadOptionalCsv("./data/player-news.csv"),
     loadOptionalCsv("./data/rank-history.csv?v=20260626-full-ranks"),
-    loadOptionalCsv("./data/card-targets.csv?v=20260701-1"),
+    loadOptionalCsv("./data/card-targets.csv?v=20260702-1"),
     loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
     loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
   ]);
@@ -294,6 +295,23 @@ async function loadTop100Prospects() {
   state.filters.org = "all";
   state.top100Filters.org = "all";
   refreshScoredData();
+  loadCachedTop100MarketData();
+}
+
+async function loadCachedTop100MarketData() {
+  try {
+    const response = await fetch("/api/top100-market-data", { headers: { Accept: "application/json" } });
+    if (!response.ok) return;
+    const data = await response.json();
+    const snapshots = Array.isArray(data.snapshots) ? data.snapshots : [];
+    state.marketSnapshots = new Map(snapshots
+      .map((snapshot) => normalizeMarketSnapshot(snapshot))
+      .filter((snapshot) => snapshot.player_id)
+      .map((snapshot) => [String(snapshot.player_id), snapshot]));
+    render();
+  } catch {
+    state.marketSnapshots = new Map();
+  }
 }
 
 async function loadOptionalCsv(path) {
@@ -986,9 +1004,6 @@ function renderMarketBoard() {
     });
   });
 
-  tracked.forEach((player) => {
-    requestLiveMarketData(player, { refreshBoard: true });
-  });
 }
 
 function bubblePlayers() {
@@ -1141,11 +1156,12 @@ function renderTop100Rows() {
   }
 
   if (!rows.length) {
-    elements.top100Rows.innerHTML = `<tr><td colspan="9" class="muted">No active MLB Top 100 players match the current filters.</td></tr>`;
+    elements.top100Rows.innerHTML = `<tr><td colspan="14" class="muted">No active MLB Top 100 players match the current filters.</td></tr>`;
     return;
   }
 
-  elements.top100Rows.innerHTML = rows.map((player) => {
+  elements.top100Rows.innerHTML = rows.map((rowPlayer) => {
+    const player = withLiveMarketData(rowPlayer);
     const selected = String(player.player_id) === String(state.selectedId) ? "selected" : "";
     return `
       <tr class="${selected}" data-player-id="${escapeHtml(player.player_id)}">
@@ -1157,10 +1173,15 @@ function renderTop100Rows() {
           </span>
         </td>
         <td>${escapeHtml(player.org ?? "-")}</td>
-        <td>${escapeHtml(player.position ?? "-")}</td>
-        <td>${escapeHtml(player.level ?? "-")}</td>
-        <td><span class="score-pill ${scoreClass(player.callup_score)}">${escapeHtml(player.callup_score)}%</span></td>
-        <td>${escapeHtml(onDeckCatalyst(player))}</td>
+        <td>${escapeHtml(top100BenchmarkLabel(player))}</td>
+        <td>${escapeHtml(countOrPending(player.sales_30))}</td>
+        <td>${escapeHtml(countOrPending(player.sales_90))}</td>
+        <td>${escapeHtml(currencyOrPending(player.avg_30))}</td>
+        <td>${escapeHtml(currencyOrPending(player.avg_90))}</td>
+        <td>${escapeHtml(countOrPending(player.active_listings))}</td>
+        <td>${escapeHtml(sellThroughOrPending(player, 30))}</td>
+        <td>${escapeHtml(sellThroughOrPending(player, 90))}</td>
+        <td>${escapeHtml(dateOrPending(player.checked_at || player.last_updated))}</td>
         <td>${rankTrend(player)}</td>
         <td>${escapeHtml(top100ComparisonReason(player))}</td>
       </tr>
@@ -1173,6 +1194,31 @@ function renderTop100Rows() {
       openPlayerProfile(row.dataset.playerId, { scroll: false });
     });
   });
+}
+
+function top100BenchmarkLabel(player) {
+  const card = cardDescription(player);
+  return card === "Bowman Chrome Prospect Auto" && !hasMarketData(player) ? "Pending" : card;
+}
+
+function countOrPending(value) {
+  if (value === "" || value == null) return "Pending";
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? String(Math.round(numeric)) : String(value);
+}
+
+function currencyOrPending(value) {
+  const formatted = currency(value);
+  return formatted === "-" ? "Pending" : formatted;
+}
+
+function sellThroughOrPending(player, days) {
+  const value = sellThroughValue(player, days);
+  return Number.isFinite(value) ? `${value.toFixed(1)}%` : "Pending";
+}
+
+function dateOrPending(value) {
+  return formatShortDate(value) || "Pending";
 }
 
 function top100ComparisonReason(player) {
@@ -1427,9 +1473,6 @@ function renderCard(player) {
   }
 
   const profilePlayer = withLiveMarketData(player);
-  if (isOnDeckBoardPlayer(profilePlayer)) {
-    requestLiveMarketData(profilePlayer);
-  }
   elements.contentGrid.classList.add("profile-open");
   elements.cardPanel.hidden = false;
   elements.playerCard.className = "player-card";
@@ -1458,15 +1501,16 @@ function renderCard(player) {
     ${profileStatsPanel(profilePlayer)}
     ${teamPathPanel(profilePlayer)}
     ${scoutingSnapshotPanel(profilePlayer)}
-    ${isOnDeckBoardPlayer(profilePlayer) || isGraduated(profilePlayer) ? marketPanel(profilePlayer) : ""}
+    ${isTop100Prospect(profilePlayer) || isOnDeckBoardPlayer(profilePlayer) || isGraduated(profilePlayer) || hasMarketData(profilePlayer) ? marketPanel(profilePlayer) : ""}
   `;
 
   attachProfileActions(profilePlayer);
 }
 
 function withLiveMarketData(player) {
+  const snapshot = state.marketSnapshots.get(String(player.player_id));
   const live = state.liveMarketData.get(String(player.player_id));
-  return live ? { ...player, ...live } : player;
+  return { ...player, ...(snapshot ?? {}), ...(live ?? {}) };
 }
 
 function attachProfileActions(player) {
@@ -1508,85 +1552,60 @@ async function requestMarketHistory(player) {
   }
 }
 
-async function requestLiveMarketData(player, options = {}) {
-  const playerId = String(player.player_id);
-  const recentError = state.liveMarketErrors.get(playerId);
-  if (state.liveMarketData.has(playerId) || state.liveMarketRequests.has(playerId) || isRecentMarketError(recentError)) return;
-  state.liveMarketRequests.add(playerId);
-  state.liveMarketErrors.delete(playerId);
-  const params = new URLSearchParams({ player: player.player_name || "" });
+function normalizeMarketSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return {};
+  const playerId = snapshot.playerId ?? snapshot.player_id ?? "";
+  const sellThrough30 = snapshotSellThroughPercent(snapshot.sellThruRate30d ?? snapshot.sell_thru_rate_30d);
+  const sellThrough90 = snapshotSellThroughPercent(snapshot.sellThruRate90d ?? snapshot.sell_thru_rate_90d);
+  const hasSnapshot = [
+    snapshot.salesCount30d,
+    snapshot.salesCount90d,
+    snapshot.avgSoldPrice30d,
+    snapshot.avgSoldPrice90d,
+    snapshot.lastSoldPrice,
+    snapshot.activeListingCount,
+  ].some((value) => value !== "" && value != null);
 
-  try {
-    const response = await fetch(`/api/market-data?${params.toString()}`, { headers: { Accept: "application/json" } });
-    if (!response.ok) {
-      state.liveMarketErrors.set(playerId, {
-        message: `SoldComps unavailable (${response.status})`,
-        at: Date.now(),
-      });
-      if (String(state.selectedId) === playerId) {
-        renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
-      }
-      return;
-    }
-    const data = await response.json();
-    const live = normalizeLiveMarketData(data);
-    if (!live) return;
-    state.liveMarketData.set(playerId, live);
-    state.liveMarketErrors.delete(playerId);
-    if (options.refreshBoard) {
-      renderMarketBoard();
-      renderRows(getFilteredRows());
-      renderScorebook();
-    }
-    if (String(state.selectedId) === playerId) {
-      renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
-    }
-  } catch (error) {
-    state.liveMarketErrors.set(playerId, {
-      message: "SoldComps API is not available in this local/static run.",
-      at: Date.now(),
-    });
-    if (String(state.selectedId) === playerId) {
-      renderCard(state.allScored.find((candidate) => String(candidate.player_id) === playerId));
-    }
-  } finally {
-    state.liveMarketRequests.delete(playerId);
-  }
-}
-
-function isRecentMarketError(error) {
-  return error?.at && Date.now() - error.at < 30000;
-}
-
-function normalizeLiveMarketData(data) {
-  if (!data || typeof data !== "object") return null;
-  const buyLow = data.buyZone?.low ?? data.buy_low;
-  const buyHigh = data.buyZone?.high ?? data.buy_high;
-  const row = compactMarketRow({
-    card_name: data.cardName || data.card_name || "",
-    card_code: data.cardCode || data.card_code || "",
-    last_sale: data.lastSale ?? data.last_sale ?? "",
-    last_sale_date: data.lastSaleDate ?? data.last_sale_date ?? "",
-    avg_7: data.averages?.days7 ?? data.avg_7 ?? "",
-    avg_14: data.averages?.days14 ?? data.avg_14 ?? "",
-    avg_30: data.averages?.days30 ?? data.avg_30 ?? "",
-    sales_7: data.sales?.days7 ?? data.sales_7 ?? "",
-    sales_14: data.sales?.days14 ?? data.sales_14 ?? "",
-    sales_30: data.sales?.days30 ?? data.sales_30 ?? "",
-    active_listings: data.activeListings ?? data.active_listings ?? "",
-    sell_through: data.sellThrough ?? data.sell_through ?? "",
-    sell_through_30: data.sellThrough30 ?? data.sell_through_30 ?? data.sellThrough ?? data.sell_through ?? "",
-    sell_through_90: data.sellThrough90 ?? data.sell_through_90 ?? "",
-    buy_low: buyLow ?? "",
-    buy_high: buyHigh ?? "",
-    market_signal: data.marketSignal || data.market_signal || data.recommendation?.signal || "",
-    market_note: data.marketNote || data.market_note || data.recommendation?.note || "",
-    data_source: data.source || data.data_source || "SoldComps API",
-    source_url: data.sourceUrl || data.source_url || "",
-    last_updated: data.lastUpdated || data.last_updated || "",
+  return compactMarketRow({
+    player_id: playerId,
+    card_code: snapshot.benchmarkCardCode ?? snapshot.benchmark_card_code ?? "",
+    benchmark_card_code: snapshot.benchmarkCardCode ?? snapshot.benchmark_card_code ?? "",
+    card_name: "Bowman Chrome Auto",
+    card_query: snapshot.canonicalQuery ?? snapshot.canonical_query ?? "",
+    canonical_query: snapshot.canonicalQuery ?? snapshot.canonical_query ?? "",
+    data_source: "D1 market snapshot",
+    last_sale: snapshot.lastSoldPrice ?? snapshot.last_sold_price ?? "",
+    last_sale_date: snapshot.lastSoldAt ?? snapshot.last_sold_at ?? "",
+    avg_30: snapshot.avgSoldPrice30d ?? snapshot.avg_sold_price_30d ?? "",
+    avg_90: snapshot.avgSoldPrice90d ?? snapshot.avg_sold_price_90d ?? "",
+    median_30: snapshot.medianSoldPrice30d ?? snapshot.median_sold_price_30d ?? "",
+    median_90: snapshot.medianSoldPrice90d ?? snapshot.median_sold_price_90d ?? "",
+    low_30: snapshot.lowSoldPrice30d ?? snapshot.low_sold_price_30d ?? "",
+    high_30: snapshot.highSoldPrice30d ?? snapshot.high_sold_price_30d ?? "",
+    low_90: snapshot.lowSoldPrice90d ?? snapshot.low_sold_price_90d ?? "",
+    high_90: snapshot.highSoldPrice90d ?? snapshot.high_sold_price_90d ?? "",
+    sales_30: snapshot.salesCount30d ?? snapshot.sales_count_30d ?? "",
+    sales_90: snapshot.salesCount90d ?? snapshot.sales_count_90d ?? "",
+    active_listings: snapshot.activeListingCount ?? snapshot.active_listing_count ?? "",
+    active_lowest_ask: snapshot.activeLowestAsk ?? snapshot.active_lowest_ask ?? "",
+    active_median_ask: snapshot.activeMedianAsk ?? snapshot.active_median_ask ?? "",
+    active_highest_ask: snapshot.activeHighestAsk ?? snapshot.active_highest_ask ?? "",
+    active_auction_count: snapshot.activeAuctionCount ?? snapshot.active_auction_count ?? "",
+    active_buy_it_now_count: snapshot.activeBuyItNowCount ?? snapshot.active_buy_it_now_count ?? "",
+    sell_through_30: Number.isFinite(sellThrough30) ? sellThrough30 : "",
+    sell_through_90: Number.isFinite(sellThrough90) ? sellThrough90 : "",
+    sold_refreshed_at: snapshot.soldRefreshedAt ?? snapshot.sold_refreshed_at ?? "",
+    active_data_updated_at: snapshot.activeDataUpdatedAt ?? snapshot.active_data_updated_at ?? "",
+    checked_at: snapshot.checkedAt ?? snapshot.checked_at ?? "",
+    last_updated: snapshot.checkedAt ?? snapshot.checked_at ?? "",
+    market_signal: hasSnapshot ? "Cached Market Data" : "",
   });
-  if (!row.market_signal && data.recommendation?.label) row.market_signal = data.recommendation.label;
-  return row;
+}
+
+function snapshotSellThroughPercent(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return NaN;
+  return numeric <= 1 ? numeric * 100 : numeric;
 }
 
 function compactMarketRow(row) {
@@ -1743,7 +1762,7 @@ function playerTypeBadge(player) {
   if (String(player.injury_opening).toLowerCase() === "true") return "Injury Replacement";
   if (Number(player.opportunity_score) >= 70) return "Path Play";
   if (isOnFortyMan(player)) return "40-Man Candidate";
-  if (player.market_signal) return "Card Sleeper";
+  if (player.market_signal && player.market_signal !== "Cached Market Data") return "Card Sleeper";
   if (isTop100Prospect(player)) return "Top 100 Watch";
   return "Path Play";
 }
@@ -1751,12 +1770,12 @@ function playerTypeBadge(player) {
 function cardBaselineLabel(player) {
   const playerId = String(player.player_id ?? "");
   if (state.liveMarketRequests.has(playerId)) return "Loading...";
-  if (state.liveMarketErrors.has(playerId)) return "API pending";
+  if (state.liveMarketErrors.has(playerId)) return "Market pending";
   const avg30 = numericMoney(player.avg_30);
   if (Number.isFinite(avg30)) return currency(avg30);
   const baseline = numericMoney(player.baseline_value);
   if (Number.isFinite(baseline)) return currency(baseline);
-  return player.market_signal ? "API pending" : "Awaiting API";
+  return player.market_signal ? "Market pending" : "Pending";
 }
 
 function latestCardValue(player) {
@@ -1770,7 +1789,7 @@ function latestCardValue(player) {
 function marketStatus(player) {
   const playerId = String(player.player_id ?? "");
   if (state.liveMarketRequests.has(playerId)) return "Loading";
-  if (state.liveMarketErrors.has(playerId)) return "API Pending";
+  if (state.liveMarketErrors.has(playerId)) return "Market Pending";
   const signal = String(player.market_status || player.market_signal || "").toLowerCase();
   const shortTrend = shortWindowMarketMove(player);
   if (signal.includes("spiked")) return "Spiked";
@@ -1780,14 +1799,14 @@ function marketStatus(player) {
   if (signal.includes("flat")) return "Stable";
   if (signal.includes("priced")) return "Priced In";
   if (signal.includes("illiquid")) return "Illiquid";
-  return player.card_name || player.avg_30 ? "Early Entry" : "Awaiting API";
+  return player.card_name || player.avg_30 ? "Early Entry" : "Market Pending";
 }
 
 function marketStatusClass(player) {
   const status = marketStatus(player).toLowerCase();
   if (status.includes("moving") || status.includes("early")) return "positive";
   if (status.includes("cooling") || status.includes("priced")) return "caution";
-  if (status.includes("illiquid") || status.includes("api")) return "negative";
+  if (status.includes("illiquid") || status.includes("pending")) return "negative";
   return "neutral";
 }
 
@@ -1817,17 +1836,14 @@ function playerPathRead(player, lane) {
 }
 
 function marketPanel(player) {
-  const playerId = String(player.player_id);
-  const isLoading = state.liveMarketRequests.has(playerId);
-  const error = state.liveMarketErrors.get(playerId)?.message;
-  if (!player.market_signal) {
+  if (!hasMarketData(player)) {
     return `
       <section class="card-market-panel">
         <div class="panel-heading compact">
-          <h3>Card Market</h3>
-          <span>${isLoading ? "Loading SoldComps" : error ? "API unavailable" : "SoldComps API"}</span>
+          <h3>Market Pulse</h3>
+          <span>Market Data: Pending</span>
         </div>
-        <p class="muted">${escapeHtml(error || `Loading current SoldComps sales for ${player.player_name}. Card data is API-only, so stale manual comps are not shown.`)}</p>
+        <p class="muted">No cached market snapshot is available for ${escapeHtml(player.player_name)} yet. Run Refresh Top 100 Market Data to collect sold comps, active listings, and calculated sell-thru rates.</p>
       </section>
     `;
   }
@@ -1835,7 +1851,7 @@ function marketPanel(player) {
   return `
     <section class="card-market-panel">
       <div class="panel-heading compact">
-        <h3>Card Market Box Score</h3>
+        <h3>Market Pulse</h3>
         <span class="grade-pill ${marketGradeClass(player)}">${escapeHtml(marketGrade(player))}</span>
       </div>
       <div class="card-market-grid">
@@ -1850,13 +1866,14 @@ function marketPanel(player) {
         <span>${escapeHtml(cardDescription(player))}</span>
         <button class="button ghost history-link" type="button" data-market-history>Historical Data</button>
       </div>
+      ${canonicalSearchLabel(player) ? `<p class="market-query">Search: ${escapeHtml(canonicalSearchLabel(player))}</p>` : ""}
       <div class="market-readout ${marketStatusClass(player)}">
         <strong>${escapeHtml(marketStatus(player))}</strong>
         <span>${escapeHtml(marketStatusInsight(player))}</span>
         <span>${escapeHtml(liquidityInsight(player))}</span>
       </div>
       ${marketHistoryPanel(player)}
-      <p>${escapeHtml(player.market_note ?? "")}</p>
+      ${player.market_note ? `<p>${escapeHtml(player.market_note)}</p>` : ""}
       <div class="market-reasons">
         <h4>Why this signal</h4>
         <ul>
@@ -1869,36 +1886,54 @@ function marketPanel(player) {
 }
 
 function marketMetricCells(player) {
-  const cells = [
-    { label: "Last Sale", value: currency(player.last_sale) },
-    { label: "30D Avg", value: currency(player.avg_30) },
-    { label: "14D Avg", value: currency(player.avg_14) },
-    { label: "7D Avg", value: currency(player.avg_7) },
-    { label: "30D Sales", value: countValue(player.sales_30) },
-    { label: "14D Sales", value: countValue(player.sales_14) },
-    { label: "7D Sales", value: countValue(player.sales_7) },
+  return [
+    { label: "Last Sale", value: currencyOrPending(player.last_sale) },
+    { label: "30D Sales", value: countOrPending(player.sales_30) },
+    { label: "90D Sales", value: countOrPending(player.sales_90) },
+    { label: "30D Avg", value: currencyOrPending(player.avg_30) },
+    { label: "90D Avg", value: currencyOrPending(player.avg_90) },
+    { label: "30D Median", value: currencyOrPending(player.median_30) },
+    { label: "90D Median", value: currencyOrPending(player.median_90) },
+    { label: "30D Range", value: marketRange(player.low_30, player.high_30) },
+    { label: "90D Range", value: marketRange(player.low_90, player.high_90) },
+    { label: "Active Listings", value: countOrPending(player.active_listings) },
+    { label: "Active Low Ask", value: currencyOrPending(player.active_lowest_ask) },
+    { label: "Active Median Ask", value: currencyOrPending(player.active_median_ask) },
+    { label: "Active High Ask", value: currencyOrPending(player.active_highest_ask) },
+    { label: "Active Auctions", value: countOrPending(player.active_auction_count) },
+    { label: "Active BIN", value: countOrPending(player.active_buy_it_now_count) },
+    { label: "OnDeck 30D Sell-Thru", value: sellThroughOrPending(player, 30) },
+    { label: "OnDeck 90D Sell-Thru", value: sellThroughOrPending(player, 90) },
+    { label: "Sold Refresh", value: dateOrPending(player.sold_refreshed_at) },
+    { label: "Active Refresh", value: dateOrPending(player.active_data_updated_at) },
     { label: "Card Grade", value: marketGrade(player) },
     { label: "Liquidity", value: liquidityGrade(player) },
     { label: "Market Read", value: marketStatus(player) },
-    { label: "Buy Zone", value: buyZone(player) },
+    { label: "Buy Zone", value: buyZone(player) === "-" ? "Pending" : buyZone(player) },
   ];
-  const active = Number(player.active_listings);
-  const sold = Number(player.sales_30);
-  if (Number.isFinite(active) && active > 0) {
-    cells.splice(7, 0, { label: "Active Listings", value: countValue(active) });
-    if (Number.isFinite(sold)) {
-      cells.splice(8, 0, { label: "Live Sell-through", value: `${Math.round((sold / (sold + active)) * 100)}%` });
-    }
-  }
-  const sellThrough30 = sellThroughValue(player, 30);
-  const sellThrough90 = sellThroughValue(player, 90);
-  if (Number.isFinite(sellThrough30)) {
-    cells.splice(7, 0, { label: "30D Sell-through", value: `${sellThrough30.toFixed(1)}%` });
-  }
-  if (Number.isFinite(sellThrough90)) {
-    cells.splice(8, 0, { label: "90D Sell-through", value: `${sellThrough90.toFixed(1)}%` });
-  }
-  return cells;
+}
+
+function hasMarketData(player) {
+  return [
+    player.last_sale,
+    player.avg_30,
+    player.avg_90,
+    player.sales_30,
+    player.sales_90,
+    player.active_listings,
+    player.checked_at,
+  ].some((value) => value !== "" && value != null);
+}
+
+function canonicalSearchLabel(player) {
+  return player.canonical_query || player.card_query || "";
+}
+
+function marketRange(low, high) {
+  const lowLabel = currency(low);
+  const highLabel = currency(high);
+  if (lowLabel === "-" && highLabel === "-") return "Pending";
+  return `${lowLabel === "-" ? "?" : lowLabel} - ${highLabel === "-" ? "?" : highLabel}`;
 }
 
 function marketHistoryPanel(player) {
@@ -2070,7 +2105,10 @@ function marketStatusInsight(player) {
   if (status === "Illiquid") {
     return "Sales volume is thin, so one comp can distort the read.";
   }
-  return "Current sales data is still loading or incomplete.";
+  if (status === "Market Pending") {
+    return "No cached market snapshot is available yet. Run the Top 100 market refresh to fill this profile.";
+  }
+  return "Current sales data is incomplete.";
 }
 
 function liquidityInsight(player) {
@@ -2095,7 +2133,8 @@ function cardDescription(player) {
 
 function formatShortDate(value) {
   if (!value) return "";
-  const date = new Date(`${value}T00:00:00`);
+  const text = String(value);
+  const date = new Date(text.includes("T") ? text : `${text}T00:00:00`);
   if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "2-digit" });
 }

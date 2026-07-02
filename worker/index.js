@@ -1,6 +1,7 @@
 import { onRequest } from "../functions/api/market-data.js";
 import { onRequest as onMarketHistoryRequest } from "../functions/api/market-history.js";
 import { onRequest as onRankTrendsRequest, runTop100TrendUpdate } from "../functions/api/rank-trends.js";
+import { onMarketDataRequest, onRefreshTop100MarketRequest } from "../functions/api/top100-market.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -12,6 +13,14 @@ export default {
 
     if (url.pathname === "/api/market-history") {
       return onMarketHistoryRequest({ request, env, ctx });
+    }
+
+    if (url.pathname === "/api/top100-market-data") {
+      return onMarketDataRequest({ request, env, ctx });
+    }
+
+    if (url.pathname === "/api/admin/refresh-top100-market") {
+      return onRefreshTop100MarketRequest({ request, env, ctx });
     }
 
     if (url.pathname === "/api/rank-trends") {
