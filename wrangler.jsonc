@@ -13,14 +13,13 @@
       "17 10 * * *"
     ]
   },
-  // After creating a Cloudflare D1 database, add the real database id here:
-  // "d1_databases": [
-  //   {
-  //     "binding": "MARKET_DB",
-  //     "database_name": "ondeck-market",
-  //     "database_id": "replace-with-cloudflare-d1-database-id"
-  //   }
-  // ],
+  "d1_databases": [
+    {
+      "binding": "MARKET_DB",
+      "database_name": "ondeck-market",
+      "database_id": "f3b3e570-bba8-4c59-b15d-e8af6acdba6a"
+    }
+  ],
   "observability": {
     "enabled": true
   }
