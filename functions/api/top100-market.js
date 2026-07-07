@@ -54,17 +54,28 @@ export async function onMarketDataRequest(context) {
   }
 
   try {
-    const rows = await db.prepare(`
-      SELECT *
-      FROM market_player_snapshots
-      ORDER BY rank ASC
-    `).all();
-    const cardTargets = await readCardTargets(context, db);
-    const cardByPlayerId = new Map(cardTargets.map((row) => [String(row.player_id), row]));
-    const cardByName = new Map(cardTargets.map((row) => [normalizeName(row.player_name), row]));
-    const snapshots = (rows.results || [])
-      .filter((row) => snapshotTargetIsDisplayable(row, cardByPlayerId, cardByName))
-      .map(snapshotRowToApi);
+    const [rows, cardTargets, players] = await Promise.all([
+      readMarketSnapshots(db),
+      readCardTargets(context, db),
+      readCsvAsset(context, "/data/mlb-top100-2026.csv").catch(() => []),
+    ]);
+    const enabledCardTargets = cardTargets.filter(isEnabledCardTarget);
+    const cardByPlayerId = new Map(enabledCardTargets.map((row) => [String(row.player_id), row]));
+    const cardByName = new Map(enabledCardTargets.map((row) => [normalizeName(row.player_name), row]));
+    const snapshotsByPlayerId = new Map();
+
+    for (const player of players) {
+      const target = cardByPlayerId.get(String(player.player_id)) || cardByName.get(normalizeName(player.player_name));
+      if (!target) continue;
+      snapshotsByPlayerId.set(String(player.player_id), targetRowToApi(player, target));
+    }
+
+    for (const row of rows.filter((snapshot) => snapshotTargetIsDisplayable(snapshot, cardByPlayerId, cardByName))) {
+      snapshotsByPlayerId.set(String(row.player_id), snapshotRowToApi(row));
+    }
+
+    const snapshots = [...snapshotsByPlayerId.values()]
+      .sort((a, b) => Number(a.rank || 9999) - Number(b.rank || 9999));
     return jsonResponse({ snapshots }, 200, {
       "Cache-Control": "public, max-age=300",
     });
@@ -207,7 +218,7 @@ async function fetchSoldComps(apiKey, keyword) {
 }
 
 function canonicalSearchQuery(playerName, benchmarkCardCode) {
-  return `"${playerName}" ${benchmarkCardCode} Bowman Chrome Auto`;
+  return `${searchablePlayerName(playerName)} ${benchmarkCardCode} Bowman Chrome 1st Auto`;
 }
 
 function extractSoldRecords(raw, context) {
@@ -472,31 +483,48 @@ async function readSnapshot(db, playerId) {
   return db.prepare(`SELECT * FROM market_player_snapshots WHERE player_id = ?`).bind(playerId).first();
 }
 
+async function readMarketSnapshots(db) {
+  try {
+    const rows = await db.prepare(`
+      SELECT *
+      FROM market_player_snapshots
+      ORDER BY rank ASC
+    `).all();
+    return rows.results || [];
+  } catch {
+    return [];
+  }
+}
+
 async function readCardTargets(context, db = context.env?.MARKET_DB) {
   const csvRows = await readCsvAsset(context, "/data/card-targets.csv").catch(() => []);
   if (!db) return csvRows;
 
-  try {
-    const rows = await db.prepare(`
-      SELECT
-        player_id,
-        player_name,
-        card_code,
-        card_query,
-        enabled,
-        sell_through_30,
-        sell_through_90,
-        sellers_30,
-        sellers_90,
-        card_year,
-        notes
-      FROM card_targets
-    `).all();
-    const dbRows = (rows.results || []).map(cardTargetRowFromDb);
-    return mergeCardTargets(csvRows, dbRows);
-  } catch {
+  const dbRows = await readTop100CardTargets(db, "top100_card_targets")
+    .catch(() => readTop100CardTargets(db, "card_targets"))
+    .catch(() => []);
+  if (!dbRows.length) {
     return csvRows;
   }
+  return mergeCardTargets(csvRows, dbRows.map(cardTargetRowFromDb));
+}
+
+async function readTop100CardTargets(db, tableName) {
+  return (await db.prepare(`
+    SELECT
+      player_id,
+      player_name,
+      card_code,
+      card_query,
+      enabled,
+      sell_through_30,
+      sell_through_90,
+      sellers_30,
+      sellers_90,
+      card_year,
+      notes
+    FROM ${tableName}
+  `).all()).results || [];
 }
 
 function cardTargetRowFromDb(row) {
@@ -540,6 +568,44 @@ function snapshotTargetIsDisplayable(row, cardByPlayerId, cardByName) {
 
 function isEnabledCardTarget(row) {
   return String(row?.enabled ?? "true").toLowerCase() !== "false" && String(row?.card_code || "").trim() !== "";
+}
+
+function targetRowToApi(player, target) {
+  const benchmarkCardCode = target.card_code || player.card_code || "";
+  return {
+    playerId: player.player_id || target.player_id,
+    playerName: player.player_name || target.player_name,
+    team: player.org || player.team || "",
+    rank: numberFrom(player.prospect_rank),
+    benchmarkCardCode,
+    canonicalQuery: canonicalSearchQuery(player.player_name || target.player_name, benchmarkCardCode),
+    source: "Card Target",
+    salesCount30d: null,
+    salesCount90d: null,
+    avgSoldPrice30d: null,
+    avgSoldPrice90d: null,
+    medianSoldPrice30d: null,
+    medianSoldPrice90d: null,
+    lowSoldPrice30d: null,
+    highSoldPrice30d: null,
+    lowSoldPrice90d: null,
+    highSoldPrice90d: null,
+    lastSoldPrice: null,
+    lastSoldAt: null,
+    activeListingCount: null,
+    activeLowestAsk: null,
+    activeMedianAsk: null,
+    activeHighestAsk: null,
+    activeAuctionCount: null,
+    activeBuyItNowCount: null,
+    activeDataUpdatedAt: null,
+    sellThruRate30d: target.sell_through_30 ?? null,
+    sellThruRate90d: target.sell_through_90 ?? null,
+    soldRefreshedAt: null,
+    checkedAt: null,
+    cardYear: target.card_year || "",
+    targetOnly: true,
+  };
 }
 
 function snapshotRowToApi(row) {
@@ -726,6 +792,15 @@ function normalizeText(value) {
 
 function normalizeName(value) {
   return normalizeText(value).replaceAll(/[^a-z0-9]+/g, " ").trim();
+}
+
+function searchablePlayerName(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replaceAll(/[\u0300-\u036f]/g, "")
+    .replaceAll(/[^a-zA-Z0-9.' -]+/g, " ")
+    .replaceAll(/\s+/g, " ")
+    .trim();
 }
 
 function jsonResponse(body, status = 200, headers = {}) {

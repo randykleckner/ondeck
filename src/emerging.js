@@ -1,135 +1,225 @@
-import { parseCsv } from "./lib/csv.js";
-
-const rowsElement = document.querySelector("#emerging-rows");
+const groupsElement = document.querySelector("#emerging-groups");
 const countElement = document.querySelector("#emerging-row-count");
+const summaryElement = document.querySelector("#emerging-summary");
+const detailElement = document.querySelector("#emerging-detail");
+const filters = {
+  search: document.querySelector("#emerging-search"),
+  tier: document.querySelector("#emerging-tier"),
+  year: document.querySelector("#emerging-year"),
+  product: document.querySelector("#emerging-product"),
+  role: document.querySelector("#emerging-role"),
+};
+
+const state = { prospects: [], selectedId: "", details: new Map() };
+const groups = [
+  ["card_api_candidate", "Card Candidates"],
+  ["emerging_a", "Emerging A"],
+  ["emerging_bplus", "Emerging B+"],
+  ["emerging_b", "Emerging B"],
+];
 
 loadEmergingProspects();
+Object.values(filters).forEach((element) => {
+  element?.addEventListener("input", render);
+  element?.addEventListener("change", render);
+});
 
 async function loadEmergingProspects() {
   try {
-    const [targets, top100, orgProspects] = await Promise.all([
-      loadCsv("./data/card-targets.csv?v=20260706-1"),
-      loadCsv("./data/mlb-top100-2026.csv?v=20260702-current"),
-      loadCsv("./data/org-prospects.csv?v=20260630-1"),
+    const [summaryResponse, prospectsResponse] = await Promise.all([
+      fetch("/api/emerging/summary", { headers: { Accept: "application/json" } }),
+      fetch("/api/emerging?limit=150", { headers: { Accept: "application/json" } }),
     ]);
-    const currentTop100Ids = new Set(top100.map((row) => String(row.player_id)));
-    const currentTop100Names = new Set(top100.map((row) => normalizeName(row.player_name)));
-    const orgByName = new Map(orgProspects.map((row) => [normalizeName(row.player_name), row]));
-    const emerging = targets
-      .filter((row) => isEnabledTarget(row))
-      .filter((row) => !currentTop100Ids.has(String(row.player_id)))
-      .filter((row) => !currentTop100Names.has(normalizeName(row.player_name)))
-      .map((target) => emergingRow(target, orgByName.get(normalizeName(target.player_name))))
-      .sort((a, b) => b.score - a.score || a.playerName.localeCompare(b.playerName));
-
-    renderRows(emerging);
+    if (!summaryResponse.ok || !prospectsResponse.ok) {
+      throw new Error(`Emerging API unavailable (${summaryResponse.status}/${prospectsResponse.status})`);
+    }
+    const summary = await summaryResponse.json();
+    const prospects = await prospectsResponse.json();
+    state.prospects = Array.isArray(prospects.prospects) ? prospects.prospects : [];
+    renderSummary(summary.summary || {});
+    hydrateFilters();
+    render();
   } catch (error) {
     console.error(error);
-    rowsElement.innerHTML = `<tr><td colspan="13" class="muted">Emerging prospects are unavailable right now.</td></tr>`;
     countElement.textContent = "Error loading emerging data";
+    groupsElement.innerHTML = `<p class="muted">Emerging prospects are unavailable right now. Confirm the D1 migration and import have run.</p>`;
   }
 }
 
-async function loadCsv(path) {
-  const response = await fetch(path);
-  if (!response.ok) return [];
-  return parseCsv(await response.text());
+function renderSummary(summary) {
+  const cells = [
+    ["Active", summary.active_emerging],
+    ["Card Candidates", summary.card_api_candidates],
+    ["Emerging A", summary.emerging_a],
+    ["Emerging B+", summary.emerging_bplus],
+    ["Emerging B", summary.emerging_b],
+  ];
+  summaryElement.innerHTML = cells.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${count(value)}</strong></article>`).join("");
 }
 
-function emergingRow(target, orgProspect = {}) {
-  const score = emergingScore(target, orgProspect);
-  return {
-    playerName: target.player_name || "-",
-    year: target.card_year || "-",
-    product: productName(target),
-    code: target.card_code || "-",
-    teamOnCard: orgProspect.org || target.team_on_card || "TBD",
-    role: orgProspect.position || "Prospect target",
-    level: orgProspect.level || "Pre-Top 100",
-    team: orgProspect.org || "TBD",
-    age: orgProspect.age || "-",
-    score,
-    tier: tierLabel(score),
-    query: `${target.player_name} Bowman Chrome 1st Auto`,
-    status: target.sell_through_30 || target.sell_through_90 ? "Market watch" : "Needs comp history",
-  };
+function hydrateFilters() {
+  setOptions(filters.year, unique(state.prospects.map((row) => row.year).filter(Boolean)).sort((a, b) => Number(b) - Number(a)), "All years");
+  setOptions(filters.product, unique(state.prospects.map((row) => row.product).filter(Boolean)).sort(), "All products");
 }
 
-function renderRows(rows) {
+function setOptions(select, values, firstLabel) {
+  if (!select) return;
+  select.innerHTML = [`<option value="all">${escapeHtml(firstLabel)}</option>`, ...values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)].join("");
+}
+
+function render() {
+  const rows = filteredRows();
   countElement.textContent = `${rows.length} ${rows.length === 1 ? "prospect" : "prospects"}`;
-  if (!rows.length) {
-    rowsElement.innerHTML = `<tr><td colspan="13" class="muted">No emerging Bowman-auto targets are loaded yet.</td></tr>`;
-    return;
+  groupsElement.innerHTML = groups.map(([key, label], index) => {
+    const groupRows = rows.filter((row) => row.priority_tier === key);
+    return `
+      <details class="emerging-section" ${index === 0 ? "open" : ""}>
+        <summary><span>${escapeHtml(label)}</span><strong>${groupRows.length}</strong></summary>
+        ${groupRows.length ? renderTable(groupRows) : `<p class="muted">No players in this section after filters.</p>`}
+      </details>
+    `;
+  }).join("");
+  groupsElement.querySelectorAll("[data-player-id]").forEach((row) => {
+    row.addEventListener("click", () => selectPlayer(row.dataset.playerId));
+  });
+}
+
+function renderTable(rows) {
+  return `
+    <div class="table-wrap">
+      <table class="emerging-table">
+        <thead>
+          <tr>
+            <th>Player</th><th>Year</th><th>Product</th><th>Auto Code</th><th>Role</th><th>Level</th>
+            <th>Team</th><th>Age</th><th>Pre-Score</th><th>Key Stat</th><th>Card Query Seed</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((row) => `
+            <tr data-player-id="${escapeHtml(row.player_id)}" class="${String(row.player_id) === state.selectedId ? "selected" : ""}">
+              <td><strong>${escapeHtml(row.player_name)}</strong><span>${escapeHtml(row.team_on_card || row.current_org || "Org pending")}</span></td>
+              <td>${escapeHtml(row.year || "-")}</td>
+              <td>${escapeHtml(row.product || "-")}</td>
+              <td>${escapeHtml(row.auto_code || "-")}</td>
+              <td>${escapeHtml(row.stats_role || "-")}</td>
+              <td>${escapeHtml(row.level || "-")}</td>
+              <td>${escapeHtml(row.team || "-")}</td>
+              <td>${escapeHtml(row.age || "-")}</td>
+              <td><span class="score-pill ${scoreClass(row.emerging_pre_score)}">${score(row.emerging_pre_score)}</span></td>
+              <td>${escapeHtml(keyStat(row))}</td>
+              <td class="query-cell">${escapeHtml(row.card_query_seed || "-")}</td>
+              <td>${escapeHtml(row.tier_label || row.status || "-")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function filteredRows() {
+  const search = normalize(filters.search?.value || "");
+  return state.prospects.filter((row) => {
+    const blob = normalize(`${row.player_name} ${row.team_on_card} ${row.team} ${row.product} ${row.auto_code}`);
+    return (!search || blob.includes(search))
+      && ((filters.tier?.value || "all") === "all" || row.priority_tier === filters.tier.value)
+      && ((filters.year?.value || "all") === "all" || String(row.year) === filters.year.value)
+      && ((filters.product?.value || "all") === "all" || row.product === filters.product.value)
+      && ((filters.role?.value || "all") === "all" || row.stats_role === filters.role.value);
+  });
+}
+
+async function selectPlayer(playerId) {
+  state.selectedId = String(playerId);
+  const row = state.prospects.find((candidate) => String(candidate.player_id) === state.selectedId);
+  renderDetail(row);
+  render();
+  if (!state.details.has(state.selectedId)) {
+    const response = await fetch(`/api/emerging/${encodeURIComponent(state.selectedId)}`, { headers: { Accept: "application/json" } }).catch(() => null);
+    if (response?.ok) state.details.set(state.selectedId, await response.json());
   }
-
-  rowsElement.innerHTML = rows.map((row) => `
-    <tr>
-      <td><strong>${escapeHtml(row.playerName)}</strong></td>
-      <td>${escapeHtml(row.year)}</td>
-      <td>${escapeHtml(row.product)}</td>
-      <td>${escapeHtml(row.code)}</td>
-      <td>${escapeHtml(row.teamOnCard)}</td>
-      <td>${escapeHtml(row.role)}</td>
-      <td>${escapeHtml(row.level)}</td>
-      <td>${escapeHtml(row.team)}</td>
-      <td>${escapeHtml(row.age)}</td>
-      <td><span class="score-pill ${scoreClass(row.score)}">${escapeHtml(row.score)}</span></td>
-      <td>${escapeHtml(row.tier)}</td>
-      <td>${escapeHtml(row.query)}</td>
-      <td>${escapeHtml(row.status)}</td>
-    </tr>
-  `).join("");
+  renderDetail(state.details.get(state.selectedId)?.prospect || row);
 }
 
-function emergingScore(target, orgProspect) {
-  const sell30 = percentNumber(target.sell_through_30);
-  const sell90 = percentNumber(target.sell_through_90);
-  const sellers30 = Number(target.sellers_30);
-  const age = Number(orgProspect?.age);
-  let score = 42;
-  if (Number.isFinite(sell30)) score += Math.min(28, sell30 * 0.32);
-  if (Number.isFinite(sell90)) score += Math.min(16, sell90 * 0.16);
-  if (Number.isFinite(sellers30)) score += Math.min(8, sellers30 / 14);
-  if (Number.isFinite(age) && age <= 21) score += 5;
-  if (Number(target.card_year) >= 2025) score += 3;
-  return Math.max(35, Math.min(92, Math.round(score)));
+function renderDetail(row) {
+  if (!row) return;
+  detailElement.innerHTML = `
+    <div class="panel-heading compact"><h2>${escapeHtml(row.player_name)}</h2><span>${escapeHtml(row.tier_label || row.pre_tier || "Emerging")}</span></div>
+    <div class="emerging-profile-grid">
+      <div><span>Pre-Score</span><strong>${score(row.emerging_pre_score)}</strong></div>
+      <div><span>Role</span><strong>${escapeHtml(row.stats_role || "-")}</strong></div>
+      <div><span>Level</span><strong>${escapeHtml(row.level || "-")}</strong></div>
+      <div><span>Key Stat</span><strong>${escapeHtml(keyStat(row))}</strong></div>
+    </div>
+    <section><h3>Stats Thesis</h3><p>${escapeHtml(row.pre_score_notes || "Stats-only pre-score is loaded; news and org-path review still need to be layered in.")}</p></section>
+    <section><h3>Card Target</h3><p>${escapeHtml([row.year, row.product, row.auto_set, row.auto_code].filter(Boolean).join(" · ") || "Card target pending")}</p><p class="query-cell">${escapeHtml(row.card_query_seed || "Card query pending")}</p></section>
+    <section><h3>Market Review</h3>${marketRead(row)}</section>
+  `;
 }
 
-function tierLabel(score) {
-  if (score >= 78) return "Priority Watch";
-  if (score >= 66) return "Track Closely";
-  if (score >= 54) return "Build History";
-  return "Needs Data";
+function marketRead(row) {
+  const market = row.latest_market_snapshot;
+  if (!market) return `<p class="muted">Card market review pending. Only Card Candidates should be refreshed with paid SoldComps pulls.</p>`;
+  return `<p>${escapeHtml(market.market_signal || "Market pending")} · 30D avg ${currency(market.avg_price_30d)} · 90D sales ${count(market.sales_count_90d)}</p>`;
 }
 
-function productName(target) {
-  const query = String(target.card_query || "");
-  return query.replace(String(target.card_code || ""), "").trim() || "Bowman Chrome Auto";
+function keyStat(row) {
+  if (String(row.stats_role || "").toLowerCase().includes("pitch")) {
+    return `${stat(row.pitcher_ip)} IP · ${era(row.pitcher_era)} ERA · ${stat(row.pitcher_whip)} WHIP · K-BB ${pct(row.pitcher_k_minus_bb_pct)}`;
+  }
+  return `${avg(row.hitter_ops)} OPS · ${count(row.hitter_pa)} PA · ${count(row.hitter_hr)} HR · ${count(row.hitter_sb)} SB`;
 }
 
-function isEnabledTarget(row) {
-  return String(row?.enabled ?? "true").toLowerCase() !== "false" && String(row?.card_code || "").trim() !== "";
+function unique(values) {
+  return [...new Set(values.map(String).filter(Boolean))];
 }
 
-function scoreClass(score) {
-  if (score >= 70) return "score-high";
-  if (score >= 55) return "score-medium";
+function scoreClass(value) {
+  const numeric = Number(value);
+  if (numeric >= 70) return "score-high";
+  if (numeric >= 55) return "score-medium";
   return "score-low";
 }
 
-function percentNumber(value) {
-  if (value === "" || value == null) return NaN;
-  const numeric = Number(String(value).replaceAll(/[^0-9.-]/g, ""));
-  return Number.isFinite(numeric) ? numeric : NaN;
+function score(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? String(Math.round(numeric)) : "-";
 }
 
-function normalizeName(value) {
-  return String(value ?? "")
-    .normalize("NFD")
-    .replaceAll(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9]+/g, " ")
-    .trim();
+function count(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? String(Math.round(numeric)) : "-";
+}
+
+function stat(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(1).replace(/\.0$/, "") : "-";
+}
+
+function avg(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(3).replace(/^0/, "") : "-";
+}
+
+function era(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(2) : "-";
+}
+
+function pct(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return `${(numeric <= 1 ? numeric * 100 : numeric).toFixed(1)}%`;
+}
+
+function currency(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return `$${numeric.toFixed(numeric >= 100 ? 0 : 2)}`;
+}
+
+function normalize(value) {
+  return String(value || "").toLowerCase().replaceAll(/[^a-z0-9]+/g, " ").trim();
 }
 
 function escapeHtml(value) {

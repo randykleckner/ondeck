@@ -92,11 +92,18 @@ Create a D1 database in Cloudflare named `ondeck-market`, run `migrations/0001_m
 MARKET_DB
 ```
 
-Once `MARKET_DB` is bound, run `migrations/0004_top100_market_snapshots.sql` to add the Top 100 snapshot tables. Then run `migrations/0005_card_targets.sql` and import `data/card-targets-import.sql` to store the card-code and sell-through target data in D1:
+Once `MARKET_DB` is bound, run `migrations/0004_top100_market_snapshots.sql` to add the Top 100 snapshot tables. Then run `migrations/0005_card_targets.sql` and import `data/card-targets-import.sql` to store the Top 100 card-code and sell-through target data in D1:
 
 ```sh
 wrangler d1 execute ondeck-market --file=migrations/0005_card_targets.sql
 wrangler d1 execute ondeck-market --file=data/card-targets-import.sql
+```
+
+Emerging Prospects use separate D1 tables so they do not interfere with Top 100 market data. Run `migrations/0006_emerging_pipeline.sql`, then import the cleaned CSV folder:
+
+```sh
+wrangler d1 execute ondeck-market --file=migrations/0006_emerging_pipeline.sql
+node scripts/import-emerging-workbook.mjs Emerging_cleaned --execute --remote
 ```
 
 `GET /api/top100-market-data` reads D1 only and never calls SoldComps. `POST /api/top100-market-data` is the controlled refresh route. When running as a plain static site with `python3 -m http.server`, API routes will not exist, so profiles show pending market snapshots until the Cloudflare Worker is deployed.

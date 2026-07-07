@@ -266,8 +266,164 @@ h1 span:nth-child(2) {
   padding-top: 0;
 }
 
-.emerging-panel table {
+.emerging-note,
+.emerging-summary-grid article,
+.emerging-detail,
+.emerging-board,
+.emerging-section {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(17, 24, 54, 0.88), rgba(8, 12, 27, 0.88));
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.emerging-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  color: #e9efff;
+}
+
+.emerging-note span {
+  color: var(--muted);
+}
+
+.emerging-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.emerging-summary-grid article {
+  padding: 16px;
+}
+
+.emerging-summary-grid span,
+.emerging-profile-grid span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.emerging-summary-grid strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.75rem;
+}
+
+.emerging-workbench {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.emerging-detail,
+.emerging-board {
+  overflow: hidden;
+}
+
+.emerging-detail {
+  position: sticky;
+  top: 96px;
+  padding: 18px;
+}
+
+.emerging-detail section {
+  margin-top: 18px;
+}
+
+.emerging-detail h3 {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.emerging-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.emerging-profile-grid div {
+  border: 1px solid rgba(151, 170, 255, 0.14);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(3, 7, 18, 0.34);
+}
+
+.emerging-profile-grid strong {
+  display: block;
+  margin-top: 5px;
+}
+
+.emerging-controls {
+  grid-template-columns: 1.4fr repeat(4, minmax(120px, 1fr));
+}
+
+.emerging-count-heading {
+  padding: 18px;
+}
+
+.emerging-groups {
+  display: grid;
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.emerging-section {
+  overflow: hidden;
+}
+
+.emerging-section summary {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  color: #eef3ff;
+  font-weight: 900;
+  list-style: none;
+}
+
+.emerging-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.emerging-section summary strong {
+  color: var(--cyan);
+}
+
+.emerging-table {
   min-width: 1320px;
+}
+
+.emerging-table td:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.emerging-table td:first-child span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.emerging-table tr.selected {
+  background: rgba(82, 240, 255, 0.08);
+}
+
+.query-cell {
+  color: #d8def6;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 h2 {
@@ -3167,55 +3323,51 @@ tbody tr {
     content: "Call-Up";
   }
 
-  .emerging-panel td:nth-child(1)::before {
+  .emerging-table td:nth-child(1)::before {
     content: "Player";
   }
 
-  .emerging-panel td:nth-child(2)::before {
+  .emerging-table td:nth-child(2)::before {
     content: "Year";
   }
 
-  .emerging-panel td:nth-child(3)::before {
+  .emerging-table td:nth-child(3)::before {
     content: "Product";
   }
 
-  .emerging-panel td:nth-child(4)::before {
-    content: "Auto Code / Card #";
+  .emerging-table td:nth-child(4)::before {
+    content: "Auto Code";
   }
 
-  .emerging-panel td:nth-child(5)::before {
-    content: "Team On Card";
-  }
-
-  .emerging-panel td:nth-child(6)::before {
+  .emerging-table td:nth-child(5)::before {
     content: "Stats Role";
   }
 
-  .emerging-panel td:nth-child(7)::before {
+  .emerging-table td:nth-child(6)::before {
     content: "Level";
   }
 
-  .emerging-panel td:nth-child(8)::before {
+  .emerging-table td:nth-child(7)::before {
     content: "Team";
   }
 
-  .emerging-panel td:nth-child(9)::before {
+  .emerging-table td:nth-child(8)::before {
     content: "Age";
   }
 
-  .emerging-panel td:nth-child(10)::before {
-    content: "Emerging Pre-Score";
+  .emerging-table td:nth-child(9)::before {
+    content: "Pre-Score";
   }
 
-  .emerging-panel td:nth-child(11)::before {
-    content: "Pre-Tier";
+  .emerging-table td:nth-child(10)::before {
+    content: "Key Stat";
   }
 
-  .emerging-panel td:nth-child(12)::before {
+  .emerging-table td:nth-child(11)::before {
     content: "Card Query Seed";
   }
 
-  .emerging-panel td:nth-child(13)::before {
+  .emerging-table td:nth-child(12)::before {
     content: "Status";
   }
 

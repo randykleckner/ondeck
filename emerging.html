@@ -28,47 +28,86 @@
 
     <main class="app-shell emerging-shell">
       <section class="page-hero" aria-label="Emerging Prospects">
-        <p class="eyebrow">Stats-first Bowman auto targets</p>
+        <p class="eyebrow">Stats-only pre-score</p>
         <h1>Emerging Prospects</h1>
-        <p>Filtered Bowman auto targets before they reach the Top 100.</p>
+        <p>Research board for Bowman Chrome auto targets before they reach the Top 100.</p>
       </section>
 
-      <section class="table-panel emerging-panel" aria-label="Emerging prospect table">
-        <div class="panel-heading">
-          <div>
-            <h2>Emerging Prospects</h2>
-            <p>Prospects outside the current Top 100 with a tracked Bowman auto target and enough market context to begin monitoring.</p>
+      <section class="emerging-note" aria-label="Emerging board note">
+        <strong>Stats-only pre-score. Card market review pending.</strong>
+        <span>This page is a research board, not yet a public buy list.</span>
+      </section>
+
+      <section class="emerging-summary-grid" id="emerging-summary" aria-label="Emerging summary">
+        <article><span>Active</span><strong>--</strong></article>
+        <article><span>Card Candidates</span><strong>--</strong></article>
+        <article><span>Emerging A</span><strong>--</strong></article>
+        <article><span>Emerging B+</span><strong>--</strong></article>
+        <article><span>Emerging B</span><strong>--</strong></article>
+      </section>
+
+      <section class="emerging-workbench" aria-label="Emerging research board">
+        <aside class="emerging-detail" id="emerging-detail">
+          <div class="panel-heading compact">
+            <h2>Prospect Profile</h2>
+            <span>Click a row</span>
           </div>
-          <span id="emerging-row-count">Loading emerging data...</span>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Year</th>
-                <th>Product</th>
-                <th>Auto Code / Card #</th>
-                <th>Team On Card</th>
-                <th>Stats Role</th>
-                <th>Level</th>
-                <th>Team</th>
-                <th>Age</th>
-                <th>Emerging Pre-Score</th>
-                <th>Pre-Tier</th>
-                <th>Card Query Seed</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="emerging-rows">
-              <tr>
-                <td colspan="13" class="muted">Loading emerging data...</td>
-              </tr>
-            </tbody>
-          </table>
+          <p class="muted">Select an Emerging prospect to see the stats thesis, score breakdown, card target, and any cached market data.</p>
+        </aside>
+
+        <div class="emerging-board">
+          <div class="list-controls emerging-controls" aria-label="Emerging filters">
+            <label>
+              Player Search
+              <input id="emerging-search" type="search" placeholder="Search player, team, product..." />
+            </label>
+            <label>
+              Tier
+              <select id="emerging-tier">
+                <option value="all">All core tiers</option>
+                <option value="card_api_candidate">Card Candidates</option>
+                <option value="emerging_a">Emerging A</option>
+                <option value="emerging_bplus">Emerging B+</option>
+                <option value="emerging_b">Emerging B</option>
+              </select>
+            </label>
+            <label>
+              Year
+              <select id="emerging-year">
+                <option value="all">All years</option>
+              </select>
+            </label>
+            <label>
+              Product
+              <select id="emerging-product">
+                <option value="all">All products</option>
+              </select>
+            </label>
+            <label>
+              Role
+              <select id="emerging-role">
+                <option value="all">All roles</option>
+                <option value="Hitter">Hitters</option>
+                <option value="Pitcher">Pitchers</option>
+                <option value="Two-Way">Two-way</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="panel-heading emerging-count-heading">
+            <div>
+              <h2>Research Board</h2>
+              <p>Card Candidates are the only Emerging players eligible for the first paid card-market pull.</p>
+            </div>
+            <span id="emerging-row-count">Loading emerging data...</span>
+          </div>
+
+          <div id="emerging-groups" class="emerging-groups">
+            <p class="muted">Loading emerging data...</p>
+          </div>
         </div>
       </section>
     </main>
-    <script type="module" src="./src/emerging.js?v=20260706-1"></script>
+    <script type="module" src="./src/emerging.js?v=20260707-1"></script>
   </body>
 </html>

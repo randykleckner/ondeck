@@ -1586,7 +1586,7 @@ function normalizeMarketSnapshot(snapshot) {
     card_name: "Bowman Chrome Auto",
     card_query: snapshot.canonicalQuery ?? snapshot.canonical_query ?? "",
     canonical_query: snapshot.canonicalQuery ?? snapshot.canonical_query ?? "",
-    data_source: "D1 market snapshot",
+    data_source: snapshot.source ?? "D1 market snapshot",
     last_sale: snapshot.lastSoldPrice ?? snapshot.last_sold_price ?? "",
     last_sale_date: snapshot.lastSoldAt ?? snapshot.last_sold_at ?? "",
     avg_30: snapshot.avgSoldPrice30d ?? snapshot.avg_sold_price_30d ?? "",
@@ -1607,6 +1607,8 @@ function normalizeMarketSnapshot(snapshot) {
     active_buy_it_now_count: snapshot.activeBuyItNowCount ?? snapshot.active_buy_it_now_count ?? "",
     sell_through_30: Number.isFinite(sellThrough30) ? sellThrough30 : "",
     sell_through_90: Number.isFinite(sellThrough90) ? sellThrough90 : "",
+    card_year: snapshot.cardYear ?? snapshot.card_year ?? "",
+    target_only: snapshot.targetOnly ?? snapshot.target_only ?? "",
     sold_refreshed_at: snapshot.soldRefreshedAt ?? snapshot.sold_refreshed_at ?? "",
     active_data_updated_at: snapshot.activeDataUpdatedAt ?? snapshot.active_data_updated_at ?? "",
     checked_at: snapshot.checkedAt ?? snapshot.checked_at ?? "",
@@ -2490,9 +2492,25 @@ function bestCardResearchTarget() {
 }
 
 function marketScore(player) {
-  if (!player.market_signal) return 0;
   const signal = String(player.market_signal).toLowerCase();
-  const signalScore = signal.includes("strong") ? 35 : signal.includes("buy") ? 25 : signal.includes("watch") ? 12 : 5;
+  const hasTrackedCard = Boolean(
+    player.card_code
+      || player.card_query
+      || player.sell_through_30
+      || player.sell_through_90
+      || player.sellers_30
+      || player.sellers_90,
+  );
+  if (!signal && !hasTrackedCard) return 0;
+  const signalScore = signal
+    ? signal.includes("strong")
+      ? 35
+      : signal.includes("buy")
+        ? 25
+        : signal.includes("watch")
+          ? 12
+          : 5
+    : 10;
   const last = numericMoney(player.last_sale);
   const avg30 = numericMoney(player.avg_30);
   const discount = Number.isFinite(last) && Number.isFinite(avg30) && avg30 > 0 ? Math.max(-15, Math.min(25, ((avg30 - last) / avg30) * 100)) : 0;
