@@ -39,7 +39,7 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    const marketRefreshRequest = new Request("https://ondeckprospect.com/api/top100-market-data?limit=100", {
+    const marketRefreshRequest = new Request("https://ondeckprospect.com/api/top100-market-data?limit=25", {
       method: "POST",
     });
     ctx.waitUntil(Promise.allSettled([

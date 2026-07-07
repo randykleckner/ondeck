@@ -71,7 +71,8 @@ export async function onMarketDataRequest(context) {
     }
 
     for (const row of rows.filter((snapshot) => snapshotTargetIsDisplayable(snapshot, cardByPlayerId, cardByName))) {
-      snapshotsByPlayerId.set(String(row.player_id), snapshotRowToApi(row));
+      const target = cardByPlayerId.get(String(row.player_id)) || cardByName.get(normalizeName(row.player_name));
+      snapshotsByPlayerId.set(String(row.player_id), snapshotRowToApi(row, target));
     }
 
     const snapshots = [...snapshotsByPlayerId.values()]
@@ -104,9 +105,12 @@ export async function onRefreshTop100MarketRequest(context) {
   const url = new URL(context.request.url);
   const force = url.searchParams.get("force") === "true";
   const limit = Math.max(1, Math.min(100, Number(url.searchParams.get("limit")) || 100));
+  const playerFilter = String(url.searchParams.get("player") || "").trim();
   const now = new Date();
   const summary = {
+    playerFilter,
     playersProcessed: 0,
+    playersSelected: 0,
     playersRefreshed: 0,
     playersSkippedCacheFresh: 0,
     playersMissingBenchmarkCardCodes: 0,
@@ -118,6 +122,7 @@ export async function onRefreshTop100MarketRequest(context) {
     errors: [],
     activeListingApiSupported: "not_confirmed_separate_endpoint",
     messages: [],
+    results: [],
   };
 
   const [players, cardTargets] = await Promise.all([
@@ -127,16 +132,38 @@ export async function onRefreshTop100MarketRequest(context) {
   const enabledCardTargets = cardTargets.filter(isEnabledCardTarget);
   const cardByPlayerId = new Map(enabledCardTargets.map((row) => [String(row.player_id), row]));
   const cardByName = new Map(enabledCardTargets.map((row) => [normalizeName(row.player_name), row]));
+  const selectedPlayers = filterRefreshPlayers(players, enabledCardTargets, playerFilter).slice(0, limit);
+  summary.playersSelected = selectedPlayers.length;
 
-  for (const player of players.slice(0, limit)) {
+  if (playerFilter && !selectedPlayers.length) {
+    return jsonResponse({
+      ...summary,
+      messages: [`No Top 100 player matched "${playerFilter}".`],
+    }, 404);
+  }
+
+  for (const player of selectedPlayers) {
     summary.playersProcessed += 1;
     const playerId = String(player.player_id || "");
     const playerName = String(player.player_name || "").trim();
     const card = cardByPlayerId.get(playerId) || cardByName.get(normalizeName(playerName));
     const benchmarkCardCode = String(card?.card_code || player.card_code || "").trim();
+    const result = {
+      playerId,
+      playerName,
+      benchmarkCardCode,
+      canonicalQuery: "",
+      status: "pending",
+      soldRecords: 0,
+      activeListings: 0,
+      message: "",
+    };
 
     if (!playerId || !playerName || !benchmarkCardCode) {
       summary.playersMissingBenchmarkCardCodes += 1;
+      result.status = "missing-card-code";
+      result.message = "Missing player name or benchmark card code.";
+      summary.results.push(result);
       summary.errors.push({
         playerId,
         playerName,
@@ -146,12 +173,16 @@ export async function onRefreshTop100MarketRequest(context) {
     }
 
     const canonicalQuery = canonicalSearchQuery(playerName, benchmarkCardCode);
+    result.canonicalQuery = canonicalQuery;
     try {
       const current = await readSnapshot(db, playerId);
       const soldFresh = !force && current?.sold_refreshed_at && ageDays(current.sold_refreshed_at, now) < SOLD_CACHE_DAYS;
       const activeFresh = !force && current?.active_data_updated_at && ageHours(current.active_data_updated_at, now) < ACTIVE_CACHE_HOURS;
       if (soldFresh && (activeFresh || current?.active_listing_supported === 0)) {
         summary.playersSkippedCacheFresh += 1;
+        result.status = "skipped-cache-fresh";
+        result.message = "Skipped because cached sold data is still fresh.";
+        summary.results.push(result);
         continue;
       }
 
@@ -159,10 +190,13 @@ export async function onRefreshTop100MarketRequest(context) {
       summary.soldDataApiCallsUsed += 1;
       const soldRecords = extractSoldRecords(raw, { playerId, playerName, benchmarkCardCode, canonicalQuery });
       const activeListings = extractActiveListings(raw, { playerId, playerName, benchmarkCardCode, canonicalQuery });
+      result.soldRecords = soldRecords.length;
+      result.activeListings = activeListings.length;
       const soldImport = await writeSoldRecords(db, soldRecords);
       const activeImport = await writeActiveListings(db, activeListings);
       const snapshot = buildSnapshot({
         player,
+        cardTarget: card,
         benchmarkCardCode,
         canonicalQuery,
         soldRecords,
@@ -173,6 +207,11 @@ export async function onRefreshTop100MarketRequest(context) {
       await writeSnapshot(db, snapshot);
 
       summary.playersRefreshed += 1;
+      result.status = "refreshed";
+      result.message = soldRecords.length
+        ? `Imported ${soldRecords.length} sold comps.`
+        : "SoldComps returned no benchmark sold comps after filtering.";
+      summary.results.push(result);
       summary.soldRecordsImported += soldImport.inserted;
       summary.activeListingsImported += activeImport.inserted;
       summary.duplicatesSkipped += soldImport.duplicates + activeImport.duplicates;
@@ -180,6 +219,9 @@ export async function onRefreshTop100MarketRequest(context) {
         summary.activeListingApiSupported = "active_data_seen_in_sold_response";
       }
     } catch (error) {
+      result.status = "error";
+      result.message = error?.message || "Refresh failed.";
+      summary.results.push(result);
       summary.errors.push({
         playerId,
         playerName,
@@ -198,6 +240,22 @@ export async function onRefreshTop100MarketRequest(context) {
   if (summary.errors.length) summary.messages.push("API failed for some players; showing saved data where available");
 
   return jsonResponse(summary);
+}
+
+function filterRefreshPlayers(players, cardTargets, playerFilter) {
+  if (!playerFilter) return players;
+  const normalizedFilter = normalizeName(playerFilter);
+  const cardFiltersByPlayerId = new Map(cardTargets.map((row) => [String(row.player_id), normalizeName(row.card_code)]));
+  const cardFiltersByName = new Map(cardTargets.map((row) => [normalizeName(row.player_name), normalizeName(row.card_code)]));
+  return players.filter((player) => {
+    const playerId = String(player.player_id || "");
+    const playerName = normalizeName(player.player_name);
+    const cardCode = cardFiltersByPlayerId.get(playerId) || cardFiltersByName.get(playerName) || normalizeName(player.card_code);
+    return playerId === playerFilter
+      || playerName.includes(normalizedFilter)
+      || normalizedFilter.includes(playerName)
+      || cardCode === normalizedFilter;
+  });
 }
 
 async function fetchSoldComps(apiKey, keyword) {
@@ -290,14 +348,24 @@ function normalizeActiveListing(item, context) {
   };
 }
 
-function buildSnapshot({ player, benchmarkCardCode, canonicalQuery, soldRecords, activeListings, raw, now }) {
+function buildSnapshot({ player, cardTarget, benchmarkCardCode, canonicalQuery, soldRecords, activeListings, raw, now }) {
   const sold30 = recordsInWindow(soldRecords, 30, now);
   const sold90 = recordsInWindow(soldRecords, 90, now);
   const activePrices = activeListings.map((row) => row.totalAskPrice).filter(Number.isFinite).sort((a, b) => a - b);
   const activeListingCount = activeListings.length || activeListingCountFromRaw(raw);
   const hasActiveSupport = Number.isFinite(activeListingCount) || activeListings.length > 0;
-  const sellThru30 = Number.isFinite(activeListingCount) && activeListingCount > 0 ? sold30.length / activeListingCount : null;
-  const sellThru90 = Number.isFinite(activeListingCount) && activeListingCount > 0 ? sold90.length / activeListingCount : null;
+  const targetSellThru30 = numberFrom(cardTarget?.sell_through_30);
+  const targetSellThru90 = numberFrom(cardTarget?.sell_through_90);
+  const sellThru30 = Number.isFinite(activeListingCount) && activeListingCount > 0
+    ? sold30.length / activeListingCount
+    : Number.isFinite(targetSellThru30)
+      ? targetSellThru30
+      : null;
+  const sellThru90 = Number.isFinite(activeListingCount) && activeListingCount > 0
+    ? sold90.length / activeListingCount
+    : Number.isFinite(targetSellThru90)
+      ? targetSellThru90
+      : null;
 
   return {
     playerId: player.player_id,
@@ -608,7 +676,7 @@ function targetRowToApi(player, target) {
   };
 }
 
-function snapshotRowToApi(row) {
+function snapshotRowToApi(row, target = {}) {
   return {
     playerId: row.player_id,
     playerName: row.player_name,
@@ -636,10 +704,11 @@ function snapshotRowToApi(row) {
     activeAuctionCount: row.active_auction_count,
     activeBuyItNowCount: row.active_buy_it_now_count,
     activeDataUpdatedAt: row.active_data_updated_at,
-    sellThruRate30d: row.sell_thru_rate_30d,
-    sellThruRate90d: row.sell_thru_rate_90d,
+    sellThruRate30d: row.sell_thru_rate_30d ?? target.sell_through_30 ?? null,
+    sellThruRate90d: row.sell_thru_rate_90d ?? target.sell_through_90 ?? null,
     soldRefreshedAt: row.sold_refreshed_at,
     checkedAt: row.checked_at,
+    cardYear: target.card_year || "",
   };
 }
 
