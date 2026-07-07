@@ -277,7 +277,6 @@ h1 span:nth-child(2) {
 
 .emerging-note,
 .emerging-summary-grid article,
-.emerging-detail,
 .emerging-board,
 .emerging-section {
   border: 1px solid var(--line);
@@ -328,20 +327,13 @@ h1 span:nth-child(2) {
 
 .emerging-workbench {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
 
-.emerging-detail,
 .emerging-board {
   overflow: hidden;
-}
-
-.emerging-detail {
-  position: sticky;
-  top: 96px;
-  padding: 18px;
 }
 
 .emerging-card-back {
@@ -564,17 +556,6 @@ h1 span:nth-child(2) {
 
 .emerging-record-table {
   min-width: 440px;
-}
-
-.emerging-detail section {
-  margin-top: 18px;
-}
-
-.emerging-detail h3 {
-  margin: 0 0 8px;
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .emerging-profile-grid {
