@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OnDeck Prospect | MLB Top 100 Reference</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
+    <link rel="stylesheet" href="./styles.css?v=20260707-1" />
+  </head>
+  <body>
+    <header class="app-header">
+      <a class="brand-mark" href="./index.html" aria-label="OnDeck Prospect home">
+        <strong>OnDeck</strong>
+        <span>Prospect</span>
+      </a>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="./index.html">On Deck</a>
+        <a href="./top100.html" class="active" aria-current="page">Top 100</a>
+        <a href="./emerging.html">Emerging</a>
+        <a href="./scorebook.html">Scorebook</a>
+        <a href="./graduated.html">Graduated</a>
+        <a href="./about.html">About</a>
+      </nav>
+      <div class="header-actions">
+        <a class="button primary" href="./index.html#on-deck">On Deck Board</a>
+      </div>
+    </header>
+
+    <main class="app-shell page-shell">
+      <section class="page-hero" aria-label="MLB Top 100 reference">
+        <p class="eyebrow">Reference Board</p>
+        <h1>MLB Top 100</h1>
+        <p>Full ranked context for comparing On Deck decisions against the broader prospect list.</p>
+      </section>
+
+      <section id="top-100" class="table-panel reference-panel" aria-label="MLB Top 100 reference list">
+        <div class="panel-heading">
+          <div>
+            <h2>Top 100 Reference</h2>
+            <p>Rank, benchmark card, trend, and why each player is or is not currently On Deck.</p>
+          </div>
+          <span id="top100-row-count">Loading board data...</span>
+        </div>
+        <div class="list-controls" aria-label="Top 100 filters">
+          <div class="filter-grid">
+            <label>
+              Search
+              <input id="top100-search" type="search" placeholder="Player or org" />
+            </label>
+            <label>
+              Organization
+              <select id="top100-org-filter">
+                <option value="all">All orgs</option>
+              </select>
+            </label>
+            <label>
+              Board View
+              <select id="top100-board-filter">
+                <option value="all">Full Top 100</option>
+                <option value="bubble">On Deck + Bubble</option>
+                <option value="outside">Outside On Deck</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Team</th>
+                <th>Benchmark Card</th>
+                <th>Trend</th>
+                <th>Why Not On Deck</th>
+              </tr>
+            </thead>
+            <tbody id="top100-rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js?v=20260707-1"></script>
+  </body>
+</html>

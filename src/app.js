@@ -93,6 +93,7 @@ const elements = {
   orgFilter: document.querySelector("#org-filter"),
   scoreFilter: document.querySelector("#score-filter"),
   scoreFilterValue: document.querySelector("#score-filter-value"),
+  dashboardSummary: document.querySelector("#dashboard-summary"),
   contentGrid: document.querySelector("#prospects"),
   rows: document.querySelector("#prospect-rows"),
   top100Rows: document.querySelector("#top100-rows"),
@@ -120,11 +121,11 @@ const elements = {
   secondaryTools: document.querySelectorAll(".secondary-tool"),
 };
 
-elements.loadTop100.addEventListener("click", () => {
+elements.loadTop100?.addEventListener("click", () => {
   loadTop100Prospects();
 });
 
-elements.exportCsv.addEventListener("click", () => {
+elements.exportCsv?.addEventListener("click", () => {
   const records = getFilteredRows().map((player) => ({
     player_id: player.player_id,
     player_name: player.player_name,
@@ -305,6 +306,7 @@ async function loadTop100Prospects() {
 }
 
 function setBoardLoadingStatus(message) {
+  if (elements.dashboardSummary) elements.dashboardSummary.innerHTML = `<article><span>Status</span><strong>${escapeHtml(message)}</strong></article>`;
   if (elements.marketCount) elements.marketCount.textContent = message;
   if (elements.rowCount) elements.rowCount.textContent = message;
   if (elements.top100RowCount) elements.top100RowCount.textContent = message;
@@ -315,6 +317,7 @@ function setBoardLoadingStatus(message) {
 
 function renderBoardLoadError() {
   const message = "Error loading board data";
+  if (elements.dashboardSummary) elements.dashboardSummary.innerHTML = `<article><span>Status</span><strong>${message}</strong></article>`;
   if (elements.marketCount) elements.marketCount.textContent = message;
   if (elements.rowCount) elements.rowCount.textContent = message;
   if (elements.top100RowCount) elements.top100RowCount.textContent = message;
@@ -511,15 +514,40 @@ function render() {
   const rows = getFilteredRows();
   if (state.activeTool === "break") renderTeamBoard();
   if (state.activeTool === "war") renderWarRoom();
+  renderDashboardSummary();
   renderMarketBoard();
   renderRows(rows);
   renderTop100Rows();
   renderScorebook();
   renderGraduated();
-  elements.rowCount.textContent = rows.length ? `${rows.length} On Deck` : "No approved On Deck players found";
+  if (elements.rowCount) elements.rowCount.textContent = rows.length ? `${rows.length} On Deck` : "No approved On Deck players found";
   const selected = state.selectedId ? state.allScored.find((player) => String(player.player_id) === String(state.selectedId)) : null;
   renderCard(selected);
   syncToolVisibility();
+}
+
+function renderDashboardSummary() {
+  if (!elements.dashboardSummary) return;
+  const tracked = onDeckPlayers().map(withLiveMarketData);
+  if (!state.prospects.length) {
+    elements.dashboardSummary.innerHTML = `<article><span>Status</span><strong>Loading board data...</strong></article>`;
+    return;
+  }
+  if (!tracked.length) {
+    elements.dashboardSummary.innerHTML = `<article><span>On Deck Board</span><strong>No On Deck players found</strong></article>`;
+    return;
+  }
+  const topScore = Math.max(...tracked.map((player) => Number(player.callup_score) || 0));
+  const avgScore = Math.round(tracked.reduce((sum, player) => sum + (Number(player.callup_score) || 0), 0) / tracked.length);
+  const marketReady = tracked.filter(hasMarketData).length;
+  const top100Count = state.allScored.filter((player) => isTop100Prospect(player) && !isGraduated(player)).length;
+  elements.dashboardSummary.innerHTML = `
+    <article><span>Current On Deck</span><strong>${tracked.length}</strong></article>
+    <article><span>Top Move Score</span><strong>${topScore}%</strong></article>
+    <article><span>Average Move Score</span><strong>${avgScore}%</strong></article>
+    <article><span>Market Ready</span><strong>${marketReady || "Pending"}</strong></article>
+    <article><span>Top 100 Tracked</span><strong>${top100Count || "Loading"}</strong></article>
+  `;
 }
 
 function getTop100Rows() {
@@ -596,6 +624,7 @@ function applyCardTargets(players) {
 }
 
 function renderTeamBoard() {
+  if (!elements.teamBoard || !elements.teamBoardCount) return;
   const orgs = buildOrgExposure();
   elements.teamBoardCount.textContent = `${orgs.length} ${orgs.length === 1 ? "org" : "orgs"}`;
   if (!orgs.length) {
@@ -642,6 +671,7 @@ function openTeamWarRoom(org) {
 }
 
 function renderWarRoom() {
+  if (!elements.warRoomBoard || !elements.warRoomTitle || !elements.warRoomSubtitle || !elements.warRoomLogo) return;
   const org = state.selectedOrg ?? bestBreakExposureOrg()?.name;
   if (!org) {
     elements.warRoomTitle.textContent = "Select a team";
@@ -991,25 +1021,18 @@ function laneSort(role) {
 }
 
 function renderMarketBoard() {
+  if (!elements.marketBoard || !elements.marketCount) return;
   const tracked = onDeckPlayers().map(withLiveMarketData);
-  const bubble = bubblePlayers();
-  elements.marketCount.textContent = `Top ${tracked.length}`;
   if (!tracked.length) {
-    elements.marketBoard.innerHTML = `<p class="muted">Load prospects to view the On Deck board.</p>`;
+    const message = state.prospects.length ? "No On Deck players found" : "Loading board data...";
+    elements.marketCount.textContent = message;
+    elements.marketBoard.innerHTML = `<p class="muted">${escapeHtml(message)}</p>`;
     return;
   }
+  elements.marketCount.textContent = `Top ${tracked.length}`;
 
   elements.marketBoard.innerHTML = `
     <div class="market-track">${tracked.map((player) => callupCardMarkup(player)).join("")}</div>
-    <section class="bubble-board" aria-label="On the bubble">
-      <div class="bubble-heading">
-        <h3>On The Bubble</h3>
-        <p>The next five names outside On Deck, with the reason they missed.</p>
-      </div>
-      <div class="bubble-grid">
-        ${bubble.map((player) => bubbleCardMarkup(player)).join("")}
-      </div>
-    </section>
   `;
 
   elements.marketBoard.querySelectorAll(".market-card[data-player-id], .bubble-card[data-player-id]").forEach((card) => {
@@ -1071,6 +1094,7 @@ function activateMarketCard(card, event) {
 }
 
 function scrollOnDeckBoard(direction) {
+  if (!elements.marketBoard) return;
   const track = elements.marketBoard.querySelector(".market-track");
   if (!track) return;
   const firstCard = track.querySelector(".market-card");
@@ -1130,8 +1154,9 @@ function buildOrgExposure() {
 }
 
 function renderRows(rows) {
+  if (!elements.rows) return;
   if (!rows.length) {
-    elements.rows.innerHTML = `<tr><td colspan="10" class="muted">No approved On Deck players found.</td></tr>`;
+    elements.rows.innerHTML = `<tr><td colspan="9" class="muted">No approved On Deck players found.</td></tr>`;
     return;
   }
 
@@ -1141,7 +1166,6 @@ function renderRows(rows) {
       const selected = String(player.player_id) === String(state.selectedId) ? "selected" : "";
       return `
         <tr class="${selected}" data-player-id="${escapeHtml(player.player_id)}">
-          <td><strong>${index + 1}</strong></td>
           <td>
             <span class="player-name">
               <strong>${escapeHtml(player.player_name)}</strong>
@@ -1152,9 +1176,9 @@ function renderRows(rows) {
           <td>${escapeHtml(player.position ?? "-")}</td>
           <td>${escapeHtml(player.level ?? "-")}</td>
           <td><span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}%</span></td>
-          <td>${escapeHtml(onDeckCatalyst(player))}</td>
-          <td>${escapeHtml(cardBaselineLabel(player))}</td>
+          <td><span class="grade-pill ${marketGradeClass(player)}">${escapeHtml(marketGrade(player))}</span></td>
           <td><span class="market-status ${marketStatusClass(player)}">${escapeHtml(marketStatus(player))}</span></td>
+          <td>${escapeHtml(buyZone(player) === "-" ? "Pending" : buyZone(player))}</td>
           <td><button class="button ghost row-profile-button" type="button">View</button></td>
         </tr>
       `;
@@ -1477,6 +1501,7 @@ function marketMoveLabel(row) {
 }
 
 function renderCard(player) {
+  if (!elements.contentGrid || !elements.cardPanel || !elements.playerCard) return;
   if (!player) {
     elements.contentGrid.classList.remove("profile-open");
     elements.cardPanel.hidden = true;

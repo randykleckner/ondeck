@@ -5,29 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnDeck Prospect | On Deck Market Intelligence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260706-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260707-1" />
   </head>
   <body>
     <header class="app-header">
-      <div class="brand-mark">
+      <a class="brand-mark" href="./index.html" aria-label="OnDeck Prospect home">
         <strong>OnDeck</strong>
         <span>Prospect</span>
-      </div>
+      </a>
       <nav class="main-nav" aria-label="Primary navigation">
-        <a href="#on-deck" data-route="dashboard">On Deck</a>
+        <a href="./index.html" class="active" aria-current="page">On Deck</a>
+        <a href="./top100.html">Top 100</a>
         <a href="./emerging.html">Emerging</a>
-        <a href="#top-100" data-route="dashboard">Top 100</a>
-        <a href="#graduated" data-route="graduated">Graduated</a>
-        <a href="#scorebook" data-route="dashboard">Scorebook</a>
-        <a href="#about" data-route="dashboard">About Us</a>
+        <a href="./scorebook.html">Scorebook</a>
+        <a href="./graduated.html">Graduated</a>
+        <a href="./about.html">About</a>
       </nav>
       <div class="header-actions">
-        <button id="load-top100" class="button primary" type="button">Refresh Board</button>
-        <button id="export-csv" class="button" type="button">Export Scores</button>
+        <a class="button ghost" href="./top100.html">Research Top 100</a>
       </div>
     </header>
 
-    <main id="dashboard" class="app-shell">
+    <main id="dashboard" class="app-shell home-shell">
       <section class="hero-panel" aria-label="OnDeck Prospect hero">
         <div class="hero-copy">
           <p class="eyebrow">Data. Signals. Edge.</p>
@@ -37,21 +36,25 @@
             <span>the market does.</span>
           </h1>
           <p>
-            OnDeck Prospect tracks call-up signals, promotion paths, performance breakouts,
-            and card-market catalysts so you can spot the next move before attention catches up.
+            OnDeck Prospect tracks promotion signals, performance breakouts, and card-market
+            catalysts so you can focus on the next move before attention catches up.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#on-deck">View the On Deck Board</a>
-            <a class="button ghost" href="#scorebook" data-route="dashboard">View Scorebook</a>
+            <a class="button ghost" href="./emerging.html">Explore Emerging</a>
           </div>
         </div>
+      </section>
+
+      <section id="dashboard-summary" class="summary-grid dashboard-summary" aria-label="Dashboard summary">
+        <article><span>Status</span><strong>Loading board data...</strong></article>
       </section>
 
       <section id="on-deck" class="market-board" aria-label="On Deck next prospect moves">
         <div class="panel-heading">
           <div>
             <h2>On Deck Board</h2>
-            <p>The prospects most likely to move onward and upward next, with the why shown in the profile</p>
+            <p>The prospects most likely to move onward and upward next, with card-market context attached.</p>
           </div>
           <div class="deck-controls" aria-label="On Deck Board controls">
             <button id="deck-prev" class="icon-button" type="button" aria-label="Previous On Deck cards">‹</button>
@@ -62,29 +65,28 @@
         <div id="market-board" class="market-grid"></div>
       </section>
 
-      <section id="prospects" class="content-grid">
+      <section id="prospects" class="content-grid briefing-preview">
         <div class="table-panel">
           <div class="panel-heading">
             <div>
-              <h2>Selected Player Report</h2>
-              <p>Click any player to open the profile and recommendation details</p>
+              <h2>On Deck Briefing Preview</h2>
+              <p>Open a player to see the current movement case, stats, and market pulse.</p>
             </div>
             <span id="row-count">Loading board data...</span>
           </div>
           <div class="table-wrap">
-            <table>
+            <table class="on-deck-table">
               <thead>
                 <tr>
-                  <th>Rank</th>
                   <th>Player</th>
                   <th>Org</th>
                   <th>Pos</th>
                   <th>Level</th>
                   <th>Move Score</th>
-                  <th>Next Move</th>
-                  <th>Card Baseline</th>
+                  <th>On Deck Grade</th>
                   <th>Market Read</th>
-                  <th>Profile</th>
+                  <th>Buy Zone</th>
+                  <th>Open Briefing</th>
                 </tr>
               </thead>
               <tbody id="prospect-rows"></tbody>
@@ -92,108 +94,26 @@
           </div>
         </div>
 
-        <aside class="card-panel" aria-label="Selected prospect card" hidden>
+        <aside class="card-panel" aria-label="Selected On Deck briefing" hidden>
           <div id="player-card" class="player-card empty">
             <p>Select a player to review why he is on deck.</p>
           </div>
         </aside>
       </section>
 
-      <section id="top-100" class="table-panel reference-panel" aria-label="MLB Top 100 reference list">
-        <div class="panel-heading">
-          <div>
-            <h2>MLB Top 100 Reference</h2>
-            <p>Full ranked context so the On Deck decision can be compared against everyone else</p>
-          </div>
-          <span id="top100-row-count">Loading board data...</span>
+      <section class="home-cta" aria-label="Keep researching">
+        <div>
+          <p class="eyebrow">Keep researching</p>
+          <h2>Follow the board from signal to result.</h2>
         </div>
-        <div class="list-controls" aria-label="Top 100 filters">
-          <div class="filter-grid">
-            <label>
-              Search
-              <input id="top100-search" type="search" placeholder="Player or org" />
-            </label>
-            <label>
-              Organization
-              <select id="top100-org-filter">
-                <option value="all">All orgs</option>
-              </select>
-            </label>
-            <label>
-              Board View
-              <select id="top100-board-filter">
-                <option value="all">Full Top 100</option>
-                <option value="bubble">On Deck + Bubble</option>
-                <option value="outside">Outside On Deck</option>
-              </select>
-            </label>
-          </div>
+        <div class="home-cta-actions">
+          <a class="button primary" href="./top100.html">View Top 100</a>
+          <a class="button ghost" href="./emerging.html">View Emerging Prospects</a>
+          <a class="button ghost" href="./scorebook.html">View Scorebook</a>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Team</th>
-                <th>Benchmark Card</th>
-                <th>Trend</th>
-                <th>Why Not On Deck</th>
-              </tr>
-            </thead>
-            <tbody id="top100-rows"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="scorebook" class="scorebook-page" aria-label="OnDeck Scorebook">
-        <div class="scorebook-hero">
-          <p class="eyebrow">The Scorebook</p>
-          <h2>Proof that the board was early.</h2>
-          <p>We track players flagged before a meaningful move, how early they appeared on the board, and what happened to their primary prospect card after the catalyst.</p>
-        </div>
-        <div id="scorebook-board" class="scorebook-board"></div>
-      </section>
-
-      <section id="about" class="info-panel" aria-label="About OnDeck Prospect">
-        <div class="panel-heading">
-          <div>
-            <h2>About Us</h2>
-            <p>Not another ranking list. OnDeck Prospect is built to answer who is on deck next, why the move could happen, and whether the card market has already reacted.</p>
-          </div>
-        </div>
-        <div class="method-grid">
-          <article>
-            <span>1</span>
-            <h3>Path</h3>
-            <p>We look for players whose organization has a clear reason to push them forward: roster need, level dominance, injury pressure, 40-man timing, or assignment fit.</p>
-          </article>
-          <article>
-            <span>2</span>
-            <h3>Readiness</h3>
-            <p>Level, age, role, recent form, and trend data help separate a true next-move candidate from a long-range prospect name.</p>
-          </article>
-          <article>
-            <span>3</span>
-            <h3>Bowman 1st autos</h3>
-            <p>We track Bowman Chrome 1st autos because they are the standard prospect card for baseball collectors. One benchmark card keeps the market read clean and comparable.</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="graduated" class="graduated-page secondary-tool" data-tool="graduated" aria-label="Graduated MLB prospects">
-        <div class="tool-page-nav">
-          <a class="button ghost" href="#on-deck" data-route="dashboard">Back to On Deck</a>
-        </div>
-        <div class="graduated-hero">
-          <p class="eyebrow">Graduated</p>
-          <h2>MLB graduates stay in the system.</h2>
-          <p>Players move here automatically once our data shows MLB status and removal from the current Top 100, while profile, thesis, card market, and timeline history remain intact.</p>
-        </div>
-        <div id="graduated-board" class="graduated-board"></div>
       </section>
     </main>
 
-  <script type="module" src="./src/app.js?v=20260706-2"></script>
-</body>
+    <script type="module" src="./src/app.js?v=20260707-1"></script>
+  </body>
 </html>
