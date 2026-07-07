@@ -588,6 +588,10 @@ function openPlayerProfile(playerId, options = {}) {
   if (options.scroll !== false) {
     document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+  if (options.focus !== false && elements.cardPanel && !elements.cardPanel.hidden) {
+    elements.cardPanel.setAttribute("tabindex", "-1");
+    elements.cardPanel.focus({ preventScroll: true });
+  }
 }
 
 function getFilteredRows() {
@@ -1188,7 +1192,7 @@ function renderRows(rows) {
   elements.rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
       event.stopPropagation();
-      openPlayerProfile(row.dataset.playerId, { scroll: false });
+      openPlayerProfile(row.dataset.playerId);
     });
   });
 }
@@ -1228,7 +1232,7 @@ function renderTop100Rows() {
   elements.top100Rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
       event.stopPropagation();
-      openPlayerProfile(row.dataset.playerId, { scroll: false });
+      openPlayerProfile(row.dataset.playerId);
     });
   });
 }
@@ -1506,43 +1510,508 @@ function renderCard(player) {
     elements.contentGrid.classList.remove("profile-open");
     elements.cardPanel.hidden = true;
     elements.playerCard.className = "player-card empty";
-    elements.playerCard.innerHTML = "<p>Select a player to review why he is on deck.</p>";
+    elements.playerCard.innerHTML = "<p>Select a player to open the On Deck Briefing.</p>";
     return;
   }
 
-  const profilePlayer = withLiveMarketData(player);
+  const normalizedInput = normalizeBriefingPlayer(player);
+  const profilePlayer = normalizeBriefingPlayer(withLiveMarketData(normalizedInput));
   elements.contentGrid.classList.add("profile-open");
   elements.cardPanel.hidden = false;
   elements.playerCard.className = "player-card";
   elements.playerCard.innerHTML = `
-    <div class="card-title">
-      <div>
-        <p class="card-kicker">${escapeHtml(profilePlayer.org ?? "-")} · ${escapeHtml(profilePlayer.level ?? "-")} · ${escapeHtml(profilePlayer.position ?? "-")}</p>
-        <h3>${escapeHtml(profilePlayer.player_name)}</h3>
-        <p class="muted">On Deck rank ${escapeHtml(top10Rank(profilePlayer))} · Prospect rank ${escapeHtml(profilePlayer.prospect_rank ?? "-")} · Age ${escapeHtml(profilePlayer.age ?? "-")} · ETA ${escapeHtml(profilePlayer.eta ?? "-")}</p>
-      </div>
-      <div class="profile-badges">
-        ${isGraduated(profilePlayer) ? `<span class="graduate-badge">MLB Graduate</span>` : ""}
-        <span class="score-pill ${scoreClass(profilePlayer.callup_score)}">${profilePlayer.callup_score}% move score</span>
-      </div>
-    </div>
-
-    <div class="breakdown">
-      ${bar("Path", profilePlayer.opportunity_score)}
-      ${bar("Readiness", profilePlayer.readiness_score)}
-      ${bar("Performance", profilePlayer.performance_score)}
-      ${bar("Card Grade", cardMarketScore(profilePlayer))}
-    </div>
-
-    ${profileResearchReport(profilePlayer)}
+    ${briefingHeaderSnapshot(profilePlayer)}
+    ${briefingNarrativePanel(profilePlayer)}
+    ${movementCasePanel(profilePlayer)}
+    ${briefingMarketPulse(profilePlayer)}
+    ${minorLeagueRecordPanel(profilePlayer)}
+    ${decisionRiskPanel(profilePlayer)}
     ${isGraduated(profilePlayer) ? graduationTimelinePanel(profilePlayer) : ""}
-    ${profileStatsPanel(profilePlayer)}
-    ${teamPathPanel(profilePlayer)}
-    ${scoutingSnapshotPanel(profilePlayer)}
-    ${isTop100Prospect(profilePlayer) || isOnDeckBoardPlayer(profilePlayer) || isGraduated(profilePlayer) || hasMarketData(profilePlayer) ? marketPanel(profilePlayer) : ""}
   `;
 
   attachProfileActions(profilePlayer);
+}
+
+function normalizeBriefingPlayer(player) {
+  if (!player) return player;
+  return {
+    ...player,
+    player_id: player.player_id ?? player.playerId ?? "",
+    player_name: player.player_name ?? player.playerName ?? "Player",
+    org: player.org ?? player.team ?? player.organization ?? player.current_org ?? "",
+    position: player.position ?? player.pos ?? "",
+    level: player.level ?? player.current_level ?? "",
+    age: player.age ?? "",
+    eta: player.eta ?? "",
+    prospect_rank: player.prospect_rank ?? player.rank ?? "",
+    move_score: player.move_score ?? player.moveScore ?? player.on_deck_opportunity_score ?? "",
+    on_deck_grade: player.on_deck_grade ?? player.onDeckGrade ?? player.grade ?? "",
+    market_read: player.market_read ?? player.marketRead ?? player.market_status ?? "",
+    benchmark_card_code: player.benchmark_card_code ?? player.benchmarkCardCode ?? player.card_code ?? "",
+    card_code: player.card_code ?? player.benchmarkCardCode ?? player.benchmark_card_code ?? "",
+    canonical_query: player.canonical_query ?? player.canonicalQuery ?? player.card_query ?? "",
+    card_query: player.card_query ?? player.canonicalQuery ?? player.canonical_query ?? "",
+    avg_30: player.avg_30 ?? player.avgSoldPrice30d ?? player.thirty_day_avg ?? "",
+    avg_90: player.avg_90 ?? player.avgSoldPrice90d ?? "",
+    sales_30: player.sales_30 ?? player.salesCount30d ?? "",
+    sales_90: player.sales_90 ?? player.salesCount90d ?? "",
+    sell_through_30: player.sell_through_30 ?? player.sellThruRate30d ?? player.sell_through_30d ?? "",
+    sell_through_90: player.sell_through_90 ?? player.sellThruRate90d ?? player.sell_through_90d ?? "",
+    last_sale: player.last_sale ?? player.lastSoldPrice ?? "",
+    last_sale_date: player.last_sale_date ?? player.lastSoldAt ?? "",
+    card_year: player.card_year ?? player.cardYear ?? "",
+    source: player.source ?? player.data_source ?? "",
+  };
+}
+
+function briefingHeaderSnapshot(player) {
+  const grade = briefingGrade(player);
+  const moveScore = briefingMoveScore(player);
+  const marketRead = briefingMarketRead(player);
+  const physical = [player.bats ? `Bats ${player.bats}` : "", player.throws ? `Throws ${player.throws}` : "", player.height_weight || ""].filter(Boolean);
+  return `
+    <section class="briefing-header">
+      <div>
+        <p class="card-kicker">Player Header Snapshot</p>
+        <h3>${escapeHtml(player.player_name)}</h3>
+        <p class="briefing-meta">${escapeHtml(fieldValue(player, ["org", "organization", "current_org", "team"]))} · ${escapeHtml(fieldValue(player, ["position"]))} · ${escapeHtml(fieldValue(player, ["level", "stat_level", "current_level"]))}</p>
+        <p class="muted">${escapeHtml(briefingHeaderLine(player))}</p>
+        ${physical.length ? `<p class="briefing-physical">${escapeHtml(physical.join(" · "))}</p>` : ""}
+      </div>
+      <div class="briefing-grade-block">
+        ${isGraduated(player) ? `<span class="graduate-badge">MLB Graduate</span>` : ""}
+        <span>On Deck Grade</span>
+        <strong class="grade-pill ${marketGradeClass(player)}">${escapeHtml(grade)}</strong>
+        <small class="${marketStatusClass(player)}">${escapeHtml(marketRead)}</small>
+      </div>
+    </section>
+    <div class="briefing-snapshot-grid">
+      ${briefingFact("Move Score", moveScore)}
+      ${briefingFact("Market Read", marketRead)}
+      ${briefingFact("Pipeline Rank", player.prospect_rank ? `#${player.prospect_rank}` : "Pending")}
+      ${briefingFact("ETA", fieldValue(player, ["eta"]))}
+      ${briefingFact("Age", fieldValue(player, ["age"]))}
+      ${briefingFact("Level", fieldValue(player, ["level", "stat_level", "current_level"]))}
+    </div>
+  `;
+}
+
+function briefingHeaderLine(player) {
+  const parts = [
+    player.age ? `Age ${player.age}` : "",
+    player.eta ? `ETA ${player.eta}` : "",
+    player.prospect_rank ? `MLB Pipeline #${player.prospect_rank}` : "",
+    top10Rank(player) !== "-" ? `On Deck #${top10Rank(player)}` : "",
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "Snapshot pending latest player data.";
+}
+
+function briefingNarrativePanel(player) {
+  return `
+    <section class="briefing-section">
+      <div class="panel-heading compact">
+        <h3>On Deck Briefing</h3>
+        <span>${escapeHtml(briefingStatus(player))}</span>
+      </div>
+      <div class="briefing-mini-grid">
+        ${briefingMini("Resume", briefingResume(player))}
+        ${briefingMini("Movement Case", briefingMovementCase(player))}
+        ${briefingMini("Card Setup", briefingCardSetup(player))}
+        ${briefingMini("Risk", briefingRiskNote(player))}
+      </div>
+    </section>
+  `;
+}
+
+function movementCasePanel(player) {
+  return `
+    <section class="briefing-section movement-case-panel">
+      <div class="panel-heading compact">
+        <h3>Movement Case</h3>
+        <span>${escapeHtml(primaryCatalystLabel(player))}</span>
+      </div>
+      <div class="briefing-score-grid">
+        ${briefingMetric("Move Score", briefingMoveScore(player))}
+        ${briefingMetric("Primary Catalyst", primaryCatalystLabel(player))}
+        ${briefingMetric("Next Move", nextMoveLabel(player))}
+        ${briefingMetric("Confidence", confidenceLabel(player))}
+      </div>
+    </section>
+  `;
+}
+
+function briefingMarketPulse(player) {
+  if (!hasMarketData(player)) {
+    return `
+      <section class="briefing-section market-pulse-briefing">
+        <div class="panel-heading compact">
+          <h3>Card Market Pulse</h3>
+          <span>Pending</span>
+        </div>
+        <p class="muted">Market pulse pending card-data refresh.</p>
+      </section>
+    `;
+  }
+
+  const facts = [
+    { label: "Benchmark Card", value: cardDescription(player) },
+    { label: "30D Avg", value: currencyOrPending(player.avg_30) },
+    { label: "Sell-Through", value: sellThroughOrPending(player, 30) },
+    { label: "Liquidity", value: liquidityLabel(player) },
+    { label: "Market Read", value: briefingMarketRead(player) },
+    { label: "Buy Zone", value: briefingBuyZone(player) },
+  ];
+  if (numericMoney(player.avg_90) > 0) {
+    facts.splice(2, 0, { label: "90D Avg", value: currencyOrPending(player.avg_90) });
+  }
+
+  return `
+    <section class="briefing-section market-pulse-briefing">
+      <div class="panel-heading compact">
+        <h3>Card Market Pulse</h3>
+        <span class="grade-pill ${marketGradeClass(player)}">${escapeHtml(briefingGrade(player))}</span>
+      </div>
+      <div class="briefing-market-grid">
+        ${facts.map((fact) => briefingFact(fact.label, fact.value)).join("")}
+      </div>
+      <p>${escapeHtml(marketPulseTakeaway(player))}</p>
+      <div class="briefing-actions">
+        <button class="button ghost history-link" type="button" data-market-history>Historical Data</button>
+      </div>
+      ${marketHistoryPanel(player)}
+    </section>
+  `;
+}
+
+function minorLeagueRecordPanel(player) {
+  const rows = minorLeagueRecordRows(player);
+  return `
+    <section class="briefing-section minor-record-panel">
+      <div class="panel-heading compact">
+        <h3>2026 Minor League Record</h3>
+        <span>${escapeHtml(fieldValue(player, ["stat_team", "level", "stat_level"], "Current stats"))}</span>
+      </div>
+      ${rows.length ? `
+        <div class="briefing-record-wrap">
+          <table class="briefing-record-table">
+            <thead>
+              <tr>${rows.map((cell) => `<th>${escapeHtml(cell.label)}</th>`).join("")}</tr>
+            </thead>
+            <tbody>
+              <tr>${rows.map((cell) => `<td>${escapeHtml(cell.value)}</td>`).join("")}</tr>
+            </tbody>
+          </table>
+        </div>
+        <p>${escapeHtml(profileTrendSentence(player))}</p>
+      ` : `<p class="muted">2026 stat line pending.</p>`}
+    </section>
+  `;
+}
+
+function decisionRiskPanel(player) {
+  const recommendation = decisionRecommendation(player);
+  return `
+    <section class="briefing-section decision-risk-panel">
+      <div class="panel-heading compact">
+        <h3>Decision / Risk</h3>
+        <span>${escapeHtml(recommendation)}</span>
+      </div>
+      <div class="decision-grid">
+        ${briefingFact("Grade", briefingGrade(player))}
+        ${briefingFact("Status", briefingStatus(player))}
+        ${briefingFact("Recommendation", recommendation)}
+        ${briefingFact("Buy Zone", briefingBuyZone(player))}
+      </div>
+      <div class="decision-notes">
+        <div>
+          <span>Main Reason</span>
+          <p>${escapeHtml(mainReason(player))}</p>
+        </div>
+        <div>
+          <span>Main Risk</span>
+          <p>${escapeHtml(briefingRiskNote(player))}</p>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function briefingMini(label, value) {
+  return `
+    <article>
+      <span>${escapeHtml(label)}</span>
+      <p>${escapeHtml(value)}</p>
+    </article>
+  `;
+}
+
+function briefingMetric(label, value) {
+  return `
+    <div>
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `;
+}
+
+function briefingFact(label, value) {
+  return `
+    <div>
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value || "Pending")}</strong>
+    </div>
+  `;
+}
+
+function fieldValue(player, fields, fallback = "-") {
+  for (const field of fields) {
+    const value = player[field];
+    if (value !== "" && value != null) return String(value);
+  }
+  return fallback;
+}
+
+function briefingGrade(player) {
+  return fieldValue(player, ["grade", "on_deck_grade", "recommendation_grade"], marketGrade(player));
+}
+
+function briefingMoveScore(player) {
+  const value = fieldValue(player, ["move_score", "on_deck_opportunity_score", "callup_score"], "");
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? `${Math.round(numeric)}` : "Pending";
+}
+
+function briefingMarketRead(player) {
+  const loaded = fieldValue(player, ["market_read", "market_status"], "");
+  return loaded || derivedMarketRead(player);
+}
+
+function briefingStatus(player) {
+  if (isGraduated(player)) return "Graduated";
+  if (isOnDeckBoardPlayer(player)) return "On Deck";
+  if (hasMarketData(player)) return "Watch";
+  return "Needs Market";
+}
+
+function briefingResume(player) {
+  const loaded = fieldValue(player, ["resume_summary"], "");
+  if (loaded) return loaded;
+  const rank = player.prospect_rank ? `MLB Pipeline #${player.prospect_rank}` : "ranking pending";
+  const level = fieldValue(player, ["level", "stat_level"], "current level pending");
+  const age = player.age ? `Age ${player.age}` : "Age pending";
+  const stat = compactStatSummary(player);
+  if (stat) {
+    return `${age} ${fieldValue(player, ["org"], "organization pending")} ${fieldValue(player, ["position"], "position pending")} at ${level}; ${rank}. ${stat}`;
+  }
+  return `${age} ${fieldValue(player, ["org"], "organization pending")} ${fieldValue(player, ["position"], "position pending")} at ${level}; ${rank}. Briefing pending latest recommendation run.`;
+}
+
+function briefingMovementCase(player) {
+  const loaded = fieldValue(player, ["movement_case"], "");
+  if (loaded) return loaded;
+  const movement = rankTrendText(player);
+  const score = briefingMoveScore(player);
+  const catalyst = nextMoveLabel(player);
+  const trend = movement === "Untracked" ? "rank trend is not established" : `rank trend is ${movement.toLowerCase()}`;
+  if (score !== "Pending") return `${catalyst} is the next attention trigger, with a ${score} move score and ${trend}.`;
+  return "Movement case pending.";
+}
+
+function briefingCardSetup(player) {
+  const loaded = fieldValue(player, ["card_setup_summary"], "");
+  if (loaded) return loaded;
+  if (!hasMarketData(player)) return "Card setup pending market refresh.";
+  const average = currencyOrPending(player.avg_30);
+  const sellThrough = sellThroughOrPending(player, 30);
+  return `${cardDescription(player)} is the benchmark. The 30-day average is ${average}, sell-through is ${sellThrough}, liquidity is ${liquidityLabel(player)}, and the current buy zone is ${briefingBuyZone(player)}.`;
+}
+
+function briefingRiskNote(player) {
+  const loaded = fieldValue(player, ["risk_notes"], "");
+  if (loaded) return loaded;
+  const status = marketStatus(player);
+  const movement = rankMovement(player);
+  if (!hasMarketData(player)) return "Risk note pending card-market refresh.";
+  if (String(status).toLowerCase().includes("cooling")) return "Short-window prices are cooling, so the move case needs current performance to keep improving.";
+  if (String(status).toLowerCase().includes("priced") || String(status).toLowerCase().includes("spiked")) return "Market may already be reacting; avoid chasing above the buy zone.";
+  if (movement != null && movement < 0) return "Top 100 trend is negative, which can slow demand even if the next assignment is still in play.";
+  if (Number(player.performance_score) < 55) return "Current form needs to firm up before the catalyst becomes urgent.";
+  return "Primary risk is timing: the baseball catalyst may be real but slower than the market expects.";
+}
+
+function primaryCatalystLabel(player) {
+  const loaded = fieldValue(player, ["primary_catalyst"], "");
+  const allowed = new Set(["Promotion Watch", "Rank Riser", "Performance Breakout", "MLB Proximity", "Card-Market Lag", "Watch Only", "Needs Data"]);
+  if (allowed.has(loaded)) return loaded;
+  if (!player.callup_score && !player.move_score) return "Needs Data";
+  if (String(player.level ?? "").toUpperCase() === "AAA" || isOnFortyMan(player)) return "MLB Proximity";
+  if (rankMovement(player) != null && rankMovement(player) > 0) return "Rank Riser";
+  if (Number(player.performance_score) >= 70 || strongRecentForm(player)) return "Performance Breakout";
+  if (hasMarketData(player) && ["Early Entry", "Liquidity Watch"].includes(marketStatus(player))) return "Card-Market Lag";
+  if (Number(player.callup_score) >= 55 || Number(player.move_score) >= 55) return "Promotion Watch";
+  return "Watch Only";
+}
+
+function nextMoveLabel(player) {
+  return fieldValue(player, ["next_move"], onDeckCatalyst(player));
+}
+
+function confidenceLabel(player) {
+  const loaded = fieldValue(player, ["confidence_label"], "");
+  if (loaded) return loaded;
+  const score = Number(player.move_score || player.callup_score);
+  if (!Number.isFinite(score)) return "Needs Data";
+  if (score >= 75) return "High";
+  if (score >= 55) return "Medium";
+  return "Low";
+}
+
+function liquidityLabel(player) {
+  const loaded = fieldValue(player, ["liquidity_label"], "");
+  if (loaded) return loaded;
+  const sales90 = Number(player.sales_90);
+  if (Number.isFinite(sales90)) {
+    if (sales90 >= 10) return "Good";
+    if (sales90 >= 4) return "Moderate";
+    if (sales90 >= 1) return "Thin";
+    return "No Liquidity";
+  }
+  const grade = liquidityGrade(player);
+  if (grade === "A") return "Strong";
+  if (grade === "B") return "Good";
+  if (grade === "C") return "Average";
+  if (grade === "D" || grade === "F") return "Thin";
+  return "Pending";
+}
+
+function compactStatSummary(player) {
+  if (isPitcherPosition(player.position)) {
+    const era = statValue(player.pitcher_era || player.era);
+    const whip = statValue(player.pitcher_whip || player.whip);
+    if (era !== "-" || whip !== "-") return `Current record: ${era} ERA and ${whip} WHIP.`;
+    return "";
+  }
+  const avg = statValue(player.hitter_avg || player.avg);
+  const ops = statValue(player.hitter_ops || player.ops);
+  if (avg !== "-" || ops !== "-") return `Current record: ${avg} AVG and ${ops} OPS.`;
+  return "";
+}
+
+function strongRecentForm(player) {
+  if (isPitcherPosition(player.position)) {
+    const recent = firstAvailableWindow(player, [["last_14_era", 14], ["last_30_era", 30]]);
+    const season = Number(player.era);
+    return recent && Number.isFinite(season) && recent.value <= season - 0.35;
+  }
+  const recent = firstAvailableWindow(player, [["last_14_ops", 14], ["last_30_ops", 30]]);
+  const season = Number(player.ops);
+  return recent && Number.isFinite(season) && recent.value >= season + 0.05;
+}
+
+function marketPulseTakeaway(player) {
+  return `${marketStatusInsight(player)} ${liquidityInsight(player)}`;
+}
+
+function derivedMarketRead(player) {
+  if (!hasMarketData(player)) return "Pending";
+  const sales90 = Number(player.sales_90);
+  if (Number.isFinite(sales90) && sales90 <= 0) return "No Liquidity";
+  const avg30 = numericMoney(player.avg_30);
+  const avg90 = numericMoney(player.avg_90);
+  const sales30 = Number(player.sales_30);
+  if (Number.isFinite(avg30) && Number.isFinite(avg90) && avg90 > 0) {
+    if (avg30 > avg90 * 1.4) return "Priced In";
+    if (avg30 > avg90 * 1.2 && Number.isFinite(sales30) && sales30 >= 5) return "Heating";
+  }
+  return "Early / Stable";
+}
+
+function briefingBuyZone(player) {
+  if (player.buy_low || player.buy_high) {
+    return [player.buy_low, player.buy_high].filter(Boolean).map(currency).join(" - ");
+  }
+  const avg30 = numericMoney(player.avg_30);
+  if (!Number.isFinite(avg30)) return "Pending";
+  const read = briefingMarketRead(player).toLowerCase();
+  const lowFactor = read.includes("heating") ? 0.75 : 0.8;
+  const highFactor = read.includes("heating") ? 0.88 : 0.92;
+  return `${currency(Math.round(avg30 * lowFactor))} - ${currency(Math.round(avg30 * highFactor))}`;
+}
+
+function minorLeagueRecordRows(player) {
+  if (isPitcherPosition(player.position)) {
+    const kCell = pitcherRateCell(player, ["pitcher_k_pct", "k_pct", "k_rate"], "k_per_9", "K%", "K/9");
+    const bbCell = pitcherRateCell(player, ["pitcher_bb_pct", "bb_pct", "bb_rate"], "bb_per_9", "BB%", "BB/9");
+    const rows = [
+      { label: "Level", value: fieldValue(player, ["stat_level", "level"]) },
+      { label: "IP", value: statValue(player.pitcher_ip || player.ip) },
+      { label: "ERA", value: statValue(player.pitcher_era || player.era) },
+      { label: "WHIP", value: statValue(player.pitcher_whip || player.whip) },
+      kCell,
+      bbCell,
+      { label: "K-BB%", value: percentStatValue(player.pitcher_k_minus_bb_pct || player.k_minus_bb_pct) },
+    ];
+    return rows.some((row) => row.label !== "Level" && row.value !== "-") ? rows : [];
+  }
+
+  const rows = [
+    { label: "Level", value: fieldValue(player, ["stat_level", "level"]) },
+    { label: "PA", value: countValue(player.hitter_pa || player.pa) },
+    { label: "AVG", value: statValue(player.hitter_avg || player.avg) },
+    { label: "OBP", value: statValue(player.hitter_obp || player.obp) },
+    { label: "SLG", value: statValue(player.hitter_slg || player.slg) },
+    { label: "OPS", value: statValue(player.hitter_ops || player.ops) },
+    { label: "HR", value: countValue(player.hitter_hr || player.hr) },
+    { label: "SB", value: countValue(player.hitter_sb || player.sb) },
+    { label: "BB%", value: percentStatValue(player.hitter_bb_pct || player.bb_pct || player.bb_rate) },
+    { label: "K%", value: percentStatValue(player.hitter_k_pct || player.k_pct || player.k_rate) },
+  ];
+  return rows.some((row) => row.label !== "Level" && row.value !== "-") ? rows : [];
+}
+
+function pitcherRateCell(player, percentFields, rateField, percentLabel, rateLabel) {
+  for (const field of percentFields) {
+    if (player[field] !== "" && player[field] != null) {
+      return { label: percentLabel, value: percentStatValue(player[field]) };
+    }
+  }
+  return { label: rateLabel, value: statValue(player[rateField]) };
+}
+
+function percentStatValue(value) {
+  if (value === "" || value == null) return "-";
+  const numeric = Number(String(value).replaceAll("%", ""));
+  if (!Number.isFinite(numeric)) return String(value);
+  return `${numeric.toFixed(numeric % 1 === 0 ? 0 : 1)}%`;
+}
+
+function decisionRecommendation(player) {
+  const loaded = fieldValue(player, ["recommendation", "decision_summary"], "");
+  if (loaded) return loaded;
+  if (!hasMarketData(player)) return "Recommendation pending market refresh";
+  const status = marketStatus(player);
+  const zone = buyZone(player);
+  if (["Early Entry", "Liquidity Watch"].includes(status) && zone !== "-") return "Watch buy zone";
+  if (status === "Moving Up") return "Buy only on disciplined comps";
+  if (status === "Cooling") return "Wait for baseball confirmation";
+  if (status === "Priced In" || status === "Spiked") return "Avoid chasing the spike";
+  return "Recommendation pending latest scoring run";
+}
+
+function mainReason(player) {
+  const loaded = fieldValue(player, ["decision_summary"], "");
+  if (loaded) return loaded;
+  if (!hasMarketData(player)) return "Move case is visible, but the card market still needs a refreshed benchmark read.";
+  if (Number(player.callup_score) >= 65 && liquidityGrade(player) !== "N/A") {
+    return "Strong move score with tradable benchmark-card liquidity.";
+  }
+  if (rankMovement(player) != null && rankMovement(player) > 0) {
+    return "Positive Top 100 movement is adding prospect attention to the next-move case.";
+  }
+  if (strongRecentForm(player)) {
+    return "Recent performance is strengthening the case for the next assignment.";
+  }
+  return "The current case combines player path, recent form, and available card-market data.";
 }
 
 function withLiveMarketData(player) {

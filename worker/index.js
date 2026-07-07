@@ -3,6 +3,7 @@ import { onRequest as onMarketHistoryRequest } from "../functions/api/market-his
 import { onRequest as onRankTrendsRequest, runTop100TrendUpdate } from "../functions/api/rank-trends.js";
 import { onMarketDataRequest, onRefreshTop100MarketRequest } from "../functions/api/top100-market.js";
 import { onEmergingRequest } from "../functions/api/emerging.js";
+import { onOnDeckRequest } from "../functions/api/on-deck.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -21,6 +22,10 @@ export default {
         return onRefreshTop100MarketRequest({ request, env, ctx });
       }
       return onMarketDataRequest({ request, env, ctx });
+    }
+
+    if (url.pathname === "/api/on-deck") {
+      return onOnDeckRequest({ request, env, ctx });
     }
 
     if (url.pathname === "/api/emerging" || url.pathname === "/api/emerging/summary" || url.pathname.startsWith("/api/emerging/")) {

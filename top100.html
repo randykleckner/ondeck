@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OnDeck Prospect | MLB Top 100 Reference</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260707-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260707-2" />
   </head>
   <body>
     <header class="app-header">
@@ -33,54 +33,62 @@
         <p>Full ranked context for comparing On Deck decisions against the broader prospect list.</p>
       </section>
 
-      <section id="top-100" class="table-panel reference-panel" aria-label="MLB Top 100 reference list">
-        <div class="panel-heading">
-          <div>
-            <h2>Top 100 Reference</h2>
-            <p>Rank, benchmark card, trend, and why each player is or is not currently On Deck.</p>
+      <section id="prospects" class="content-grid briefing-preview top100-briefing-grid">
+        <section id="top-100" class="table-panel reference-panel" aria-label="MLB Top 100 reference list">
+          <div class="panel-heading">
+            <div>
+              <h2>Top 100 Reference</h2>
+              <p>Rank, benchmark card, trend, and why each player is or is not currently On Deck.</p>
+            </div>
+            <span id="top100-row-count">Loading board data...</span>
           </div>
-          <span id="top100-row-count">Loading board data...</span>
-        </div>
-        <div class="list-controls" aria-label="Top 100 filters">
-          <div class="filter-grid">
-            <label>
-              Search
-              <input id="top100-search" type="search" placeholder="Player or org" />
-            </label>
-            <label>
-              Organization
-              <select id="top100-org-filter">
-                <option value="all">All orgs</option>
-              </select>
-            </label>
-            <label>
-              Board View
-              <select id="top100-board-filter">
-                <option value="all">Full Top 100</option>
-                <option value="bubble">On Deck + Bubble</option>
-                <option value="outside">Outside On Deck</option>
-              </select>
-            </label>
+          <div class="list-controls" aria-label="Top 100 filters">
+            <div class="filter-grid">
+              <label>
+                Search
+                <input id="top100-search" type="search" placeholder="Player or org" />
+              </label>
+              <label>
+                Organization
+                <select id="top100-org-filter">
+                  <option value="all">All orgs</option>
+                </select>
+              </label>
+              <label>
+                Board View
+                <select id="top100-board-filter">
+                  <option value="all">Full Top 100</option>
+                  <option value="bubble">On Deck + Bubble</option>
+                  <option value="outside">Outside On Deck</option>
+                </select>
+              </label>
+            </div>
           </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Team</th>
-                <th>Benchmark Card</th>
-                <th>Trend</th>
-                <th>Why Not On Deck</th>
-              </tr>
-            </thead>
-            <tbody id="top100-rows"></tbody>
-          </table>
-        </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Player</th>
+                  <th>Team</th>
+                  <th>Benchmark Card</th>
+                  <th>Trend</th>
+                  <th>Why Not On Deck</th>
+                </tr>
+              </thead>
+              <tbody id="top100-rows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="card-panel" aria-label="Selected On Deck briefing" hidden>
+          <div id="player-card" class="player-card empty">
+            <p>Select a player to open the On Deck Briefing.</p>
+          </div>
+        </aside>
       </section>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260707-1"></script>
+    <script type="module" src="./src/app.js?v=20260707-2"></script>
   </body>
 </html>
