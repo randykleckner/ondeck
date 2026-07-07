@@ -344,6 +344,228 @@ h1 span:nth-child(2) {
   padding: 18px;
 }
 
+.emerging-card-back {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(231, 236, 245, 0.72);
+  border-radius: 18px;
+  color: #10131b;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(207, 213, 222, 0.92) 44%, rgba(255, 255, 255, 0.96)),
+    repeating-linear-gradient(90deg, rgba(11, 14, 23, 0.04) 0 1px, transparent 1px 6px);
+  box-shadow:
+    inset 0 0 0 4px rgba(18, 22, 34, 0.08),
+    inset 0 0 0 9px rgba(255, 255, 255, 0.72),
+    0 22px 42px rgba(0, 0, 0, 0.35);
+}
+
+.emerging-card-back::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border: 2px solid rgba(20, 24, 34, 0.28);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+.emerging-card-header {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 74px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.emerging-card-nameplate {
+  display: grid;
+  gap: 4px;
+  padding: 11px 14px;
+  border: 1px solid rgba(10, 14, 28, 0.35);
+  border-radius: 999px 18px 18px 999px;
+  color: #f8fbff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 38%),
+    linear-gradient(90deg, #111727, #6f7681 48%, #1a2031);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+
+.emerging-card-nameplate p,
+.emerging-card-nameplate h2,
+.emerging-card-nameplate strong {
+  margin: 0;
+}
+
+.emerging-card-nameplate p {
+  color: #dfe8ff;
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.emerging-card-nameplate h2 {
+  overflow-wrap: anywhere;
+  color: #fff;
+  font-size: 1.42rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.emerging-card-nameplate strong {
+  color: #f1f5ff;
+  font-size: 0.76rem;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.emerging-card-code {
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  min-height: 74px;
+  border: 2px solid #f8fbff;
+  border-radius: 999px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(82, 240, 255, 0.18), transparent 42%),
+    #07101e;
+  box-shadow: 0 0 0 2px rgba(5, 8, 20, 0.74);
+}
+
+.emerging-card-code span {
+  max-width: 62px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #cbd7ff;
+  font-size: 0.62rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.emerging-card-code strong {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+
+.emerging-card-bio {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  justify-content: center;
+  padding: 8px 12px;
+  border-bottom: 2px solid rgba(8, 12, 22, 0.82);
+  color: #171b26;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.emerging-card-bio strong {
+  color: #070b13;
+}
+
+.emerging-briefing-block {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+  padding: 2px 4px 8px;
+  border-bottom: 2px solid rgba(8, 12, 22, 0.82);
+}
+
+.emerging-briefing-block h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #050811;
+  font-size: 0.98rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.emerging-briefing-block h3::before,
+.emerging-briefing-block h3::after {
+  content: "";
+  flex: 1;
+  border-top: 2px dashed rgba(8, 12, 22, 0.82);
+}
+
+.emerging-briefing-block p {
+  margin: 0;
+  color: #161b25;
+  font-size: 0.82rem;
+  font-weight: 760;
+  line-height: 1.42;
+}
+
+.emerging-briefing-block strong {
+  color: #050811;
+  font-weight: 950;
+  text-decoration: underline;
+  text-transform: uppercase;
+}
+
+.emerging-card-section {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  border-color: rgba(8, 12, 22, 0.2);
+  color: #111621;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+}
+
+.emerging-card-section .panel-heading h3,
+.emerging-card-section .panel-heading span {
+  color: #07101d;
+}
+
+.emerging-card-section p,
+.emerging-card-section .decision-notes p {
+  color: #171d29;
+}
+
+.emerging-card-section .briefing-score-grid > div,
+.emerging-card-section .briefing-market-grid > div,
+.emerging-card-section .decision-grid > div,
+.emerging-card-section .decision-notes div {
+  border-color: rgba(8, 12, 22, 0.16);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.emerging-card-section .briefing-score-grid span,
+.emerging-card-section .briefing-market-grid span,
+.emerging-card-section .decision-grid span,
+.emerging-card-section .decision-notes span {
+  color: #40495a;
+}
+
+.emerging-card-section .briefing-score-grid strong,
+.emerging-card-section .briefing-market-grid strong,
+.emerging-card-section .decision-grid strong,
+.emerging-card-section .briefing-record-table td {
+  color: #070b13;
+}
+
+.emerging-card-section .briefing-record-table th {
+  color: #343d4f;
+}
+
+.emerging-record-table {
+  min-width: 440px;
+}
+
 .emerging-detail section {
   margin-top: 18px;
 }
@@ -3689,6 +3911,23 @@ tbody tr {
 
   .briefing-section {
     padding: 12px;
+  }
+
+  .emerging-card-header {
+    grid-template-columns: 1fr;
+  }
+
+  .emerging-card-nameplate {
+    border-radius: 18px;
+  }
+
+  .emerging-card-code {
+    justify-self: start;
+    width: 74px;
+  }
+
+  .emerging-card-bio {
+    justify-content: start;
   }
 
   .card-title h3 {
