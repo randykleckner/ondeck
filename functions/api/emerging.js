@@ -19,26 +19,20 @@ export async function onEmergingRequest(context) {
 
   const db = context.env?.MARKET_DB;
   if (!db) {
-    return jsonResponse({
-      prospects: [],
-      message: "MARKET_DB is not configured; Emerging reads are cached D1 only.",
-    });
+    return emptyResponse("MARKET_DB is not configured; no current records found");
   }
 
   const url = new URL(context.request.url);
   const detailMatch = url.pathname.match(/^\/api\/emerging\/(\d+)$/);
 
   try {
-    if (url.pathname === "/api/emerging/summary") return emergingSummary(db);
-    if (detailMatch) return emergingDetail(db, Number(detailMatch[1]));
-    if (url.pathname === "/api/emerging") return emergingList(db, url);
+    if (url.pathname === "/api/emerging/summary") return await emergingSummary(db);
+    if (detailMatch) return await emergingDetail(db, Number(detailMatch[1]));
+    if (url.pathname === "/api/emerging") return await emergingList(db, url);
     return jsonResponse({ error: "Not found." }, 404);
   } catch (error) {
-    return jsonResponse({
-      prospects: [],
-      error: "Emerging data is unavailable.",
-      detail: error instanceof Error ? error.message : "Unknown error",
-    }, 503);
+    console.error("emerging route failed", safeError(error));
+    return emptyResponse("No current records found");
   }
 }
 
@@ -65,7 +59,10 @@ async function emergingSummary(db) {
       (SELECT MAX(snapshot_date) FROM card_market_snapshots) AS last_card_market_refresh_date
   `).first();
 
-  return jsonResponse({ summary: normalizeRow({ ...counts, ...dates }) }, 200, {
+  return jsonResponse({
+    summary: normalizeRow({ ...counts, ...dates }),
+    status: "ok",
+  }, 200, {
     "Cache-Control": "public, max-age=300",
   });
 }
@@ -146,9 +143,16 @@ async function emergingList(db, url) {
     LIMIT ?
   `).bind(...filters.params, filters.limit).all();
 
+  const items = (rows.results || []).map(apiRow);
+  if (!items.length) {
+    return emptyResponse("No current records found");
+  }
+
   return jsonResponse({
-    prospects: (rows.results || []).map(apiRow),
-    count: rows.results?.length || 0,
+    items,
+    prospects: items,
+    count: items.length,
+    status: "ok",
   }, 200, {
     "Cache-Control": "public, max-age=300",
   });
@@ -214,7 +218,7 @@ async function emergingDetail(db, playerId) {
     LIMIT 1
   `).bind(playerId).first();
 
-  if (!row) return jsonResponse({ error: "Emerging player not found." }, 404);
+  if (!row) return emptyResponse("No current records found");
 
   const [statsHistory, prescoreHistory, marketHistory, recommendationHistory] = await Promise.all([
     db.prepare(`SELECT * FROM player_stats_snapshots WHERE player_id = ? ORDER BY snapshot_date DESC LIMIT 12`).bind(playerId).all(),
@@ -410,4 +414,23 @@ function jsonResponse(body, status = 200, headers = {}) {
       ...headers,
     },
   });
+}
+
+function emptyResponse(message) {
+  return jsonResponse({
+    items: [],
+    prospects: [],
+    count: 0,
+    status: "empty",
+    message,
+  }, 200, {
+    "Cache-Control": "public, max-age=120",
+  });
+}
+
+function safeError(error) {
+  return {
+    name: error instanceof Error ? error.name : "Error",
+    message: error instanceof Error ? error.message : String(error),
+  };
 }

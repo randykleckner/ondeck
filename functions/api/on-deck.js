@@ -8,13 +8,17 @@ export async function onOnDeckRequest(context) {
 
   try {
     const [top100, stats, savantStats, depthCharts, news, cardTargets] = await Promise.all([
-      readCsvAsset(context, "/data/mlb-top100-2026.csv"),
+      readCsvAsset(context, "/data/mlb-top100-2026.csv").catch(() => []),
       readCsvAsset(context, "/data/current-stats.csv").catch(() => []),
       readCsvAsset(context, "/data/savant-stats.csv").catch(() => []),
       readCsvAsset(context, "/data/depth-chart-current.csv").catch(() => []),
       readCsvAsset(context, "/data/player-news.csv").catch(() => []),
       readCsvAsset(context, "/data/card-targets.csv").catch(() => []),
     ]);
+
+    if (!top100.length) {
+      return emptyResponse("No current records found");
+    }
 
     const scored = applyCardTargets(
       mergeProspectData(top100, mergeRowsByPlayerId(stats, savantStats), mergeRowsByPlayerId(depthCharts, news)),
@@ -23,21 +27,24 @@ export async function onOnDeckRequest(context) {
       .filter((player) => String(player.level || "").toUpperCase() !== "MLB")
       .sort((a, b) => Number(b.callup_score || 0) - Number(a.callup_score || 0) || Number(a.prospect_rank || 9999) - Number(b.prospect_rank || 9999));
 
+    const items = scored.slice(0, 10).map(onDeckApiRow);
+    if (!items.length) {
+      return emptyResponse("No current records found");
+    }
+
     return jsonResponse({
-      players: scored.slice(0, 10).map(onDeckApiRow),
-      count: Math.min(scored.length, 10),
+      items,
+      players: items,
+      count: items.length,
+      status: "ok",
       source: "cached_static_profile_data",
       message: "Cached On Deck board response. Recommendation snapshots are not required for this fallback route.",
     }, 200, {
       "Cache-Control": "public, max-age=300",
     });
   } catch (error) {
-    return jsonResponse({
-      players: [],
-      count: 0,
-      error: "On Deck board data is unavailable.",
-      detail: error instanceof Error ? error.message : "Unknown error",
-    }, 503);
+    console.error("on-deck route failed", safeError(error));
+    return emptyResponse("No current records found");
   }
 }
 
@@ -110,4 +117,23 @@ function jsonResponse(payload, status = 200, headers = {}) {
       ...headers,
     },
   });
+}
+
+function emptyResponse(message) {
+  return jsonResponse({
+    items: [],
+    players: [],
+    count: 0,
+    status: "empty",
+    message,
+  }, 200, {
+    "Cache-Control": "public, max-age=120",
+  });
+}
+
+function safeError(error) {
+  return {
+    name: error instanceof Error ? error.name : "Error",
+    message: error instanceof Error ? error.message : String(error),
+  };
 }
