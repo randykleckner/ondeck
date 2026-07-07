@@ -260,42 +260,67 @@ loadTop100Prospects();
 syncRouteFromHash();
 
 async function loadTop100Prospects() {
-  const response = await fetch("./data/mlb-top100-2026.csv?v=20260702-current");
-  if (!response.ok) {
-    throw new Error(`Could not load MLB Top 100 seed data: ${response.status}`);
+  setBoardLoadingStatus("Loading board data...");
+  try {
+    const response = await fetch("./data/mlb-top100-2026.csv?v=20260702-current");
+    if (!response.ok) {
+      throw new Error(`Could not load MLB Top 100 seed data: ${response.status}`);
+    }
+    const top100Prospects = parseCsv(await response.text()).map((player) => ({
+      ...player,
+      prospect_source: player.prospect_source || "MLB Top 100",
+    }));
+    const [orgProspects, stats, savantStats, depthCharts, enrichment, news, rankHistory, cardTargets, mlbPlayerFlags, scorebook] = await Promise.all([
+      loadOptionalCsv("./data/org-prospects.csv?v=20260630-1"),
+      loadOptionalCsv("./data/current-stats.csv?v=20260626-2"),
+      loadOptionalCsv("./data/savant-stats.csv?v=20260626-1"),
+      loadOptionalCsv("./data/depth-chart-current.csv"),
+      loadOptionalCsv("./data/player-enrichment.csv"),
+      loadOptionalCsv("./data/player-news.csv"),
+      loadOptionalCsv("./data/rank-history.csv?v=20260702-current"),
+      loadOptionalCsv("./data/card-targets.csv?v=20260706-1"),
+      loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
+      loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
+    ]);
+    const enrichmentRows = mergeRowsByPlayerId(enrichment, rankHistory);
+    state.latestTop100Keys = buildPlayerKeySet(top100Prospects);
+    state.previousTop100Keys = buildPlayerKeySet(rankHistory);
+    state.prospects = mergeProspectUniverse(top100Prospects, orgProspects, enrichmentRows);
+    state.prospects = applyProspectEnrichment(state.prospects, enrichmentRows);
+    state.stats = mergeRowsByPlayerId(stats, savantStats);
+    state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
+    state.cardMarket = [];
+    state.cardTargets = cardTargets;
+    state.mlbPlayerFlags = mlbPlayerFlags;
+    state.scorebook = scorebook;
+    state.selectedId = null;
+    state.filters.org = "all";
+    state.top100Filters.org = "all";
+    refreshScoredData();
+    loadCachedTop100MarketData();
+  } catch (error) {
+    console.error(error);
+    renderBoardLoadError();
   }
-  const top100Prospects = parseCsv(await response.text()).map((player) => ({
-    ...player,
-    prospect_source: player.prospect_source || "MLB Top 100",
-  }));
-  const [orgProspects, stats, savantStats, depthCharts, enrichment, news, rankHistory, cardTargets, mlbPlayerFlags, scorebook] = await Promise.all([
-    loadOptionalCsv("./data/org-prospects.csv?v=20260630-1"),
-    loadOptionalCsv("./data/current-stats.csv?v=20260626-2"),
-    loadOptionalCsv("./data/savant-stats.csv?v=20260626-1"),
-    loadOptionalCsv("./data/depth-chart-current.csv"),
-    loadOptionalCsv("./data/player-enrichment.csv"),
-    loadOptionalCsv("./data/player-news.csv"),
-    loadOptionalCsv("./data/rank-history.csv?v=20260702-current"),
-    loadOptionalCsv("./data/card-targets.csv?v=20260702-2"),
-    loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
-    loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
-  ]);
-  const enrichmentRows = mergeRowsByPlayerId(enrichment, rankHistory);
-  state.latestTop100Keys = buildPlayerKeySet(top100Prospects);
-  state.previousTop100Keys = buildPlayerKeySet(rankHistory);
-  state.prospects = mergeProspectUniverse(top100Prospects, orgProspects, enrichmentRows);
-  state.prospects = applyProspectEnrichment(state.prospects, enrichmentRows);
-  state.stats = mergeRowsByPlayerId(stats, savantStats);
-  state.depthCharts = mergeRowsByPlayerId(depthCharts, news);
-  state.cardMarket = [];
-  state.cardTargets = cardTargets;
-  state.mlbPlayerFlags = mlbPlayerFlags;
-  state.scorebook = scorebook;
-  state.selectedId = null;
-  state.filters.org = "all";
-  state.top100Filters.org = "all";
-  refreshScoredData();
-  loadCachedTop100MarketData();
+}
+
+function setBoardLoadingStatus(message) {
+  if (elements.marketCount) elements.marketCount.textContent = message;
+  if (elements.rowCount) elements.rowCount.textContent = message;
+  if (elements.top100RowCount) elements.top100RowCount.textContent = message;
+  if (elements.marketBoard) elements.marketBoard.innerHTML = `<p class="muted">${escapeHtml(message)}</p>`;
+  if (elements.rows) elements.rows.innerHTML = `<tr><td colspan="10" class="muted">${escapeHtml(message)}</td></tr>`;
+  if (elements.top100Rows) elements.top100Rows.innerHTML = `<tr><td colspan="6" class="muted">${escapeHtml(message)}</td></tr>`;
+}
+
+function renderBoardLoadError() {
+  const message = "Error loading board data";
+  if (elements.marketCount) elements.marketCount.textContent = message;
+  if (elements.rowCount) elements.rowCount.textContent = message;
+  if (elements.top100RowCount) elements.top100RowCount.textContent = message;
+  if (elements.marketBoard) elements.marketBoard.innerHTML = `<p class="muted">${message}</p>`;
+  if (elements.rows) elements.rows.innerHTML = `<tr><td colspan="10" class="muted">${message}</td></tr>`;
+  if (elements.top100Rows) elements.top100Rows.innerHTML = `<tr><td colspan="6" class="muted">${message}</td></tr>`;
 }
 
 async function loadCachedTop100MarketData() {
@@ -484,14 +509,14 @@ function hydrateTop100OrgFilter() {
 
 function render() {
   const rows = getFilteredRows();
-  renderTeamBoard();
-  renderWarRoom();
+  if (state.activeTool === "break") renderTeamBoard();
+  if (state.activeTool === "war") renderWarRoom();
   renderMarketBoard();
   renderRows(rows);
   renderTop100Rows();
   renderScorebook();
   renderGraduated();
-  elements.rowCount.textContent = rows.length ? `Top ${rows.length}` : "No active Top 10 data loaded";
+  elements.rowCount.textContent = rows.length ? `${rows.length} On Deck` : "No approved On Deck players found";
   const selected = state.selectedId ? state.allScored.find((player) => String(player.player_id) === String(state.selectedId)) : null;
   renderCard(selected);
   syncToolVisibility();
@@ -562,6 +587,10 @@ function applyCardTargets(players) {
       card_name: target.card_name || player.card_name,
       sell_through_30: target.sell_through_30 || player.sell_through_30,
       sell_through_90: target.sell_through_90 || player.sell_through_90,
+      sellers_30: target.sellers_30 || player.sellers_30,
+      sellers_90: target.sellers_90 || player.sellers_90,
+      card_year: target.card_year || player.card_year,
+      card_notes: target.notes || player.card_notes,
     };
   });
 }
@@ -616,8 +645,8 @@ function renderWarRoom() {
   const org = state.selectedOrg ?? bestBreakExposureOrg()?.name;
   if (!org) {
     elements.warRoomTitle.textContent = "Select a team";
-    elements.warRoomSubtitle.textContent = "Click a team on the Break Value Board to map depth chart blockers and prospect paths.";
-    elements.warRoomBoard.innerHTML = `<p class="muted">Pick a team above to open its Dugout board.</p>`;
+    elements.warRoomSubtitle.textContent = "Team depth tools are not part of this public version.";
+    elements.warRoomBoard.innerHTML = `<p class="muted">Team depth tools are unavailable in this public version.</p>`;
     elements.warRoomLogo.innerHTML = "";
     return;
   }
@@ -662,16 +691,7 @@ function renderWarRoom() {
 }
 
 function syncRouteFromHash() {
-  if (location.hash === "#break-board") {
-    openTool("break", "#break-board", false);
-  } else if (location.hash === "#dugout" || location.hash === "#war-room") {
-    openTool("war", "#dugout", false);
-    if (location.hash === "#war-room") {
-      history.replaceState(null, "", "#dugout");
-    }
-  } else if (location.hash === "#scorebook") {
-    openTool("scorebook", "#scorebook", false);
-  } else if (location.hash === "#graduated") {
+  if (location.hash === "#graduated") {
     openTool("graduated", "#graduated", false);
   } else {
     state.activeTool = "dashboard";
@@ -698,7 +718,7 @@ function syncToolVisibility() {
     const route = link.dataset.route;
     const href = link.getAttribute("href");
     const active = state.activeTool === "dashboard"
-      ? route === "dashboard" && (href === location.hash || (href === "#top-10" && (!location.hash || location.hash === "#dashboard")))
+      ? route === "dashboard" && (href === location.hash || (href === "#on-deck" && (!location.hash || location.hash === "#dashboard")))
       : route === state.activeTool;
     link.classList.toggle("active", active);
   });
@@ -780,10 +800,10 @@ function dugoutReadMarkup(players, calledUp, board) {
   return `
     <aside class="dugout-read">
       <div class="panel-heading compact">
-        <h3>Dugout Read</h3>
+        <h3>Team Path Read</h3>
         <span>${escapeHtml(team)}</span>
       </div>
-      ${bestLane ? `<p><strong>${escapeHtml(bestLane.players[0].player_name)}</strong> is the clearest name to track in this Dugout because the current depth lane creates the next decision point. ${escapeHtml(calledUpText)}</p>` : `<p>No active prospect path is loaded for ${escapeHtml(team)} right now.</p>`}
+      ${bestLane ? `<p><strong>${escapeHtml(bestLane.players[0].player_name)}</strong> is the clearest name to track because the current depth lane creates the next decision point. ${escapeHtml(calledUpText)}</p>` : `<p>No active prospect path is loaded for ${escapeHtml(team)} right now.</p>`}
     </aside>
   `;
 }
@@ -984,7 +1004,7 @@ function renderMarketBoard() {
     <section class="bubble-board" aria-label="On the bubble">
       <div class="bubble-heading">
         <h3>On The Bubble</h3>
-        <p>The next five names outside the Top 10, with the reason they missed.</p>
+        <p>The next five names outside On Deck, with the reason they missed.</p>
       </div>
       <div class="bubble-grid">
         ${bubble.map((player) => bubbleCardMarkup(player)).join("")}
@@ -1111,7 +1131,7 @@ function buildOrgExposure() {
 
 function renderRows(rows) {
   if (!rows.length) {
-    elements.rows.innerHTML = `<tr><td colspan="10" class="muted">No active Top 10 data loaded yet. Add players in the admin panel to publish the board.</td></tr>`;
+    elements.rows.innerHTML = `<tr><td colspan="10" class="muted">No approved On Deck players found.</td></tr>`;
     return;
   }
 
@@ -1157,7 +1177,7 @@ function renderTop100Rows() {
   }
 
   if (!rows.length) {
-    elements.top100Rows.innerHTML = `<tr><td colspan="14" class="muted">No active MLB Top 100 players match the current filters.</td></tr>`;
+    elements.top100Rows.innerHTML = `<tr><td colspan="6" class="muted">No active MLB Top 100 players match the current filters.</td></tr>`;
     return;
   }
 
@@ -1175,14 +1195,6 @@ function renderTop100Rows() {
         </td>
         <td>${escapeHtml(player.org ?? "-")}</td>
         <td>${escapeHtml(top100BenchmarkLabel(player))}</td>
-        <td>${escapeHtml(countOrPending(player.sales_30))}</td>
-        <td>${escapeHtml(countOrPending(player.sales_90))}</td>
-        <td>${escapeHtml(currencyOrPending(player.avg_30))}</td>
-        <td>${escapeHtml(currencyOrPending(player.avg_90))}</td>
-        <td>${escapeHtml(countOrPending(player.active_listings))}</td>
-        <td>${escapeHtml(sellThroughOrPending(player, 30))}</td>
-        <td>${escapeHtml(sellThroughOrPending(player, 90))}</td>
-        <td>${escapeHtml(dateOrPending(player.checked_at || player.last_updated))}</td>
         <td>${rankTrend(player)}</td>
         <td>${escapeHtml(top100ComparisonReason(player))}</td>
       </tr>
@@ -1224,13 +1236,13 @@ function dateOrPending(value) {
 
 function top100ComparisonReason(player) {
   if (isCalledUp(player)) return "Already reached MLB; reference only.";
-  if (isOnDeckBoardPlayer(player)) return `On Deck Top 10: ${onDeckCatalyst(player)}.`;
+  if (isOnDeckBoardPlayer(player)) return `On Deck Board: ${onDeckCatalyst(player)}.`;
   const bubble = bubblePlayers().find((candidate) => String(candidate.player_id) === String(player.player_id));
   if (bubble) return bubbleMissReason(player);
   if (Number(player.opportunity_score) < 45) return "Path needs to open.";
   if (Number(player.performance_score) < 55) return "Current form needs to improve.";
   if (Number(player.readiness_score) < 55) return "Timeline is less immediate.";
-  return "Behind the current Top 10 score cutoff.";
+  return "Behind the current On Deck score cutoff.";
 }
 
 function renderScorebook() {
@@ -1256,7 +1268,7 @@ function renderScorebook() {
   elements.scorebookBoard.innerHTML = `
     <div class="scorebook-summary">
       ${scorebookMetric("Official hits", officialHits.length)}
-      ${scorebookMetric("Pending Top 10", pending.length)}
+      ${scorebookMetric("Pending On Deck", pending.length)}
       ${scorebookMetric("Historical examples", historical.length)}
       ${scorebookMetric("Missed", missed.length)}
     </div>
@@ -1269,7 +1281,7 @@ function renderScorebook() {
       event.stopPropagation();
       openPlayerProfile(row.dataset.playerId);
       state.activeTool = "dashboard";
-      history.pushState(null, "", "#top-10");
+      history.pushState(null, "", "#on-deck");
       syncToolVisibility();
     });
   });
@@ -1306,7 +1318,7 @@ function renderGraduated() {
     const openGraduate = (event) => {
       event.stopPropagation();
       state.activeTool = "dashboard";
-      history.pushState(null, "", "#top-10");
+      history.pushState(null, "", "#on-deck");
       syncToolVisibility();
       openPlayerProfile(card.dataset.playerId);
     };
@@ -1359,11 +1371,11 @@ function scorebookMetric(label, value) {
 
 function pendingTable(rows) {
   if (!rows.length) {
-    return `<section class="scorebook-section"><h3>Pending Top 10</h3><p class="muted">No active Top 10 data loaded yet.</p></section>`;
+    return `<section class="scorebook-section"><h3>Pending On Deck</h3><p class="muted">No approved On Deck players found.</p></section>`;
   }
   return `
     <section class="scorebook-section">
-      <h3>Pending Top 10</h3>
+      <h3>Pending On Deck</h3>
       <div class="table-wrap">
         <table>
           <thead>
@@ -1482,7 +1494,7 @@ function renderCard(player) {
       <div>
         <p class="card-kicker">${escapeHtml(profilePlayer.org ?? "-")} · ${escapeHtml(profilePlayer.level ?? "-")} · ${escapeHtml(profilePlayer.position ?? "-")}</p>
         <h3>${escapeHtml(profilePlayer.player_name)}</h3>
-        <p class="muted">Top 10 rank ${escapeHtml(top10Rank(profilePlayer))} · Prospect rank ${escapeHtml(profilePlayer.prospect_rank ?? "-")} · Age ${escapeHtml(profilePlayer.age ?? "-")} · ETA ${escapeHtml(profilePlayer.eta ?? "-")}</p>
+        <p class="muted">On Deck rank ${escapeHtml(top10Rank(profilePlayer))} · Prospect rank ${escapeHtml(profilePlayer.prospect_rank ?? "-")} · Age ${escapeHtml(profilePlayer.age ?? "-")} · ETA ${escapeHtml(profilePlayer.eta ?? "-")}</p>
       </div>
       <div class="profile-badges">
         ${isGraduated(profilePlayer) ? `<span class="graduate-badge">MLB Graduate</span>` : ""}
@@ -1771,7 +1783,7 @@ function playerTypeBadge(player) {
 function cardBaselineLabel(player) {
   const playerId = String(player.player_id ?? "");
   if (state.liveMarketRequests.has(playerId)) return "Loading...";
-  if (state.liveMarketErrors.has(playerId)) return "Market pending";
+  if (state.liveMarketErrors.has(playerId)) return "Market data unavailable";
   const avg30 = numericMoney(player.avg_30);
   if (Number.isFinite(avg30)) return currency(avg30);
   const baseline = numericMoney(player.baseline_value);
@@ -1790,7 +1802,7 @@ function latestCardValue(player) {
 function marketStatus(player) {
   const playerId = String(player.player_id ?? "");
   if (state.liveMarketRequests.has(playerId)) return "Loading";
-  if (state.liveMarketErrors.has(playerId)) return "Market Pending";
+  if (state.liveMarketErrors.has(playerId)) return "Market data unavailable";
   const signal = String(player.market_status || player.market_signal || "").toLowerCase();
   const shortTrend = shortWindowMarketMove(player);
   if (signal.includes("spiked")) return "Spiked";
@@ -1905,6 +1917,9 @@ function marketMetricCells(player) {
     { label: "Active BIN", value: countOrPending(player.active_buy_it_now_count) },
     { label: "OnDeck 30D Sell-Thru", value: sellThroughOrPending(player, 30) },
     { label: "OnDeck 90D Sell-Thru", value: sellThroughOrPending(player, 90) },
+    { label: "30D Sellers", value: countOrPending(player.sellers_30) },
+    { label: "90D Sellers", value: countOrPending(player.sellers_90) },
+    { label: "Card Year", value: player.card_year || "Pending" },
     { label: "Sold Refresh", value: dateOrPending(player.sold_refreshed_at) },
     { label: "Active Refresh", value: dateOrPending(player.active_data_updated_at) },
     { label: "Card Grade", value: marketGrade(player) },
@@ -2129,7 +2144,8 @@ function liquidityInsight(player) {
 }
 
 function cardDescription(player) {
-  return [player.card_name || player.card_query, player.card_code].filter(Boolean).join(" · ") || "Bowman Chrome Prospect Auto";
+  const name = player.card_name || player.card_query || "Bowman Chrome Auto";
+  return [player.card_year, name, player.card_code].filter(Boolean).join(" · ") || "Bowman Chrome Prospect Auto";
 }
 
 function formatShortDate(value) {

@@ -16,6 +16,9 @@ export default {
     }
 
     if (url.pathname === "/api/top100-market-data") {
+      if (request.method === "POST") {
+        return onRefreshTop100MarketRequest({ request, env, ctx });
+      }
       return onMarketDataRequest({ request, env, ctx });
     }
 
@@ -31,6 +34,12 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runTop100TrendUpdate(env));
+    const marketRefreshRequest = new Request("https://ondeckprospect.com/api/top100-market-data?limit=100", {
+      method: "POST",
+    });
+    ctx.waitUntil(Promise.allSettled([
+      runTop100TrendUpdate(env),
+      onRefreshTop100MarketRequest({ request: marketRefreshRequest, env, ctx }),
+    ]));
   },
 };

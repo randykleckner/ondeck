@@ -40,7 +40,7 @@ Break Board and Team War Room are secondary top-nav tools, not default landing-p
 
 The homepage card-market section is the On Deck Board. Normal page loads read cached card-market snapshots from D1 through `/api/top100-market-data`; they do not call SoldComps. Player profiles show the cached Market Pulse when a snapshot exists, and show pending states when the player still needs a refresh.
 
-`data/card-targets.csv` stores only search targets and card-code hints for the API. It does not store prices. The card target is the raw Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv`; players without a benchmark code are skipped by the bulk refresh and reported in the summary.
+`data/card-targets.csv` stores search targets, Bowman auto codes, and liquidity inputs for the API and profile cards. It does not store sold prices. The card target is the raw Bowman Chrome Prospect Auto code, for example Jesús Made is `CPA-JM`. Add exact code overrides to `data/card-targets.csv`; players without a benchmark code are skipped by the bulk refresh and reported in the summary.
 
 ## Secure SoldComps API proxy
 
@@ -50,11 +50,13 @@ The browser reads cached Top 100 market snapshots through our own endpoint:
 GET /api/top100-market-data
 ```
 
-The admin refresh endpoint is the only Top 100 flow that calls SoldComps:
+The refresh endpoint is the only Top 100 flow that calls SoldComps:
 
 ```sh
-POST /api/admin/refresh-top100-market
+POST /api/top100-market-data
 ```
+
+`/api/admin/refresh-top100-market` is kept as a backwards-compatible alias.
 
 The repo includes these serverless entry points:
 
@@ -90,7 +92,14 @@ Create a D1 database in Cloudflare named `ondeck-market`, run `migrations/0001_m
 MARKET_DB
 ```
 
-Once `MARKET_DB` is bound, run `migrations/0004_top100_market_snapshots.sql` to add the Top 100 snapshot tables. `/api/top100-market-data` reads D1 only and never calls SoldComps. When running as a plain static site with `python3 -m http.server`, API routes will not exist, so profiles show pending market snapshots until the Cloudflare Worker is deployed.
+Once `MARKET_DB` is bound, run `migrations/0004_top100_market_snapshots.sql` to add the Top 100 snapshot tables. Then run `migrations/0005_card_targets.sql` and import `data/card-targets-import.sql` to store the card-code and sell-through target data in D1:
+
+```sh
+wrangler d1 execute ondeck-market --file=migrations/0005_card_targets.sql
+wrangler d1 execute ondeck-market --file=data/card-targets-import.sql
+```
+
+`GET /api/top100-market-data` reads D1 only and never calls SoldComps. `POST /api/top100-market-data` is the controlled refresh route. When running as a plain static site with `python3 -m http.server`, API routes will not exist, so profiles show pending market snapshots until the Cloudflare Worker is deployed.
 
 ## Historical card sales import
 
@@ -139,7 +148,7 @@ Run the migration:
 wrangler d1 execute ondeck-market --file=migrations/0002_top100_rank_trends.sql
 ```
 
-The Cloudflare Worker has a scheduled handler that checks the MLB Top 100 source and writes a rank snapshot only when at least 14 days have passed since the last successful snapshot. `wrangler.jsonc` runs the Worker daily at 10:17 UTC, while the code prevents duplicate 14-day writes.
+The Cloudflare Worker has a scheduled handler that checks the MLB Top 100 source and refreshes Top 100 market data weekly. Rank snapshots are written only when at least seven days have passed since the last successful snapshot. `wrangler.jsonc` runs the Worker every Monday at 10:17 UTC.
 
 Manual trigger:
 

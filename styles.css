@@ -245,6 +245,31 @@ h1 span:nth-child(2) {
   line-height: 1.55;
 }
 
+.page-hero {
+  display: grid;
+  gap: 12px;
+  padding: clamp(42px, 7vw, 84px) 0 28px;
+}
+
+.page-hero h1 {
+  margin: 0;
+}
+
+.page-hero p:not(.eyebrow) {
+  max-width: 620px;
+  color: #d4dcf7;
+  font-size: 1.04rem;
+  line-height: 1.55;
+}
+
+.emerging-shell {
+  padding-top: 0;
+}
+
+.emerging-panel table {
+  min-width: 1320px;
+}
+
 h2 {
   margin-bottom: 0;
   font-size: 1.02rem;
@@ -691,7 +716,7 @@ tbody tr.selected {
 }
 
 body[data-view="war"] .hero-panel,
-body[data-view="war"] #top-10,
+body[data-view="war"] #on-deck,
 body[data-view="war"] #break-board,
 body[data-view="war"] #graduated,
 body[data-view="war"] #prospects,
@@ -706,7 +731,7 @@ body[data-view="war"] #dugout {
 }
 
 body[data-view="scorebook"] .hero-panel,
-body[data-view="scorebook"] #top-10,
+body[data-view="scorebook"] #on-deck,
 body[data-view="scorebook"] #break-board,
 body[data-view="scorebook"] #dugout,
 body[data-view="scorebook"] #graduated,
@@ -722,7 +747,7 @@ body[data-view="scorebook"] #scorebook {
 }
 
 body[data-view="graduated"] .hero-panel,
-body[data-view="graduated"] #top-10,
+body[data-view="graduated"] #on-deck,
 body[data-view="graduated"] #break-board,
 body[data-view="graduated"] #dugout,
 body[data-view="graduated"] #prospects,
@@ -3140,6 +3165,58 @@ tbody tr {
 
   td:nth-child(7)::before {
     content: "Call-Up";
+  }
+
+  .emerging-panel td:nth-child(1)::before {
+    content: "Player";
+  }
+
+  .emerging-panel td:nth-child(2)::before {
+    content: "Year";
+  }
+
+  .emerging-panel td:nth-child(3)::before {
+    content: "Product";
+  }
+
+  .emerging-panel td:nth-child(4)::before {
+    content: "Auto Code / Card #";
+  }
+
+  .emerging-panel td:nth-child(5)::before {
+    content: "Team On Card";
+  }
+
+  .emerging-panel td:nth-child(6)::before {
+    content: "Stats Role";
+  }
+
+  .emerging-panel td:nth-child(7)::before {
+    content: "Level";
+  }
+
+  .emerging-panel td:nth-child(8)::before {
+    content: "Team";
+  }
+
+  .emerging-panel td:nth-child(9)::before {
+    content: "Age";
+  }
+
+  .emerging-panel td:nth-child(10)::before {
+    content: "Emerging Pre-Score";
+  }
+
+  .emerging-panel td:nth-child(11)::before {
+    content: "Pre-Tier";
+  }
+
+  .emerging-panel td:nth-child(12)::before {
+    content: "Card Query Seed";
+  }
+
+  .emerging-panel td:nth-child(13)::before {
+    content: "Status";
   }
 
   .player-name strong {

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OnDeck Prospect | Emerging Prospects</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
+    <link rel="stylesheet" href="./styles.css?v=20260706-1" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-mark">
+        <strong>OnDeck</strong>
+        <span>Prospect</span>
+      </div>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="./index.html#on-deck">On Deck</a>
+        <a href="./emerging.html" class="active" aria-current="page">Emerging</a>
+        <a href="./index.html#top-100">Top 100</a>
+        <a href="./index.html#graduated">Graduated</a>
+        <a href="./index.html#scorebook">Scorebook</a>
+        <a href="./index.html#about">About Us</a>
+      </nav>
+      <div class="header-actions">
+        <a class="button primary" href="./index.html#on-deck">On Deck Board</a>
+      </div>
+    </header>
+
+    <main class="app-shell emerging-shell">
+      <section class="page-hero" aria-label="Emerging Prospects">
+        <p class="eyebrow">Stats-first Bowman auto targets</p>
+        <h1>Emerging Prospects</h1>
+        <p>Filtered Bowman auto targets before they reach the Top 100.</p>
+      </section>
+
+      <section class="table-panel emerging-panel" aria-label="Emerging prospect table">
+        <div class="panel-heading">
+          <div>
+            <h2>Emerging Prospects</h2>
+            <p>Prospects outside the current Top 100 with a tracked Bowman auto target and enough market context to begin monitoring.</p>
+          </div>
+          <span id="emerging-row-count">Loading emerging data...</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Year</th>
+                <th>Product</th>
+                <th>Auto Code / Card #</th>
+                <th>Team On Card</th>
+                <th>Stats Role</th>
+                <th>Level</th>
+                <th>Team</th>
+                <th>Age</th>
+                <th>Emerging Pre-Score</th>
+                <th>Pre-Tier</th>
+                <th>Card Query Seed</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="emerging-rows">
+              <tr>
+                <td colspan="13" class="muted">Loading emerging data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/emerging.js?v=20260706-1"></script>
+  </body>
+</html>

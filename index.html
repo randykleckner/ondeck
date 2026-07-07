@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OnDeck Prospect | Top 10 Next-Move Intelligence</title>
+    <title>OnDeck Prospect | On Deck Market Intelligence</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
-    <link rel="stylesheet" href="./styles.css?v=20260630-10" />
+    <link rel="stylesheet" href="./styles.css?v=20260706-1" />
   </head>
   <body>
     <header class="app-header">
@@ -14,10 +14,11 @@
         <span>Prospect</span>
       </div>
       <nav class="main-nav" aria-label="Primary navigation">
-        <a href="#top-10" data-route="dashboard">Top 10</a>
+        <a href="#on-deck" data-route="dashboard">On Deck</a>
+        <a href="./emerging.html">Emerging</a>
         <a href="#top-100" data-route="dashboard">Top 100</a>
         <a href="#graduated" data-route="graduated">Graduated</a>
-        <a href="#scorebook" data-route="scorebook">Scorebook</a>
+        <a href="#scorebook" data-route="dashboard">Scorebook</a>
         <a href="#about" data-route="dashboard">About Us</a>
       </nav>
       <div class="header-actions">
@@ -40,65 +41,35 @@
             and card-market catalysts so you can spot the next move before attention catches up.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="#top-10">View the Top 10</a>
-            <a class="button ghost" href="#scorebook" data-route="scorebook">View Scorebook</a>
+            <a class="button primary" href="#on-deck">View the On Deck Board</a>
+            <a class="button ghost" href="#scorebook" data-route="dashboard">View Scorebook</a>
           </div>
         </div>
       </section>
 
-      <section id="top-10" class="market-board" aria-label="Top 10 next prospect moves">
+      <section id="on-deck" class="market-board" aria-label="On Deck next prospect moves">
         <div class="panel-heading">
           <div>
-            <h2>Top 10 On Deck</h2>
+            <h2>On Deck Board</h2>
             <p>The prospects most likely to move onward and upward next, with the why shown in the profile</p>
           </div>
           <div class="deck-controls" aria-label="On Deck Board controls">
             <button id="deck-prev" class="icon-button" type="button" aria-label="Previous On Deck cards">‹</button>
-            <span id="market-count">Top 10</span>
+            <span id="market-count">Loading board data...</span>
             <button id="deck-next" class="icon-button" type="button" aria-label="Next On Deck cards">›</button>
           </div>
         </div>
         <div id="market-board" class="market-grid"></div>
       </section>
 
-      <section id="break-board" class="team-board secondary-tool" data-tool="break" aria-label="Top prospects by team" hidden>
-        <div class="panel-heading">
-          <div>
-            <h2>Break Value Board</h2>
-            <p>Prospect exposure by organization</p>
-          </div>
-          <span id="team-board-count">0 orgs</span>
-        </div>
-        <div id="team-board" class="team-grid"></div>
-      </section>
-
-      <section id="dugout" class="war-room secondary-tool" data-tool="war" aria-label="Team prospect dugout" hidden>
-        <div class="tool-page-nav">
-          <a class="button ghost" href="#dashboard" data-route="dashboard">Back to Dashboard</a>
-        </div>
-        <div class="war-room-hero">
-          <div class="war-room-team">
-            <span id="war-room-logo" class="team-logo-wrap war-room-logo"></span>
-            <div>
-              <p class="eyebrow">The Dugout</p>
-              <h2 id="war-room-title">Select a team</h2>
-              <p id="war-room-subtitle">Click a team on the Break Value Board to map depth chart blockers and prospect paths.</p>
-            </div>
-          </div>
-        </div>
-        <div id="war-room-board" class="war-room-board">
-          <p class="muted">Pick a team above to open its depth-chart board.</p>
-        </div>
-      </section>
-
       <section id="prospects" class="content-grid">
         <div class="table-panel">
           <div class="panel-heading">
             <div>
-              <h2>Top 10 Board</h2>
+              <h2>Selected Player Report</h2>
               <p>Click any player to open the profile and recommendation details</p>
             </div>
-            <span id="row-count">Top 10</span>
+            <span id="row-count">Loading board data...</span>
           </div>
           <div class="table-wrap">
             <table>
@@ -132,9 +103,9 @@
         <div class="panel-heading">
           <div>
             <h2>MLB Top 100 Reference</h2>
-            <p>Full ranked context so the Top 10 decision can be compared against everyone else</p>
+            <p>Full ranked context so the On Deck decision can be compared against everyone else</p>
           </div>
-          <span id="top100-row-count">0 players</span>
+          <span id="top100-row-count">Loading board data...</span>
         </div>
         <div class="list-controls" aria-label="Top 100 filters">
           <div class="filter-grid">
@@ -153,7 +124,7 @@
               <select id="top100-board-filter">
                 <option value="all">Full Top 100</option>
                 <option value="bubble">On Deck + Bubble</option>
-                <option value="outside">Outside Top 10</option>
+                <option value="outside">Outside On Deck</option>
               </select>
             </label>
           </div>
@@ -166,21 +137,22 @@
                 <th>Player</th>
                 <th>Team</th>
                 <th>Benchmark Card</th>
-                <th>30D Sales</th>
-                <th>90D Sales</th>
-                <th>30D Avg</th>
-                <th>90D Avg</th>
-                <th>Active Listings</th>
-                <th>30D Sell-Thru</th>
-                <th>90D Sell-Thru</th>
-                <th>Last Checked</th>
                 <th>Trend</th>
-                <th>Why Not Top 10</th>
+                <th>Why Not On Deck</th>
               </tr>
             </thead>
             <tbody id="top100-rows"></tbody>
           </table>
         </div>
+      </section>
+
+      <section id="scorebook" class="scorebook-page" aria-label="OnDeck Scorebook">
+        <div class="scorebook-hero">
+          <p class="eyebrow">The Scorebook</p>
+          <h2>Proof that the board was early.</h2>
+          <p>We track players flagged before a meaningful move, how early they appeared on the board, and what happened to their primary prospect card after the catalyst.</p>
+        </div>
+        <div id="scorebook-board" class="scorebook-board"></div>
       </section>
 
       <section id="about" class="info-panel" aria-label="About OnDeck Prospect">
@@ -209,21 +181,9 @@
         </div>
       </section>
 
-      <section id="scorebook" class="scorebook-page secondary-tool" data-tool="scorebook" aria-label="OnDeck Scorebook">
-        <div class="tool-page-nav">
-          <a class="button ghost" href="#top-10" data-route="dashboard">Back to Top 10</a>
-        </div>
-        <div class="scorebook-hero">
-          <p class="eyebrow">The Scorebook</p>
-          <h2>Proof that the board was early.</h2>
-          <p>We track players flagged before a meaningful move, how early they appeared on the board, and what happened to their primary prospect card after the catalyst.</p>
-        </div>
-        <div id="scorebook-board" class="scorebook-board"></div>
-      </section>
-
       <section id="graduated" class="graduated-page secondary-tool" data-tool="graduated" aria-label="Graduated MLB prospects">
         <div class="tool-page-nav">
-          <a class="button ghost" href="#top-10" data-route="dashboard">Back to Top 10</a>
+          <a class="button ghost" href="#on-deck" data-route="dashboard">Back to On Deck</a>
         </div>
         <div class="graduated-hero">
           <p class="eyebrow">Graduated</p>
@@ -234,6 +194,6 @@
       </section>
     </main>
 
-  <script type="module" src="./src/app.js?v=20260702-2"></script>
+  <script type="module" src="./src/app.js?v=20260706-1"></script>
 </body>
 </html>

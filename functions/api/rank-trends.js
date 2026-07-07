@@ -1,5 +1,5 @@
 const DEFAULT_TOP100_SOURCE_URL = "https://www.mlb.com/milb/prospects/top100/";
-const MIN_RUN_INTERVAL_DAYS = 14;
+const MIN_RUN_INTERVAL_DAYS = 7;
 
 export async function onRequest({ request, env }) {
   if (request.method === "OPTIONS") {

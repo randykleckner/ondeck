@@ -59,7 +59,7 @@ export async function onMarketDataRequest(context) {
       FROM market_player_snapshots
       ORDER BY rank ASC
     `).all();
-    const cardTargets = await readCsvAsset(context, "/data/card-targets.csv").catch(() => []);
+    const cardTargets = await readCardTargets(context, db);
     const cardByPlayerId = new Map(cardTargets.map((row) => [String(row.player_id), row]));
     const cardByName = new Map(cardTargets.map((row) => [normalizeName(row.player_name), row]));
     const snapshots = (rows.results || [])
@@ -111,7 +111,7 @@ export async function onRefreshTop100MarketRequest(context) {
 
   const [players, cardTargets] = await Promise.all([
     readCsvAsset(context, "/data/mlb-top100-2026.csv"),
-    readCsvAsset(context, "/data/card-targets.csv"),
+    readCardTargets(context, db),
   ]);
   const enabledCardTargets = cardTargets.filter(isEnabledCardTarget);
   const cardByPlayerId = new Map(enabledCardTargets.map((row) => [String(row.player_id), row]));
@@ -470,6 +470,67 @@ async function writeSnapshot(db, row) {
 
 async function readSnapshot(db, playerId) {
   return db.prepare(`SELECT * FROM market_player_snapshots WHERE player_id = ?`).bind(playerId).first();
+}
+
+async function readCardTargets(context, db = context.env?.MARKET_DB) {
+  const csvRows = await readCsvAsset(context, "/data/card-targets.csv").catch(() => []);
+  if (!db) return csvRows;
+
+  try {
+    const rows = await db.prepare(`
+      SELECT
+        player_id,
+        player_name,
+        card_code,
+        card_query,
+        enabled,
+        sell_through_30,
+        sell_through_90,
+        sellers_30,
+        sellers_90,
+        card_year,
+        notes
+      FROM card_targets
+    `).all();
+    const dbRows = (rows.results || []).map(cardTargetRowFromDb);
+    return mergeCardTargets(csvRows, dbRows);
+  } catch {
+    return csvRows;
+  }
+}
+
+function cardTargetRowFromDb(row) {
+  return {
+    player_id: row.player_id,
+    player_name: row.player_name,
+    card_code: row.card_code || "",
+    card_query: row.card_query || "",
+    enabled: Number(row.enabled) === 0 ? "false" : "true",
+    sell_through_30: row.sell_through_30 ?? "",
+    sell_through_90: row.sell_through_90 ?? "",
+    sellers_30: row.sellers_30 ?? "",
+    sellers_90: row.sellers_90 ?? "",
+    card_year: row.card_year || "",
+    notes: row.notes || "",
+  };
+}
+
+function mergeCardTargets(csvRows, dbRows) {
+  if (!dbRows.length) return csvRows;
+  const merged = new Map();
+  for (const row of csvRows) {
+    const key = cardTargetKey(row);
+    if (key) merged.set(key, row);
+  }
+  for (const row of dbRows) {
+    const key = cardTargetKey(row);
+    if (key) merged.set(key, { ...(merged.get(key) || {}), ...row });
+  }
+  return [...merged.values()];
+}
+
+function cardTargetKey(row) {
+  return String(row?.player_id || "").trim() || normalizeName(row?.player_name);
 }
 
 function snapshotTargetIsDisplayable(row, cardByPlayerId, cardByName) {
