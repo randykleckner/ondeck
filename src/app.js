@@ -1788,6 +1788,7 @@ function cardBaselineLabel(player) {
   if (Number.isFinite(avg30)) return currency(avg30);
   const baseline = numericMoney(player.baseline_value);
   if (Number.isFinite(baseline)) return currency(baseline);
+  if (player.card_code) return player.card_code;
   return player.market_signal ? "Market pending" : "Pending";
 }
 
@@ -1812,6 +1813,7 @@ function marketStatus(player) {
   if (signal.includes("flat")) return "Stable";
   if (signal.includes("priced")) return "Priced In";
   if (signal.includes("illiquid")) return "Illiquid";
+  if (Number.isFinite(sellThroughValue(player, 30)) || player.card_code) return "Liquidity Watch";
   return player.card_name || player.avg_30 ? "Early Entry" : "Market Pending";
 }
 
@@ -1819,6 +1821,7 @@ function marketStatusClass(player) {
   const status = marketStatus(player).toLowerCase();
   if (status.includes("moving") || status.includes("early")) return "positive";
   if (status.includes("cooling") || status.includes("priced")) return "caution";
+  if (status.includes("liquidity")) return "neutral";
   if (status.includes("illiquid") || status.includes("pending")) return "negative";
   return "neutral";
 }
@@ -1938,6 +1941,13 @@ function hasMarketData(player) {
     player.sales_90,
     player.active_listings,
     player.checked_at,
+    player.card_code,
+    player.card_query,
+    player.sell_through_30,
+    player.sell_through_90,
+    player.sellers_30,
+    player.sellers_90,
+    player.card_year,
   ].some((value) => value !== "" && value != null);
 }
 
@@ -2120,6 +2130,9 @@ function marketStatusInsight(player) {
   }
   if (status === "Illiquid") {
     return "Sales volume is thin, so one comp can distort the read.";
+  }
+  if (status === "Liquidity Watch") {
+    return "The benchmark card is loaded and liquidity is available; sold-price comps will sharpen the grade on the next refresh.";
   }
   if (status === "Market Pending") {
     return "No cached market snapshot is available yet. Run the Top 100 market refresh to fill this profile.";
