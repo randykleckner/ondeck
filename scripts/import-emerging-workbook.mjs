@@ -40,14 +40,6 @@ importSheet("All_Targets", {
   importPrescore: true,
 });
 
-importSheet("Card_API_Candidates", {
-  defaultGroup: "emerging",
-  defaultStatus: "active",
-  defaultTier: "card_api_candidate",
-  importStats: true,
-  importPrescore: true,
-});
-
 for (const sheetName of ["Emerging_A", "Emerging_BPlus", "Emerging_B", "Emerging_Watch", "Low_Priority"]) {
   importSheet(sheetName, {
     defaultGroup: "emerging",
@@ -57,6 +49,14 @@ for (const sheetName of ["Emerging_A", "Emerging_BPlus", "Emerging_B", "Emerging
     importPrescore: true,
   });
 }
+
+importSheet("Card_API_Candidates", {
+  defaultGroup: "emerging",
+  defaultStatus: "active",
+  defaultTier: "card_api_candidate",
+  importStats: true,
+  importPrescore: true,
+});
 
 importSheet("Called_Up", {
   defaultGroup: "called_up",

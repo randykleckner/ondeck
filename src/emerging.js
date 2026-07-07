@@ -47,14 +47,25 @@ async function loadEmergingProspects() {
 }
 
 function renderSummary(summary) {
+  const computed = computedSummary();
   const cells = [
-    ["Active", summary.active_emerging],
-    ["Card Candidates", summary.card_api_candidates],
-    ["Emerging A", summary.emerging_a],
-    ["Emerging B+", summary.emerging_bplus],
-    ["Emerging B", summary.emerging_b],
+    ["Active", computed.active || summary.active_emerging],
+    ["Card Candidates", computed.cardCandidates || summary.card_api_candidates],
+    ["Emerging A", computed.emergingA || summary.emerging_a],
+    ["Emerging B+", computed.emergingBPlus || summary.emerging_bplus],
+    ["Emerging B", computed.emergingB || summary.emerging_b],
   ];
   summaryElement.innerHTML = cells.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${count(value)}</strong></article>`).join("");
+}
+
+function computedSummary() {
+  return {
+    active: state.prospects.length,
+    cardCandidates: state.prospects.filter((row) => row.priority_tier === "card_api_candidate").length,
+    emergingA: state.prospects.filter((row) => normalizeTier(row.pre_tier) === "emerging_a").length,
+    emergingBPlus: state.prospects.filter((row) => normalizeTier(row.pre_tier) === "emerging_bplus").length,
+    emergingB: state.prospects.filter((row) => normalizeTier(row.pre_tier) === "emerging_b").length,
+  };
 }
 
 function hydrateFilters() {
@@ -71,7 +82,9 @@ function render() {
   const rows = filteredRows();
   countElement.textContent = `${rows.length} ${rows.length === 1 ? "prospect" : "prospects"}`;
   groupsElement.innerHTML = groups.map(([key, label], index) => {
-    const groupRows = rows.filter((row) => row.priority_tier === key);
+    const groupRows = key === "card_api_candidate"
+      ? rows.filter((row) => row.priority_tier === key)
+      : rows.filter((row) => normalizeTier(row.pre_tier) === key);
     return `
       <details class="emerging-section" ${index === 0 ? "open" : ""}>
         <summary><span>${escapeHtml(label)}</span><strong>${groupRows.length}</strong></summary>
@@ -220,6 +233,14 @@ function currency(value) {
 
 function normalize(value) {
   return String(value || "").toLowerCase().replaceAll(/[^a-z0-9]+/g, " ").trim();
+}
+
+function normalizeTier(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\+/g, "plus")
+    .replaceAll(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
 }
 
 function escapeHtml(value) {
