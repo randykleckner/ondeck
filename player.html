@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OnDeck Prospect | Graduated</title>
+    <title>OnDeck Prospect | Player Briefing</title>
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
     <link rel="stylesheet" href="./styles.css?v=20260707-profile-1" />
   </head>
@@ -18,25 +18,18 @@
         <a href="./top100.html">Top 100</a>
         <a href="./emerging.html">Emerging</a>
         <a href="./scorebook.html">Scorebook</a>
-        <a href="./graduated.html" class="active" aria-current="page">Graduated</a>
+        <a href="./graduated.html">Graduated</a>
         <a href="./about.html">About</a>
       </nav>
       <div class="header-actions">
-        <a class="button primary" href="./index.html#on-deck">On Deck Board</a>
+        <a class="button ghost" href="./index.html">Back to Board</a>
       </div>
     </header>
 
-    <main class="app-shell page-shell">
-      <section id="graduated" class="graduated-page" aria-label="Graduated MLB prospects">
-        <div class="graduated-hero">
-          <p class="eyebrow">Graduated</p>
-          <h1>MLB graduates stay in the system.</h1>
-          <p>Players move here automatically once our data shows MLB status and removal from the current Top 100, while profile, thesis, card market, and timeline history remain intact.</p>
-        </div>
-        <div id="graduated-board" class="graduated-board"></div>
-      </section>
+    <main id="player-profile-root" class="profile-page-shell">
+      <p class="muted">Loading player briefing...</p>
     </main>
 
-    <script type="module" src="./src/app.js?v=20260707-profile-1"></script>
+    <script type="module" src="./src/profile.js?v=20260707-profile-1"></script>
   </body>
 </html>

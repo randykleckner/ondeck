@@ -583,15 +583,8 @@ function isOnDeckBoardPlayer(player) {
 
 function openPlayerProfile(playerId, options = {}) {
   if (!playerId) return;
-  state.selectedId = String(playerId);
-  render();
-  if (options.scroll !== false) {
-    document.querySelector("#prospects")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  if (options.focus !== false && elements.cardPanel && !elements.cardPanel.hidden) {
-    elements.cardPanel.setAttribute("tabindex", "-1");
-    elements.cardPanel.focus({ preventScroll: true });
-  }
+  const type = options.type || "on-deck";
+  window.location.href = `./player.html?type=${encodeURIComponent(type)}&id=${encodeURIComponent(String(playerId))}`;
 }
 
 function getFilteredRows() {
@@ -1192,7 +1185,7 @@ function renderRows(rows) {
   elements.rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
       event.stopPropagation();
-      openPlayerProfile(row.dataset.playerId);
+      openPlayerProfile(row.dataset.playerId, { type: "on-deck" });
     });
   });
 }
@@ -1232,7 +1225,7 @@ function renderTop100Rows() {
   elements.top100Rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
       event.stopPropagation();
-      openPlayerProfile(row.dataset.playerId);
+      openPlayerProfile(row.dataset.playerId, { type: "top100" });
     });
   });
 }

@@ -143,15 +143,8 @@ function filteredRows() {
 }
 
 async function selectPlayer(playerId) {
-  state.selectedId = String(playerId);
-  const row = state.prospects.find((candidate) => String(candidate.player_id) === state.selectedId);
-  renderDetail(row);
-  render();
-  if (!state.details.has(state.selectedId)) {
-    const response = await fetch(`/api/emerging/${encodeURIComponent(state.selectedId)}`, { headers: { Accept: "application/json" } }).catch(() => null);
-    if (response?.ok) state.details.set(state.selectedId, await response.json());
-  }
-  renderDetail(state.details.get(state.selectedId)?.prospect || row);
+  if (!playerId) return;
+  window.location.href = `./player.html?type=emerging&id=${encodeURIComponent(String(playerId))}`;
 }
 
 function renderDetail(row) {
