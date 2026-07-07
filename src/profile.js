@@ -240,7 +240,6 @@ function profileHeader(player) {
       </div>
       <div class="odp-code-block">
         <span>${escapeHtml(player.code)}</span>
-        <strong>ODP</strong>
       </div>
     </header>
     <div class="odp-bio-line">

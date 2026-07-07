@@ -3575,13 +3575,6 @@ tbody tr {
   letter-spacing: 0.08em;
 }
 
-.odp-code-block strong {
-  margin-top: 8px;
-  font-size: clamp(1.5rem, 2.8vw, 2.4rem);
-  font-style: italic;
-  letter-spacing: 0.03em;
-}
-
 .odp-bio-line {
   display: flex;
   flex-wrap: wrap;
