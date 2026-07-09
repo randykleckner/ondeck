@@ -1023,6 +1023,16 @@ input[type="range"] {
   color: transparent;
 }
 
+.insight-card .market-price strong {
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+}
+
+.insight-card .market-price span {
+  display: block;
+  margin-top: 6px;
+  text-transform: none;
+}
+
 .market-price span,
 .market-card dt,
 .card-market-grid span {

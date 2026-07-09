@@ -665,6 +665,10 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
           NULL AS organization,
           NULL AS position,
           NULL AS level,
+          NULL AS age,
+          NULL AS birth_date,
+          NULL AS dob,
+          NULL AS player_age,
           NULL AS top100_rank,
           NULL AS card_code,
           NULL AS market_sales_count_30d,
@@ -716,6 +720,10 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
           COALESCE(p.current_org, p.current_team, ct.team_on_card) AS organization,
           p.position,
           s.level,
+          s.age,
+          p.birth_date,
+          p.birth_date AS dob,
+          s.age AS player_age,
           NULL AS top100_rank,
           COALESCE(ct.auto_code, ct.card_number) AS card_code,
           m.sales_count_30d AS market_sales_count_30d,
@@ -916,6 +924,7 @@ function insightRowToApi(row) {
   const organization = packet?.player?.organization || "";
   const position = packet?.player?.position || "";
   const level = packet?.player?.level || "";
+  const age = packet?.player?.age ?? row.age ?? "";
   return {
     id: row.id,
     player_id: row.player_id,
@@ -932,6 +941,10 @@ function insightRowToApi(row) {
     org: organization,
     position,
     level,
+    age,
+    player_age: age,
+    birth_date: row.birth_date || "",
+    dob: row.dob || "",
     rank: packet?.player?.top100_rank || "",
     prospect_rank: packet?.player?.top100_rank || "",
     card_code: packet?.card?.card_code || "",
@@ -992,6 +1005,7 @@ function onDeckCandidateRowToApi(row) {
   const organization = row.organization || "";
   const position = row.position || "";
   const level = row.level || "";
+  const age = row.age ?? row.player_age ?? "";
   return {
     id: row.id,
     player_id: row.player_id,
@@ -1010,6 +1024,10 @@ function onDeckCandidateRowToApi(row) {
     org: organization,
     position,
     level,
+    age,
+    player_age: age,
+    birth_date: row.birth_date || "",
+    dob: row.dob || "",
     rank: row.top100_rank || "",
     prospect_rank: row.top100_rank || "",
     card_code: row.card_code || "",
