@@ -756,6 +756,12 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
           AND LOWER(COALESCE(m.market_signal, '')) NOT LIKE '%down%'
           AND LOWER(COALESCE(m.market_signal, '')) NOT LIKE '%cooling%'
           AND LOWER(COALESCE(m.market_signal, '')) NOT LIKE '%avoid%'
+          AND NOT (
+            m.avg_price_30d IS NOT NULL
+            AND m.avg_price_90d IS NOT NULL
+            AND m.avg_price_90d > 0
+            AND m.avg_price_30d <= m.avg_price_90d * 0.88
+          )
       ),
       ranked AS (
         SELECT candidate_rows.*,
@@ -772,6 +778,12 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
         AND LOWER(COALESCE(market_signal, '')) NOT LIKE '%down%'
         AND LOWER(COALESCE(market_signal, '')) NOT LIKE '%cooling%'
         AND LOWER(COALESCE(market_signal, '')) NOT LIKE '%avoid%'
+        AND NOT (
+          market_avg_price_30d IS NOT NULL
+          AND market_avg_price_90d IS NOT NULL
+          AND market_avg_price_90d > 0
+          AND market_avg_price_30d <= market_avg_price_90d * 0.88
+        )
       ORDER BY move_score DESC, callup_score DESC, created_at DESC
       LIMIT ?
     `).bind(ON_DECK_MIN_SCORE, ON_DECK_MIN_SCORE, ON_DECK_MIN_SCORE, limit).all();
