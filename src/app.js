@@ -1368,15 +1368,34 @@ function onDeckInvestmentSort(a, b) {
 
 function moonshotRating(player) {
   const price = boardCardPrice(player);
-  const multiple = moonshotUpsideMultiple(player);
-  if (Number.isFinite(price) && price > 150) {
-    return multiple >= 2 ? 2 : 1;
+  const upside = moonshotUpsideScore(player);
+  if (!Number.isFinite(price) || price <= 0) {
+    return upside >= 80 ? 3 : upside >= 58 ? 2 : 1;
   }
-  if (multiple >= 5) return 5;
-  if (multiple >= 3) return 4;
-  if (multiple >= 2) return 3;
-  if (multiple >= 1.35) return 2;
-  return 1;
+  if (price <= 20) {
+    if (upside >= 72) return 5;
+    if (upside >= 54) return 4;
+    if (upside >= 36) return 3;
+    if (upside >= 22) return 2;
+    return 1;
+  }
+  if (price <= 60) {
+    if (upside >= 90) return 5;
+    if (upside >= 66) return 4;
+    if (upside >= 44) return 3;
+    if (upside >= 28) return 2;
+    return 1;
+  }
+  if (price <= 150) {
+    if (upside >= 84) return 4;
+    if (upside >= 58) return 3;
+    if (upside >= 36) return 2;
+    return 1;
+  }
+  if (price <= 300) {
+    return upside >= 76 ? 2 : 1;
+  }
+  return upside >= 90 ? 2 : 1;
 }
 
 function moonshotStars(player) {
@@ -1384,35 +1403,35 @@ function moonshotStars(player) {
   return "★".repeat(rating);
 }
 
-function moonshotUpsideMultiple(player) {
+function moonshotUpsideScore(player) {
   const price = boardCardPrice(player);
   const rawCeiling = ceilingScore(player);
-  const ceiling = clampScore((rawCeiling - 74) * 1.25);
+  const ceiling = clampScore((rawCeiling - 82) * 1.8);
   const investment = investmentScore(player);
   const performance = performanceTrendScore(player);
   const catalyst = catalystScore(player);
   const trajectory = Math.max(0, boardMovementValue(player));
   const demand = hobbyDemandScore(player);
-  const upside = clampScore(
-    ceiling * 0.32
-    + investment * 0.22
+  const priceLeverage = !Number.isFinite(price) || price <= 0
+    ? -10
+    : price <= 20
+      ? 18
+      : price <= 60
+        ? 9
+        : price <= 150
+          ? 0
+          : price <= 300
+            ? -18
+            : -30;
+  return clampScore(
+    ceiling * 0.34
+    + investment * 0.20
     + performance * 0.14
-    + catalyst * 0.12
-    + demand * 0.12
-    + Math.min(100, trajectory * 8) * 0.08,
+    + catalyst * 0.10
+    + demand * 0.14
+    + Math.min(100, trajectory * 8) * 0.08
+    + priceLeverage,
   );
-
-  if (!Number.isFinite(price) || price <= 0) return 1;
-  const maxMultiple = price <= 20
-    ? 6.5
-    : price <= 60
-      ? 4.25
-      : price <= 150
-        ? 3.1
-        : price <= 300
-          ? 2
-          : 1.45;
-  return 1 + (maxMultiple - 1) * (upside / 100);
 }
 
 function hobbyDemandScore(player) {

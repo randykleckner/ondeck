@@ -305,30 +305,32 @@ function profileMoonshotRating(row, rawMoveScore) {
   const ageBoost = Number.isFinite(age) ? Math.max(0, 24 - age) * 3 : 6;
   const rankBoost = Number.isFinite(rank) && rank > 0 ? Math.max(0, 105 - rank) / 4 : 8;
   const ceiling = (Number.isFinite(move) ? move : 50) + levelBoost + ageBoost + rankBoost;
-  const maxMultiple = !Number.isFinite(price) || price <= 0
-    ? 1
+  const priceLeverage = !Number.isFinite(price) || price <= 0
+    ? -10
     : price <= 20
-      ? 6.5
+      ? 18
       : price <= 60
-        ? 4.25
+        ? 9
         : price <= 150
-          ? 3.1
+          ? 0
           : price <= 300
-            ? 2
-            : 1.45;
-  const upside = clampScore((ceiling - 74) * 1.25);
-  const multiple = 1 + (maxMultiple - 1) * (upside / 100);
-  const rating = Number.isFinite(price) && price > 150
-    ? (multiple >= 2 ? 2 : 1)
-    : multiple >= 5
-      ? 5
-      : multiple >= 3
-        ? 4
-        : multiple >= 2
-          ? 3
-          : multiple >= 1.35
-            ? 2
-            : 1;
+            ? -18
+            : -30;
+  const upside = clampScore((ceiling - 82) * 1.8 + priceLeverage);
+  let rating = 1;
+  if (!Number.isFinite(price) || price <= 0) {
+    rating = upside >= 80 ? 3 : upside >= 58 ? 2 : 1;
+  } else if (price <= 20) {
+    rating = upside >= 72 ? 5 : upside >= 54 ? 4 : upside >= 36 ? 3 : upside >= 22 ? 2 : 1;
+  } else if (price <= 60) {
+    rating = upside >= 90 ? 5 : upside >= 66 ? 4 : upside >= 44 ? 3 : upside >= 28 ? 2 : 1;
+  } else if (price <= 150) {
+    rating = upside >= 84 ? 4 : upside >= 58 ? 3 : upside >= 36 ? 2 : 1;
+  } else if (price <= 300) {
+    rating = upside >= 76 ? 2 : 1;
+  } else {
+    rating = upside >= 90 ? 2 : 1;
+  }
   return "★".repeat(rating);
 }
 
