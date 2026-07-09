@@ -603,7 +603,7 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
         SELECT pre.*
         FROM emerging_prescore_snapshots pre
         JOIN (
-          SELECT player_id, card_target_id, board_type, MAX(snapshot_date) AS snapshot_date
+          SELECT player_id, card_target_id, MAX(snapshot_date) AS snapshot_date
           FROM emerging_prescore_snapshots
           GROUP BY player_id, card_target_id
         ) latest ON latest.player_id = pre.player_id
@@ -625,7 +625,7 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
         SELECT rec.*
         FROM recommendation_snapshots rec
         JOIN (
-          SELECT player_id, card_target_id, MAX(snapshot_date) AS snapshot_date
+          SELECT player_id, card_target_id, board_type, MAX(snapshot_date) AS snapshot_date
           FROM recommendation_snapshots
           WHERE board_type = 'emerging'
           GROUP BY player_id, card_target_id, board_type
@@ -673,8 +673,8 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
           NULL AS market_avg_price_90d,
           NULL AS market_last_sold_price,
           NULL AS market_liquidity,
-          NULL AS market_trend,
-          NULL AS market_signal
+          CASE WHEN raw_packet_json LIKE '%"trend":"Down"%' THEN 'Down' ELSE NULL END AS market_trend,
+          CASE WHEN raw_packet_json LIKE '%"trend":"Down"%' THEN 'Down' ELSE NULL END AS market_signal
         FROM player_insight_snapshots
         WHERE is_current = 1
           AND board_type IN ('top100', 'emerging')
@@ -753,6 +753,9 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
             OR COALESCE(m.avg_price_90d, 0) > 0
           )
           AND COALESCE(rec.recommendation, '') NOT IN ('Avoid Chase', 'No Liquidity')
+          AND LOWER(COALESCE(m.market_signal, '')) NOT LIKE '%down%'
+          AND LOWER(COALESCE(m.market_signal, '')) NOT LIKE '%cooling%'
+          AND LOWER(COALESCE(m.market_signal, '')) NOT LIKE '%avoid%'
       ),
       ranked AS (
         SELECT candidate_rows.*,
@@ -765,9 +768,13 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
       SELECT *
       FROM ranked
       WHERE player_row = 1
+        AND move_score >= ?
+        AND LOWER(COALESCE(market_signal, '')) NOT LIKE '%down%'
+        AND LOWER(COALESCE(market_signal, '')) NOT LIKE '%cooling%'
+        AND LOWER(COALESCE(market_signal, '')) NOT LIKE '%avoid%'
       ORDER BY move_score DESC, callup_score DESC, created_at DESC
       LIMIT ?
-    `).bind(ON_DECK_MIN_SCORE, ON_DECK_MIN_SCORE, limit).all();
+    `).bind(ON_DECK_MIN_SCORE, ON_DECK_MIN_SCORE, ON_DECK_MIN_SCORE, limit).all();
     const items = (rows.results || []).map(onDeckCandidateRowToApi);
     return {
       items,

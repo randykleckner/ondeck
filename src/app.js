@@ -347,7 +347,7 @@ function normalizeOnDeckApiRow(row) {
     market_signal: row.final_action ?? row.action ?? row.marketRead ?? "",
     market_status: row.market_status ?? row.marketStatus ?? row.market_read ?? "",
     source_board: row.source_board ?? row.sourceBoard ?? row.board_type ?? "top100",
-    source_badge: row.source_badge ?? row.sourceBadge ?? sourceBadge(row),
+    source_badge: row.source_badge ?? row.sourceBadge ?? "",
     context: row.context ?? [row.organization ?? row.org ?? row.team, row.position, row.level].filter(Boolean).join(" · "),
     final_action: row.final_action ?? row.action ?? "",
     recommendation: row.final_action ?? row.action ?? "",
@@ -1152,12 +1152,10 @@ function callupCardMarkup(player) {
   const rank = top10Rank(player);
   const moveScore = boardMoveScore(player);
   const marketRead = boardMarketRead(player);
-  const badge = sourceBadge(player);
   return `
       <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}" data-profile-type="${escapeHtml(profileTypeForSource(player))}">
         <div>
           <span class="market-label">#${escapeHtml(rank)} · ${escapeHtml(playerTypeBadge(player))}</span>
-          <span class="source-badge ${sourceBadgeClass(badge)}">${escapeHtml(badge)}</span>
           <h3>${escapeHtml(player.player_name)}</h3>
           <p>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))} · MLB ETA ${escapeHtml(player.eta ?? "-")}</p>
         </div>
@@ -1181,26 +1179,9 @@ function boardMoveScore(player) {
   return Number.isFinite(numeric) ? String(Math.round(numeric)) : "-";
 }
 
-function sourceBadge(player) {
-  const loaded = fieldValue(player, ["source_badge", "sourceBadge"], "");
-  if (loaded) return loaded;
-  const board = String(fieldValue(player, ["source_board", "sourceBoard", "board_type"], "")).toLowerCase();
-  if (board.includes("top100") || board.includes("top_100")) return "Top 100";
-  if (board.includes("emerging")) return "Emerging";
-  return "Watchlist";
-}
-
-function sourceBadgeClass(value) {
-  const text = String(value || "").toLowerCase();
-  if (text.includes("top")) return "top100";
-  if (text.includes("emerging")) return "emerging";
-  return "watchlist";
-}
-
 function profileTypeForSource(player) {
   const board = String(fieldValue(player, ["source_board", "sourceBoard", "board_type"], "")).toLowerCase();
-  const badge = String(sourceBadge(player)).toLowerCase();
-  return board.includes("emerging") || board.includes("watch") || badge.includes("emerging") || badge.includes("watch")
+  return board.includes("emerging") || board.includes("watch")
     ? "emerging"
     : "on-deck";
 }
@@ -1306,7 +1287,7 @@ function buildOrgExposure() {
 function renderRows(rows) {
   if (!elements.rows) return;
   if (!rows.length) {
-    elements.rows.innerHTML = `<tr><td colspan="7" class="muted">No approved On Deck players found.</td></tr>`;
+    elements.rows.innerHTML = `<tr><td colspan="6" class="muted">No approved On Deck players found.</td></tr>`;
     return;
   }
 
@@ -1323,7 +1304,6 @@ function renderRows(rows) {
             </span>
           </td>
           <td>${escapeHtml(player.org ?? "-")}</td>
-          <td><span class="source-badge ${sourceBadgeClass(sourceBadge(player))}">${escapeHtml(sourceBadge(player))}</span></td>
           <td><span class="score-pill ${scoreClass(boardMoveScore(player))}">${escapeHtml(boardMoveScore(player))}</span></td>
           <td><span class="market-status ${marketToneClass(boardMarketRead(player))}">${escapeHtml(boardMarketRead(player))}</span></td>
           <td>${escapeHtml(boardBuyZone(player))}</td>
