@@ -310,7 +310,7 @@ async function loadTop100Prospects() {
 
 async function loadDynamicOnDeckBoard() {
   try {
-    const response = await fetch("/api/on-deck", { headers: { Accept: "application/json" } });
+    const response = await fetch("/api/on-deck?limit=50", { headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error(`On Deck API unavailable (${response.status})`);
     const data = await response.json();
     const items = Array.isArray(data.items) ? data.items : Array.isArray(data.players) ? data.players : [];
@@ -626,13 +626,17 @@ function getTop100Rows() {
 
 function onDeckPlayers() {
   if (state.dynamicOnDeckRows.length) {
-    return state.dynamicOnDeckRows.map((row) => {
-      const scored = state.allScored.find((player) => String(player.player_id) === String(row.player_id));
-      return scored ? { ...scored, ...row } : row;
-    });
+    return state.dynamicOnDeckRows
+      .map((row) => {
+        const scored = state.allScored.find((player) => String(player.player_id) === String(row.player_id));
+        return scored ? { ...scored, ...row } : row;
+      })
+      .filter(isActionableOnDeckTarget)
+      .slice(0, 10);
   }
   return state.scored
     .slice()
+    .filter(isActionableOnDeckTarget)
     .sort((a, b) => b.callup_score - a.callup_score || b.opportunity_score - a.opportunity_score || Number(a.prospect_rank) - Number(b.prospect_rank))
     .slice(0, 10);
 }
@@ -1111,28 +1115,33 @@ function renderMarketBoard() {
 
 function summaryInsightCards(players) {
   const priced = players
-    .map((player) => ({ player, price: currentCardPrice(player), target: targetEntryPrice(player), score: Number(boardMoveScore(player)) }))
+    .map((player) => ({ player, price: currentCardPrice(player), target: targetEntryPrice(player), score: Number(boardMoveScore(player)), liquidity: liquidityScore(player) }))
     .filter((item) => Number.isFinite(item.price) && item.price > 0);
   const bestValue = priced
     .slice()
-    .sort((a, b) => (b.score / b.price) - (a.score / a.price))[0];
+    .sort((a, b) => opportunityValueScore(b) - opportunityValueScore(a))[0];
   const cheapest = priced
     .slice()
     .sort((a, b) => a.price - b.price || b.score - a.score)[0];
   const biggestMover = players
     .map((player) => ({ player, movement: boardMovementValue(player), score: Number(boardMoveScore(player)) }))
     .sort((a, b) => b.movement - a.movement || b.score - a.score)[0];
-  const warning = players
-    .map((player) => ({ player, score: Number(boardMoveScore(player)), entry: entryLabel(player), market: boardMarketRead(player) }))
-    .filter((item) => item.score >= 80 && /wait|watch only|no bid|need comps/i.test(item.entry))
-    .sort((a, b) => b.score - a.score)[0];
+  const highestCeiling = players
+    .slice()
+    .sort((a, b) => ceilingScore(b) - ceilingScore(a))[0];
+  const bestUnder20 = priced
+    .filter((item) => item.price < 20)
+    .sort((a, b) => b.score - a.score || opportunityValueScore(b) - opportunityValueScore(a))[0];
+  const closestCatalyst = players
+    .slice()
+    .sort((a, b) => catalystScore(b) - catalystScore(a) || Number(boardMoveScore(b)) - Number(boardMoveScore(a)))[0];
 
   return [
     bestValue && {
       label: "Best Value",
       player: bestValue.player,
-      value: `${currency(bestValue.price)} card`,
-      note: `${boardMoveScore(bestValue.player)} score against the current comp.`,
+      value: entryLabel(bestValue.player),
+      note: `${boardMoveScore(bestValue.player)} score with discount and liquidity working together.`,
     },
     cheapest && {
       label: "Cheapest Target",
@@ -1146,13 +1155,67 @@ function summaryInsightCards(players) {
       value: biggestMover.movement > 0 ? `+${Math.round(biggestMover.movement)}` : boardMoveScore(biggestMover.player),
       note: biggestMover.movement > 0 ? "Largest movement signal since the last update." : "Highest movement score without a rank delta.",
     },
-    warning && {
-      label: "Market Warning",
-      player: warning.player,
-      value: warning.entry,
-      note: `${boardMoveScore(warning.player)} score, but price or liquidity says wait.`,
+    highestCeiling && {
+      label: "Highest Ceiling",
+      player: highestCeiling,
+      value: boardMoveScore(highestCeiling),
+      note: "Best upside blend of age, level, rank momentum, and hobby demand.",
+    },
+    bestUnder20 && {
+      label: "Best Under $20",
+      player: bestUnder20.player,
+      value: currency(bestUnder20.price),
+      note: "Highest-score actionable Bowman auto below $20.",
+    },
+    closestCatalyst && {
+      label: "Closest Catalyst",
+      player: closestCatalyst,
+      value: onDeckCatalyst(closestCatalyst),
+      note: "Nearest likely promotion, ranking, call-up, or news trigger.",
     },
   ].filter(Boolean);
+}
+
+function opportunityValueScore(item) {
+  const discount = Number.isFinite(item.target) && item.price > 0 ? Math.max(0, (item.target - item.price) / item.price) : 0;
+  return item.score * 0.62 + Math.min(30, discount * 100) * 0.23 + item.liquidity * 0.15;
+}
+
+function liquidityScore(player) {
+  const sales30 = numericField(player, ["market_sales_count_30d", "sales_count_30d", "salesCount30d", "sales_30"]);
+  const sales90 = numericField(player, ["market_sales_count_90d", "sales_count_90d", "salesCount90d", "sales_90"]);
+  if (Number.isFinite(sales30) && sales30 >= 25) return 95;
+  if (Number.isFinite(sales30) && sales30 >= 12) return 85;
+  if (Number.isFinite(sales30) && sales30 >= 5) return 72;
+  if (Number.isFinite(sales90) && sales90 >= 30) return 68;
+  if (Number.isFinite(sales90) && sales90 >= 12) return 58;
+  return 35;
+}
+
+function ceilingScore(player) {
+  const score = Number(boardMoveScore(player));
+  const age = Number(player.age);
+  const level = String(player.level || "").toUpperCase();
+  const rank = Number(fieldValue(player, ["prospect_rank", "rank"], ""));
+  const movement = boardMovementValue(player);
+  const levelBoost = level === "AAA" ? 12 : level === "AA" ? 14 : level === "A+" ? 10 : level === "A" ? 8 : 5;
+  const ageBoost = Number.isFinite(age) ? Math.max(0, 24 - age) * 3 : 6;
+  const rankBoost = Number.isFinite(rank) && rank > 0 ? Math.max(0, 105 - rank) / 4 : 8;
+  const movementBoost = Math.max(0, movement) * 1.2;
+  return (Number.isFinite(score) ? score : 0) + levelBoost + ageBoost + rankBoost + movementBoost;
+}
+
+function catalystScore(player) {
+  const level = String(player.level || "").toUpperCase();
+  const catalyst = onDeckCatalyst(player).toLowerCase();
+  let score = 0;
+  if (level === "AAA" || catalyst.includes("mlb")) score += 40;
+  else if (level === "AA" || catalyst.includes("triple-a")) score += 30;
+  else if (level === "A+" || level === "A") score += 18;
+  if (boardMovementValue(player) > 0) score += 12;
+  if (Number(player.callup_score) >= 65) score += 10;
+  if (Number(player.opportunity_score) >= 85 || Number(player.move_score) >= 85) score += 8;
+  return score;
 }
 
 function summaryInsightCardMarkup(card) {
@@ -2522,20 +2585,21 @@ function entryLabel(player) {
   if (lowPriceConfidence(player)) return "Watch only";
   const target = targetEntryPrice(player);
   if (!Number.isFinite(target)) return "Need comps";
-  return current <= target ? `<${currency(target)}` : `Wait <${currency(target)}`;
+  if (current > target) return `Wait <${currency(target)}`;
+  return `${entryActionVerb(player)} <${currency(target)}`;
 }
 
 function currentCardPrice(player) {
   return positiveMoneyField(player, [
+    "market_last_sold_price",
+    "last_sold_price",
+    "lastSoldPrice",
+    "last_sale",
     "market_avg_price_30d",
     "avg_sold_price_30d",
     "avgSoldPrice30d",
     "avg_30",
     "thirty_day_avg",
-    "market_last_sold_price",
-    "last_sold_price",
-    "lastSoldPrice",
-    "last_sale",
     "market_avg_price_90d",
     "avg_sold_price_90d",
     "avgSoldPrice90d",
@@ -2560,13 +2624,70 @@ function targetEntryPrice(player) {
   return current * 0.94;
 }
 
+function entryActionVerb(player) {
+  const score = Number(boardMoveScore(player));
+  const price = currentCardPrice(player);
+  const market = boardMarketRead(player).toLowerCase();
+  const action = boardBuyZone(player).toLowerCase();
+  const movement = boardMovementValue(player);
+  if (Number.isFinite(price) && price < 20) return "Auction Target";
+  if (action.includes("strong") || score >= 90) return "Buy";
+  if (movement > 0 || market.includes("up")) return "Accumulate";
+  if (market.includes("stable")) return "Target";
+  return "Buy Dips";
+}
+
 function lowPriceConfidence(player) {
   const market = boardMarketRead(player).toLowerCase();
   if (market.includes("thin") || market.includes("no liquidity")) return true;
   const sales30 = numericField(player, ["market_sales_count_30d", "sales_count_30d", "salesCount30d", "sales_30"]);
   const sales90 = numericField(player, ["market_sales_count_90d", "sales_count_90d", "salesCount90d", "sales_90"]);
+  const sellThrough30 = numericField(player, ["market_sell_through_30d", "sell_through_30d", "sellThrough30d", "sell_thru_rate_30d"]);
+  const sellThrough90 = numericField(player, ["market_sell_through_90d", "sell_through_90d", "sellThrough90d", "sell_thru_rate_90d"]);
+  if (Number.isFinite(sellThrough30) && sellThrough30 > 0 && sellThrough30 < 15) return true;
+  if (Number.isFinite(sellThrough90) && sellThrough90 > 0 && sellThrough90 < 20) return true;
   if (Number.isFinite(sales30) && sales30 >= 3) return false;
   if (Number.isFinite(sales90) && sales90 >= 8) return false;
+  if (Number.isFinite(sellThrough30) && sellThrough30 >= 30) return false;
+  if (Number.isFinite(sellThrough90) && sellThrough90 >= 35) return false;
+  return true;
+}
+
+function hasValidBowmanAutoMarket(player) {
+  const code = fieldValue(player, ["card_code", "benchmarkCardCode", "benchmark_card_code"], "");
+  const cardName = fieldValue(player, ["card_name", "canonicalQuery", "card_query"], "");
+  const hasCard = code || /bowman|chrome|auto/i.test(cardName);
+  return Boolean(hasCard) && Number.isFinite(currentCardPrice(player));
+}
+
+function hasPositiveBaseballSignal(player) {
+  const score = Number(boardMoveScore(player));
+  const movement = boardMovementValue(player);
+  const ops = Number(player.hitter_ops || player.ops);
+  const recentOps = Number(player.last_14_ops || player.last_30_ops || player.recent_ops);
+  const era = Number(player.pitcher_era || player.era);
+  const kMinusBb = Number(player.pitcher_k_minus_bb_pct || player.k_minus_bb_pct);
+  const level = String(player.level || "").toUpperCase();
+  if (Number.isFinite(score) && score >= 82) return true;
+  if (movement > 0) return true;
+  if (Number.isFinite(ops) && ops >= 0.82) return true;
+  if (Number.isFinite(recentOps) && recentOps >= 0.86) return true;
+  if (Number.isFinite(era) && era <= 3.75) return true;
+  if (Number.isFinite(kMinusBb) && kMinusBb >= 18) return true;
+  return level === "AAA" && Number(player.callup_score) >= 65;
+}
+
+function isActionableOnDeckTarget(player) {
+  if (!hasValidBowmanAutoMarket(player)) return false;
+  if (lowPriceConfidence(player)) return false;
+  if (!hasPositiveBaseballSignal(player)) return false;
+  const score = Number(boardMoveScore(player));
+  if (!Number.isFinite(score) || score < 80) return false;
+  const entry = entryLabel(player).toLowerCase();
+  const thesis = onDeckQuickThesis(player).toLowerCase();
+  if (!/^(buy|target|accumulate|auction target|buy dips)\s+</i.test(entryLabel(player))) return false;
+  if (/(wait|research|need comps|too hot|watch only)/i.test(entry)) return false;
+  if (/(market warning|illiquid risk|fully valued|cooling|no comps)/i.test(thesis)) return false;
   return true;
 }
 
