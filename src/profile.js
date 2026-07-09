@@ -256,6 +256,8 @@ function normalizeScore(row, boardType) {
       ? firstValue(row.opportunity_score, rankPlaceholderScore(row), "")
       : firstValue(row.opportunity_score, row.move_score, row.callup_score, "");
   const opportunityScore = numberLabel(rawScore);
+  const investmentScore = profileInvestmentScore(row, rawScore);
+  const moonshot = profileMoonshotRating(row, rawScore);
   let action = cleanValue(firstValue(row.final_action, row.action, row.recommendation, row.market_action, ""));
   if (!action) {
     if (boardType === "emerging") action = hasValidSoldData(row) ? getMarketStatus(row) : "Market Review Pending";
@@ -268,9 +270,42 @@ function normalizeScore(row, boardType) {
   else status = "Needs Market";
   return {
     opportunityScore,
+    investmentScore,
+    moonshot,
     action: cleanValue(action || "Pending"),
     status: cleanValue(status),
   };
+}
+
+function profileInvestmentScore(row, rawMoveScore) {
+  const direct = firstValue(row.investment_score, row.market_opportunity_score, row.marketOpportunityScore, row.on_deck_opportunity_score, "");
+  if (direct !== "") return numberLabel(direct);
+  const move = Number(rawMoveScore);
+  const sales30 = Number(firstValue(row.sales_30, row.salesCount30d, row.sales_count_30d, row.market_sales_count_30d, ""));
+  const sales90 = Number(firstValue(row.sales_90, row.salesCount90d, row.sales_count_90d, row.market_sales_count_90d, ""));
+  const avg30 = numericMoney(firstValue(row.avg_30, row.avgSoldPrice30d, row.avg_sold_price_30d, row.market_avg_price_30d, ""));
+  const avg90 = numericMoney(firstValue(row.avg_90, row.avgSoldPrice90d, row.avg_sold_price_90d, row.market_avg_price_90d, ""));
+  const volume = Math.min(100, Math.max(Number.isFinite(sales30) ? sales30 * 4 : 0, Number.isFinite(sales90) ? sales90 * 1.3 : 0));
+  const priceDiscipline = Number.isFinite(avg30) && Number.isFinite(avg90) && avg90 > 0
+    ? clampScore(72 - Math.max(0, ((avg30 - avg90) / avg90) * 100 - 18))
+    : 58;
+  const score = (Number.isFinite(move) ? move : 50) * 0.48 + volume * 0.32 + priceDiscipline * 0.20;
+  return numberLabel(clampScore(score));
+}
+
+function profileMoonshotRating(row, rawMoveScore) {
+  const direct = Number(firstValue(row.moonshot_rating, row.moonshot, ""));
+  if (Number.isFinite(direct) && direct > 0) return `${"★".repeat(Math.min(5, Math.round(direct)))}${"☆".repeat(Math.max(0, 5 - Math.round(direct)))}`;
+  const move = Number(rawMoveScore);
+  const age = Number(firstValue(row.age, ""));
+  const rank = Number(firstValue(row.prospect_rank, row.rank, ""));
+  const level = String(firstValue(row.level, row.current_level, "")).toUpperCase();
+  const levelBoost = { AAA: 12, AA: 14, "A+": 10, A: 8, ROK: 7, RK: 7 }[level] || 5;
+  const ageBoost = Number.isFinite(age) ? Math.max(0, 24 - age) * 3 : 6;
+  const rankBoost = Number.isFinite(rank) && rank > 0 ? Math.max(0, 105 - rank) / 4 : 8;
+  const ceiling = (Number.isFinite(move) ? move : 50) + levelBoost + ageBoost + rankBoost;
+  const rating = ceiling >= 125 ? 5 : ceiling >= 110 ? 4 : ceiling >= 95 ? 3 : ceiling >= 80 ? 2 : 1;
+  return `${"★".repeat(rating)}${"☆".repeat(5 - rating)}`;
 }
 
 function rankPlaceholderScore(row) {
@@ -344,7 +379,9 @@ function bioSegments(profile) {
     ["Throws", handedness(player.throws)],
     ["ETA", player.eta],
     ["Rank", player.rank ? `#${player.rank}` : ""],
-    ["Opportunity Score", profile.score.opportunityScore],
+    ["Move Score", profile.score.opportunityScore],
+    ["Investment Score", profile.score.investmentScore],
+    ["Moonshot", profile.score.moonshot],
   ].filter(([, value]) => value !== "" && value != null);
 }
 
@@ -726,7 +763,9 @@ function movementDetailRows(row, player, score) {
     ["Previous Rank", row.previous_rank ? `#${row.previous_rank}` : "Pending"],
     ["Trend", rankTrendText(row)],
     ["Next Catalyst", firstValue(row.next_trigger, onDeckCatalyst(row))],
-    ["Opportunity Score", score.opportunityScore || "Pending"],
+    ["Move Score", score.opportunityScore || "Pending"],
+    ["Investment Score", score.investmentScore || "Pending"],
+    ["Moonshot", score.moonshot || "Pending"],
     ["Status", score.status],
     ["Action", score.action],
     ["Confidence", row.confidence || "Pending"],
@@ -934,6 +973,10 @@ function currency(value) {
 function numericMoney(value) {
   const numeric = Number(String(value ?? "").replaceAll(/[^0-9.-]/g, ""));
   return Number.isFinite(numeric) ? numeric : NaN;
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Number(value) || 0));
 }
 
 function sellThroughValue(player, days = 30) {

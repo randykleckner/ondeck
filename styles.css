@@ -971,10 +971,10 @@ input[type="range"] {
 
 .market-card {
   display: grid;
-  gap: 13px;
-  flex: 0 0 clamp(260px, 24vw, 340px);
+  gap: 9px;
+  flex: 0 0 clamp(230px, 20vw, 286px);
   scroll-snap-align: start;
-  padding: 15px;
+  padding: 12px 13px;
   color: var(--ink);
   cursor: pointer;
   text-align: left;
@@ -993,13 +993,13 @@ input[type="range"] {
 
 .market-card h3 {
   margin: 4px 0 2px;
-  font-size: 1.08rem;
+  font-size: 0.98rem;
 }
 
 .market-card p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   line-height: 1.35;
 }
 
@@ -1015,7 +1015,7 @@ input[type="range"] {
 
 .market-price strong {
   display: block;
-  font-size: 2rem;
+  font-size: 1.65rem;
   line-height: 1;
   background: linear-gradient(90deg, var(--cyan), var(--violet));
   -webkit-background-clip: text;
@@ -1024,7 +1024,7 @@ input[type="range"] {
 }
 
 .insight-card .market-price strong {
-  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
 }
 
 .insight-card .market-price span {
@@ -2278,7 +2278,7 @@ body[data-view="graduated"] #graduated {
 }
 
 .on-deck-table {
-  min-width: 760px;
+  min-width: 880px;
 }
 
 .diagnostics-panel {
@@ -2392,6 +2392,20 @@ tbody tr {
 .score-low {
   color: white;
   background: linear-gradient(90deg, #97314b, var(--red));
+}
+
+.moonshot-stars {
+  color: var(--yellow);
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.ebay-button {
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
 }
 
 .legend {

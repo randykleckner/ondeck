@@ -386,7 +386,7 @@ function setBoardLoadingStatus(message) {
   if (elements.rowCount) elements.rowCount.textContent = message;
   if (elements.top100RowCount) elements.top100RowCount.textContent = message;
   if (elements.marketBoard) elements.marketBoard.innerHTML = `<p class="muted">${escapeHtml(message)}</p>`;
-  if (elements.rows) elements.rows.innerHTML = `<tr><td colspan="5" class="muted">${escapeHtml(message)}</td></tr>`;
+  if (elements.rows) elements.rows.innerHTML = `<tr><td colspan="6" class="muted">${escapeHtml(message)}</td></tr>`;
   if (elements.top100Rows) elements.top100Rows.innerHTML = `<tr><td colspan="6" class="muted">${escapeHtml(message)}</td></tr>`;
 }
 
@@ -625,20 +625,19 @@ function getTop100Rows() {
 }
 
 function onDeckPlayers() {
+  const sortBoard = (players) => players
+    .filter(isActionableOnDeckTarget)
+    .sort(onDeckInvestmentSort)
+    .slice(0, 10);
+
   if (state.dynamicOnDeckRows.length) {
-    return state.dynamicOnDeckRows
+    return sortBoard(state.dynamicOnDeckRows
       .map((row) => {
         const scored = state.allScored.find((player) => String(player.player_id) === String(row.player_id));
         return scored ? { ...scored, ...row } : row;
-      })
-      .filter(isActionableOnDeckTarget)
-      .slice(0, 10);
+      }));
   }
-  return state.scored
-    .slice()
-    .filter(isActionableOnDeckTarget)
-    .sort((a, b) => b.callup_score - a.callup_score || b.opportunity_score - a.opportunity_score || Number(a.prospect_rank) - Number(b.prospect_rank))
-    .slice(0, 10);
+  return sortBoard(state.scored.slice());
 }
 
 function isOnDeckBoardPlayer(player) {
@@ -1115,70 +1114,68 @@ function renderMarketBoard() {
 
 function summaryInsightCards(players) {
   const priced = players
-    .map((player) => ({ player, price: currentCardPrice(player), target: targetEntryPrice(player), score: Number(boardMoveScore(player)), liquidity: liquidityScore(player) }))
+    .map((player) => ({
+      player,
+      price: currentCardPrice(player),
+      investment: investmentScore(player),
+      move: Number(boardMoveScore(player)),
+      moonshot: moonshotRating(player),
+      confidence: cardMarketConfidence(player),
+    }))
     .filter((item) => Number.isFinite(item.price) && item.price > 0);
   const bestValue = priced
     .slice()
-    .sort((a, b) => opportunityValueScore(b) - opportunityValueScore(a))[0];
+    .sort((a, b) => opportunityValueScore(b) - opportunityValueScore(a) || b.investment - a.investment)[0];
   const cheapest = priced
     .slice()
-    .sort((a, b) => a.price - b.price || b.score - a.score)[0];
+    .sort((a, b) => a.price - b.price || b.investment - a.investment)[0];
   const biggestMover = players
-    .map((player) => ({ player, movement: boardMovementValue(player), score: Number(boardMoveScore(player)) }))
-    .sort((a, b) => b.movement - a.movement || b.score - a.score)[0];
+    .map((player) => ({ player, movement: investmentMovementValue(player), investment: investmentScore(player) }))
+    .sort((a, b) => b.movement - a.movement || b.investment - a.investment)[0];
   const highestCeiling = players
     .slice()
     .sort((a, b) => ceilingScore(b) - ceilingScore(a))[0];
-  const bestUnder20 = priced
-    .filter((item) => item.price < 20)
-    .sort((a, b) => b.score - a.score || opportunityValueScore(b) - opportunityValueScore(a))[0];
-  const closestCatalyst = players
-    .slice()
-    .sort((a, b) => catalystScore(b) - catalystScore(a) || Number(boardMoveScore(b)) - Number(boardMoveScore(a)))[0];
+  const marketSleeping = priced
+    .filter((item) => item.price <= 25)
+    .sort((a, b) => b.investment - a.investment || b.moonshot - a.moonshot)[0];
 
   return [
+    biggestMover && {
+      label: "Biggest Mover",
+      player: biggestMover.player,
+      value: biggestMover.movement > 0 ? `+${Math.round(biggestMover.movement)}` : investmentScore(biggestMover.player),
+      note: "Largest jump in Investment Score this week.",
+    },
     bestValue && {
       label: "Best Value",
       player: bestValue.player,
       value: currency(bestValue.price),
-      note: `${boardMoveScore(bestValue.player)} score with price and volume working together.`,
+      note: "Strongest Investment Score relative to card price.",
+    },
+    highestCeiling && {
+      label: "Moonshot",
+      player: highestCeiling,
+      value: moonshotStars(highestCeiling),
+      note: "Highest ceiling card profile on the board.",
+    },
+    marketSleeping && {
+      label: "Market Sleeping",
+      player: marketSleeping.player,
+      value: currency(marketSleeping.price),
+      note: "Strong score while card price remains low.",
     },
     cheapest && {
       label: "Cheapest Target",
       player: cheapest.player,
       value: currency(cheapest.price),
-      note: `Lowest current Bowman auto price on the board.`,
-    },
-    biggestMover && {
-      label: "Biggest Mover",
-      player: biggestMover.player,
-      value: biggestMover.movement > 0 ? `+${Math.round(biggestMover.movement)}` : boardMoveScore(biggestMover.player),
-      note: biggestMover.movement > 0 ? "Largest movement signal since the last update." : "Highest movement score without a rank delta.",
-    },
-    highestCeiling && {
-      label: "Highest Ceiling",
-      player: highestCeiling,
-      value: boardMoveScore(highestCeiling),
-      note: "Best upside blend of age, level, rank momentum, and hobby demand.",
-    },
-    bestUnder20 && {
-      label: "Best Under $20",
-      player: bestUnder20.player,
-      value: currency(bestUnder20.price),
-      note: "Highest-score actionable Bowman auto below $20.",
-    },
-    closestCatalyst && {
-      label: "Closest Catalyst",
-      player: closestCatalyst,
-      value: onDeckCatalyst(closestCatalyst),
-      note: "Nearest likely promotion, ranking, call-up, or news trigger.",
+      note: "Lowest-priced card among qualified On Deck players.",
     },
   ].filter(Boolean);
 }
 
 function opportunityValueScore(item) {
-  const discount = Number.isFinite(item.target) && item.price > 0 ? Math.max(0, (item.target - item.price) / item.price) : 0;
-  return item.score * 0.62 + Math.min(30, discount * 100) * 0.23 + item.liquidity * 0.15;
+  const priceEfficiency = item.price > 0 ? Math.min(35, item.investment / Math.sqrt(item.price)) : 0;
+  return item.investment * 0.58 + priceEfficiency * 0.27 + item.confidence * 0.15;
 }
 
 function liquidityScore(player) {
@@ -1335,6 +1332,132 @@ function boardMoveScore(player) {
   return Number.isFinite(numeric) ? String(Math.round(numeric)) : "-";
 }
 
+function investmentScore(player) {
+  const direct = numericField(player, [
+    "investment_score",
+    "market_opportunity_score",
+    "marketOpportunityScore",
+    "on_deck_opportunity_score",
+  ]);
+  if (Number.isFinite(direct) && direct > 0) return Math.round(clampScore(direct));
+
+  const move = Number(boardMoveScore(player));
+  const moveSignal = Number.isFinite(move) ? move : 50;
+  const market = cardMarketConfidence(player);
+  const discipline = priceDisciplineScore(player);
+  const catalyst = catalystScore(player);
+  const ceiling = Math.min(100, ceilingScore(player) * 0.78);
+  const performance = performanceTrendScore(player);
+  return Math.round(clampScore(
+    moveSignal * 0.28
+    + market * 0.24
+    + ceiling * 0.18
+    + performance * 0.14
+    + catalyst * 0.10
+    + discipline * 0.06,
+  ));
+}
+
+function onDeckInvestmentSort(a, b) {
+  return investmentScore(b) - investmentScore(a)
+    || moonshotRating(b) - moonshotRating(a)
+    || Number(boardMoveScore(b)) - Number(boardMoveScore(a))
+    || cardMarketConfidence(b) - cardMarketConfidence(a)
+    || String(a.player_name || "").localeCompare(String(b.player_name || ""));
+}
+
+function moonshotRating(player) {
+  const score = ceilingScore(player);
+  if (score >= 125) return 5;
+  if (score >= 110) return 4;
+  if (score >= 95) return 3;
+  if (score >= 80) return 2;
+  return 1;
+}
+
+function moonshotStars(player) {
+  const rating = moonshotRating(player);
+  return `${"★".repeat(rating)}${"☆".repeat(5 - rating)}`;
+}
+
+function cardMarketConfidence(player) {
+  const sales30 = numericField(player, ["market_sales_count_30d", "sales_count_30d", "salesCount30d", "sales_30"]);
+  const sales90 = numericField(player, ["market_sales_count_90d", "sales_count_90d", "salesCount90d", "sales_90"]);
+  const sellThrough30 = numericField(player, ["market_sell_through_30d", "sell_through_30d", "sellThrough30d", "sell_thru_rate_30d"]);
+  const sellThrough90 = numericField(player, ["market_sell_through_90d", "sell_through_90d", "sellThrough90d", "sell_thru_rate_90d"]);
+  const volume = Math.min(100, Math.max(
+    Number.isFinite(sales30) ? sales30 * 4 : 0,
+    Number.isFinite(sales90) ? sales90 * 1.3 : 0,
+  ));
+  const sellThrough = Math.max(
+    Number.isFinite(sellThrough30) ? sellThrough30 : 0,
+    Number.isFinite(sellThrough90) ? sellThrough90 : 0,
+  );
+  return Math.round(clampScore(liquidityScore(player) * 0.45 + volume * 0.35 + Math.min(100, sellThrough) * 0.20));
+}
+
+function priceDisciplineScore(player) {
+  const current = currentCardPrice(player);
+  const target = targetEntryPrice(player);
+  const avg30 = positiveMoneyField(player, ["market_avg_price_30d", "avg_sold_price_30d", "avgSoldPrice30d", "avg_30", "thirty_day_avg"]);
+  const avg90 = positiveMoneyField(player, ["market_avg_price_90d", "avg_sold_price_90d", "avgSoldPrice90d", "avg_90", "ninety_day_avg"]);
+  if (!Number.isFinite(current)) return 35;
+  let score = 68;
+  if (Number.isFinite(avg30) && Number.isFinite(avg90) && avg90 > 0) {
+    const trend = ((avg30 - avg90) / avg90) * 100;
+    if (trend > 55) score -= 28;
+    else if (trend > 25) score -= 12;
+    else if (trend >= -10 && trend <= 18) score += 12;
+    else if (trend < -25) score -= 8;
+  }
+  if (Number.isFinite(target) && target > 0) {
+    const premium = ((current - target) / target) * 100;
+    if (premium > 35) score -= 24;
+    else if (premium > 12) score -= 10;
+    else if (premium < -8) score += 10;
+  }
+  return clampScore(score);
+}
+
+function performanceTrendScore(player) {
+  const ops = Number(player.last_14_ops || player.last_30_ops || player.recent_ops || player.hitter_ops || player.ops);
+  const era = Number(player.last_30_era || player.recent_era || player.pitcher_era || player.era);
+  const kMinusBb = Number(player.pitcher_k_minus_bb_pct || player.k_minus_bb_pct);
+  if (Number.isFinite(ops)) return clampScore((ops - 0.62) * 185);
+  if (Number.isFinite(era)) return clampScore(105 - era * 16);
+  if (Number.isFinite(kMinusBb)) return clampScore(45 + kMinusBb * 1.8);
+  return Number(boardMoveScore(player)) || 50;
+}
+
+function investmentMovementValue(player) {
+  const direct = numericField(player, ["investment_score_delta", "market_opportunity_delta", "opportunity_score_delta"]);
+  if (Number.isFinite(direct)) return direct;
+  const current = investmentScore(player);
+  const previous = numericField(player, ["previous_investment_score", "previous_market_opportunity_score", "previous_on_deck_opportunity_score"]);
+  if (Number.isFinite(current) && Number.isFinite(previous)) return current - previous;
+  return boardMovementValue(player);
+}
+
+function ebaySearchUrl(player) {
+  const code = fieldValue(player, ["card_code", "benchmarkCardCode", "benchmark_card_code"], "");
+  const query = [
+    player.player_name,
+    isValidCardCode(code) ? code : "",
+    "Bowman Chrome 1st Auto",
+    "-paper",
+    "-digital",
+    "-break",
+    "-box",
+    "-case",
+    "-lot",
+  ].filter(Boolean).join(" ");
+  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}`;
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Number(value) || 0));
+}
+
 function profileTypeForSource(player) {
   const board = String(fieldValue(player, ["source_board", "sourceBoard", "board_type"], "")).toLowerCase();
   return board.includes("emerging") || board.includes("watch")
@@ -1453,7 +1576,7 @@ function buildOrgExposure() {
 function renderRows(rows) {
   if (!elements.rows) return;
   if (!rows.length) {
-    elements.rows.innerHTML = `<tr><td colspan="5" class="muted">No approved On Deck players found.</td></tr>`;
+    elements.rows.innerHTML = `<tr><td colspan="6" class="muted">No approved On Deck players found.</td></tr>`;
     return;
   }
 
@@ -1470,9 +1593,12 @@ function renderRows(rows) {
             </span>
           </td>
           <td><span class="score-pill ${scoreClass(boardMoveScore(player))}">${escapeHtml(boardMoveScore(player))}</span></td>
+          <td><span class="score-pill ${scoreClass(investmentScore(player))}">${escapeHtml(investmentScore(player))}</span></td>
+          <td><span class="moonshot-stars" aria-label="${escapeHtml(moonshotRating(player))} out of 5 moonshot rating">${escapeHtml(moonshotStars(player))}</span></td>
           <td>${escapeHtml(cardBaselineLabel(player))}</td>
-          <td>${escapeHtml(entryLabel(player))}</td>
-          <td>${escapeHtml(onDeckQuickThesis(player))}</td>
+          <td>
+            <a class="button ebay-button" href="${escapeHtml(ebaySearchUrl(player))}" target="_blank" rel="noreferrer" aria-label="Search eBay for ${escapeHtml(player.player_name)} Bowman Chrome 1st Auto">eBay</a>
+          </td>
         </tr>
       `;
     })
@@ -1481,6 +1607,7 @@ function renderRows(rows) {
   elements.rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
       event.stopPropagation();
+      if (event.target.closest("a")) return;
       const player = rows.find((candidate) => String(candidate.player_id) === String(row.dataset.playerId));
       openPlayerProfile(row.dataset.playerId, { type: profileTypeForSource(player || {}) });
     });
@@ -2661,8 +2788,13 @@ function lowPriceConfidence(player) {
 function hasValidBowmanAutoMarket(player) {
   const code = fieldValue(player, ["card_code", "benchmarkCardCode", "benchmark_card_code"], "");
   const cardName = fieldValue(player, ["card_name", "canonicalQuery", "card_query"], "");
-  const hasCard = code || /bowman|chrome|auto/i.test(cardName);
+  const hasCard = isValidCardCode(code) || /bowman|chrome|auto/i.test(cardName);
   return Boolean(hasCard) && Number.isFinite(currentCardPrice(player));
+}
+
+function isValidCardCode(value) {
+  const text = String(value || "").trim().toLowerCase();
+  return Boolean(text) && !["no card", "n/a", "na", "none", "pending"].includes(text);
 }
 
 function hasPositiveBaseballSignal(player) {
@@ -2688,11 +2820,13 @@ function isActionableOnDeckTarget(player) {
   if (!hasPositiveBaseballSignal(player)) return false;
   const score = Number(boardMoveScore(player));
   if (!Number.isFinite(score) || score < 80) return false;
-  const entry = actionableEntryLabel(player).toLowerCase();
-  const thesis = marketSetupLabel(player).toLowerCase();
-  if (!/^(buy|target|accumulate|auction target|buy dips)\s+</i.test(actionableEntryLabel(player))) return false;
-  if (/(wait|research|need comps|too hot|watch only)/i.test(entry)) return false;
-  if (/(market warning|illiquid risk|fully valued|cooling|no comps)/i.test(thesis)) return false;
+  if (investmentScore(player) < 72) return false;
+  if (moonshotRating(player) < 3) return false;
+  const market = boardMarketRead(player).toLowerCase();
+  const current = currentCardPrice(player);
+  const target = targetEntryPrice(player);
+  if (market.includes("no liquidity") || market.includes("avoid")) return false;
+  if (market.includes("cooling") && Number.isFinite(target) && Number.isFinite(current) && current > target * 1.18) return false;
   return true;
 }
 
