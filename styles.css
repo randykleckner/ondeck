@@ -991,6 +991,41 @@ input[type="range"] {
   font-weight: 950;
 }
 
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  min-height: 22px;
+  margin-top: 7px;
+  border: 1px solid rgba(151, 170, 255, 0.24);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #d8def6;
+  background: rgba(151, 170, 255, 0.1);
+  font-size: 0.68rem;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.source-badge.top100 {
+  border-color: rgba(82, 240, 255, 0.36);
+  color: var(--cyan);
+  background: rgba(82, 240, 255, 0.1);
+}
+
+.source-badge.emerging {
+  border-color: rgba(154, 255, 122, 0.34);
+  color: var(--green);
+  background: rgba(154, 255, 122, 0.1);
+}
+
+.source-badge.watchlist {
+  border-color: rgba(255, 197, 89, 0.34);
+  color: #ffc559;
+  background: rgba(255, 197, 89, 0.1);
+}
+
 .market-card h3 {
   margin: 4px 0 2px;
   font-size: 1.08rem;
@@ -2361,6 +2396,18 @@ tbody tr {
   width: 12px;
   height: 12px;
   border-radius: 999px;
+}
+
+.legend-dot.positive {
+  background: var(--green);
+}
+
+.legend-dot.caution {
+  background: var(--yellow);
+}
+
+.legend-dot.negative {
+  background: var(--red);
 }
 
 .player-card {

@@ -18,6 +18,8 @@ const state = {
   marketHistoryData: new Map(),
   marketHistoryRequests: new Set(),
   marketHistoryErrors: new Map(),
+  dynamicOnDeckRows: [],
+  onDeckSource: "csv-fallback",
   allScored: [],
   scored: [],
   calledUp: [],
@@ -299,10 +301,59 @@ async function loadTop100Prospects() {
     state.top100Filters.org = "all";
     refreshScoredData();
     loadCachedTop100MarketData();
+    loadDynamicOnDeckBoard();
   } catch (error) {
     console.error(error);
     renderBoardLoadError();
   }
+}
+
+async function loadDynamicOnDeckBoard() {
+  try {
+    const response = await fetch("/api/on-deck", { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`On Deck API unavailable (${response.status})`);
+    const data = await response.json();
+    const items = Array.isArray(data.items) ? data.items : Array.isArray(data.players) ? data.players : [];
+    if (data.source === "d1-insights" && items.length) {
+      state.dynamicOnDeckRows = items.map(normalizeOnDeckApiRow);
+      state.onDeckSource = "d1-insights";
+      console.info("OnDeck board source = d1-insights");
+    } else {
+      state.dynamicOnDeckRows = [];
+      state.onDeckSource = "csv-fallback";
+      console.info("OnDeck board source = csv-fallback");
+    }
+    render();
+  } catch (error) {
+    state.dynamicOnDeckRows = [];
+    state.onDeckSource = "csv-fallback";
+    console.info("OnDeck board source = csv-fallback", error?.message || error);
+    render();
+  }
+}
+
+function normalizeOnDeckApiRow(row) {
+  return {
+    ...row,
+    player_id: row.player_id ?? row.playerId ?? "",
+    player_name: row.player_name ?? row.playerName ?? "",
+    org: row.org ?? row.team ?? "",
+    position: row.position ?? "",
+    level: row.level ?? "",
+    prospect_rank: row.prospect_rank ?? row.rank ?? "",
+    opportunity_score: row.opportunity_score ?? row.opportunityScore ?? row.moveScore ?? "",
+    callup_score: row.callup_score ?? row.moveScore ?? row.opportunityScore ?? "",
+    card_code: row.card_code ?? row.benchmarkCardCode ?? "",
+    market_signal: row.final_action ?? row.action ?? row.marketRead ?? "",
+    market_status: row.market_status ?? row.marketStatus ?? row.market_read ?? "",
+    source_board: row.source_board ?? row.sourceBoard ?? row.board_type ?? "top100",
+    source_badge: row.source_badge ?? row.sourceBadge ?? sourceBadge(row),
+    context: row.context ?? [row.organization ?? row.org ?? row.team, row.position, row.level].filter(Boolean).join(" · "),
+    final_action: row.final_action ?? row.action ?? "",
+    recommendation: row.final_action ?? row.action ?? "",
+    confidence: row.confidence ?? "",
+    source_type: row.source_type || "d1-insights",
+  };
 }
 
 function setBoardLoadingStatus(message) {
@@ -528,26 +579,7 @@ function render() {
 
 function renderDashboardSummary() {
   if (!elements.dashboardSummary) return;
-  const tracked = onDeckPlayers().map(withLiveMarketData);
-  if (!state.prospects.length) {
-    elements.dashboardSummary.innerHTML = `<article><span>Status</span><strong>Loading board data...</strong></article>`;
-    return;
-  }
-  if (!tracked.length) {
-    elements.dashboardSummary.innerHTML = `<article><span>On Deck Board</span><strong>No On Deck players found</strong></article>`;
-    return;
-  }
-  const topScore = Math.max(...tracked.map((player) => Number(player.callup_score) || 0));
-  const avgScore = Math.round(tracked.reduce((sum, player) => sum + (Number(player.callup_score) || 0), 0) / tracked.length);
-  const marketReady = tracked.filter(hasMarketData).length;
-  const top100Count = state.allScored.filter((player) => isTop100Prospect(player) && !isGraduated(player)).length;
-  elements.dashboardSummary.innerHTML = `
-    <article><span>Current On Deck</span><strong>${tracked.length}</strong></article>
-    <article><span>Top Move Score</span><strong>${topScore}%</strong></article>
-    <article><span>Average Move Score</span><strong>${avgScore}%</strong></article>
-    <article><span>Market Ready</span><strong>${marketReady || "Pending"}</strong></article>
-    <article><span>Top 100 Tracked</span><strong>${top100Count || "Loading"}</strong></article>
-  `;
+  elements.dashboardSummary.innerHTML = "";
 }
 
 function getTop100Rows() {
@@ -569,6 +601,12 @@ function getTop100Rows() {
 }
 
 function onDeckPlayers() {
+  if (state.dynamicOnDeckRows.length) {
+    return state.dynamicOnDeckRows.map((row) => {
+      const scored = state.allScored.find((player) => String(player.player_id) === String(row.player_id));
+      return scored ? { ...scored, ...row } : row;
+    });
+  }
   return state.scored
     .slice()
     .sort((a, b) => b.callup_score - a.callup_score || b.opportunity_score - a.opportunity_score || Number(a.prospect_rank) - Number(b.prospect_rank))
@@ -592,7 +630,7 @@ function getFilteredRows() {
     const searchBlob = normalizeName(`${player.player_name ?? ""} ${player.org ?? ""} ${player.position ?? ""}`);
     const matchesSearch = state.filters.search === "" || searchBlob.includes(state.filters.search);
     const matchesOrg = state.filters.org === "all" || player.org === state.filters.org;
-    const matchesScore = Number(player.callup_score) >= state.filters.minScore;
+    const matchesScore = Number(boardMoveScore(player)) >= state.filters.minScore;
     return matchesSearch && matchesOrg && matchesScore;
   });
 }
@@ -1087,7 +1125,7 @@ function activateMarketCard(card, event) {
   event?.stopPropagation?.();
   if (!card?.dataset.playerId) return;
   clearListFilters();
-  openPlayerProfile(card.dataset.playerId);
+  openPlayerProfile(card.dataset.playerId, { type: card.dataset.profileType || "on-deck" });
 }
 
 function scrollOnDeckBoard(direction) {
@@ -1112,25 +1150,140 @@ function clearListFilters() {
 function callupCardMarkup(player) {
   const catalyst = onDeckCatalyst(player);
   const rank = top10Rank(player);
+  const moveScore = boardMoveScore(player);
+  const marketRead = boardMarketRead(player);
+  const badge = sourceBadge(player);
   return `
-      <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}">
+      <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}" data-profile-type="${escapeHtml(profileTypeForSource(player))}">
         <div>
           <span class="market-label">#${escapeHtml(rank)} · ${escapeHtml(playerTypeBadge(player))}</span>
+          <span class="source-badge ${sourceBadgeClass(badge)}">${escapeHtml(badge)}</span>
           <h3>${escapeHtml(player.player_name)}</h3>
           <p>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))} · MLB ETA ${escapeHtml(player.eta ?? "-")}</p>
         </div>
         <div class="market-price">
-          <strong>${escapeHtml(player.callup_score)}%</strong>
+          <strong>${escapeHtml(moveScore)}</strong>
           <span>Move Score</span>
         </div>
         <dl>
           <div><dt>Next Move</dt><dd>${escapeHtml(catalyst)}</dd></div>
           <div><dt>Card</dt><dd>${escapeHtml(cardBaselineLabel(player))}</dd></div>
-          <div><dt>Market</dt><dd>${escapeHtml(marketStatus(player))}</dd></div>
+          <div><dt>Market</dt><dd><span class="market-status ${marketToneClass(marketRead)}">${escapeHtml(marketRead)}</span></dd></div>
         </dl>
         <p class="market-thesis">${escapeHtml(onDeckThesis(player))}</p>
       </article>
     `;
+}
+
+function boardMoveScore(player) {
+  const value = fieldValue(player, ["move_score", "opportunity_score", "emerging_pre_score", "pre_score", "callup_score"], "");
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? String(Math.round(numeric)) : "-";
+}
+
+function sourceBadge(player) {
+  const loaded = fieldValue(player, ["source_badge", "sourceBadge"], "");
+  if (loaded) return loaded;
+  const board = String(fieldValue(player, ["source_board", "sourceBoard", "board_type"], "")).toLowerCase();
+  if (board.includes("top100") || board.includes("top_100")) return "Top 100";
+  if (board.includes("emerging")) return "Emerging";
+  return "Watchlist";
+}
+
+function sourceBadgeClass(value) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("top")) return "top100";
+  if (text.includes("emerging")) return "emerging";
+  return "watchlist";
+}
+
+function profileTypeForSource(player) {
+  const board = String(fieldValue(player, ["source_board", "sourceBoard", "board_type"], "")).toLowerCase();
+  const badge = String(sourceBadge(player)).toLowerCase();
+  return board.includes("emerging") || board.includes("watch") || badge.includes("emerging") || badge.includes("watch")
+    ? "emerging"
+    : "on-deck";
+}
+
+function boardMarketRead(player) {
+  return usefulMarketRead(player);
+}
+
+function boardBuyZone(player) {
+  const value = fieldValue(player, ["buy_zone", "final_action", "action", "recommendation"], "");
+  if (value) return simplifyBuyZone(value);
+  const fallback = buyZone(player);
+  return fallback && fallback !== "-" ? fallback : "Research";
+}
+
+function simplifyMarketRead(value) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("avoid")) return "Avoid Chase";
+  if (text.includes("no liquidity")) return "No Liquidity";
+  if (text.includes("need")) return "Needs Market";
+  if (text.includes("thin")) return "Thin";
+  if (text.includes("liquid")) return "Liquid";
+  if (text.includes("confirmed")) return "Confirmed";
+  if (text.includes("buy") || text.includes("watch")) return value || "Watch";
+  return value || "Needs Market";
+}
+
+function usefulMarketRead(player) {
+  const loaded = fieldValue(player, ["market_read", "market_status", "market_signal"], "");
+  if (loaded && loaded.includes(" · ")) return loaded;
+  if (loaded && !/confirmed market|cached market data|market pending|needs market/i.test(loaded)) return simplifyMarketRead(loaded);
+
+  const sales30 = numericField(player, ["market_sales_count_30d", "sales_count_30d", "salesCount30d", "sales_30"]);
+  const sales90 = numericField(player, ["market_sales_count_90d", "sales_count_90d", "salesCount90d", "sales_90"]);
+  const avg30 = numericField(player, ["market_avg_price_30d", "avg_sold_price_30d", "avgSoldPrice30d", "avg_30"]);
+  const avg90 = numericField(player, ["market_avg_price_90d", "avg_sold_price_90d", "avgSoldPrice90d", "avg_90"]);
+  if ((!Number.isFinite(sales30) || sales30 <= 0) && (!Number.isFinite(sales90) || sales90 <= 0)) {
+    return loaded ? simplifyMarketRead(loaded) : simplifyMarketRead(marketStatus(player));
+  }
+
+  let volume = "Confirmed";
+  if (Number.isFinite(sales90) && sales90 > 0 && sales90 < 4) volume = "Thin";
+  else if ((Number.isFinite(sales30) && sales30 >= 12) || (Number.isFinite(sales90) && sales90 >= 20)) volume = "Liquid";
+
+  let trend = fieldValue(player, ["market_trend", "price_trend"], "");
+  if (!trend && Number.isFinite(avg30) && Number.isFinite(avg90) && avg90 > 0) {
+    const movement = ((avg30 - avg90) / avg90) * 100;
+    if (movement >= 12) trend = "Up";
+    else if (movement <= -12) trend = "Down";
+    else trend = "Stable";
+  }
+  if (!trend) trend = Number.isFinite(sales30) && Number.isFinite(sales90) && sales30 >= Math.max(3, sales90 * 0.4) ? "Active" : "Watch";
+  return `${volume} · ${trend}`;
+}
+
+function numericField(player, fields) {
+  for (const field of fields) {
+    const raw = player[field];
+    if (raw === "" || raw == null) continue;
+    const value = Number(String(raw).replaceAll(/[$,%]/g, ""));
+    if (Number.isFinite(value)) return value;
+  }
+  return NaN;
+}
+
+function marketToneClass(value) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("no liquidity") || text.includes("avoid") || text.includes("down") || text.includes("priced")) return "negative";
+  if (text.includes("up") || text.includes("heating") || text.includes("strong")) return "positive";
+  if (text.includes("stable") || text.includes("thin") || text.includes("need") || text.includes("pending") || text.includes("watch")) return "caution";
+  return "neutral";
+}
+
+function simplifyBuyZone(value) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("strong")) return "Strong Buy";
+  if (text.includes("avoid")) return "Avoid Chase";
+  if (text.includes("no liquidity")) return "No Liquidity";
+  if (text.includes("need")) return "Needs Market";
+  if (text.includes("buy")) return "Buy Zone";
+  if (text.includes("watch")) return "Watch";
+  if (text.includes("research")) return "Research";
+  return value || "Research";
 }
 
 function buildOrgExposure() {
@@ -1153,7 +1306,7 @@ function buildOrgExposure() {
 function renderRows(rows) {
   if (!elements.rows) return;
   if (!rows.length) {
-    elements.rows.innerHTML = `<tr><td colspan="9" class="muted">No approved On Deck players found.</td></tr>`;
+    elements.rows.innerHTML = `<tr><td colspan="7" class="muted">No approved On Deck players found.</td></tr>`;
     return;
   }
 
@@ -1170,12 +1323,10 @@ function renderRows(rows) {
             </span>
           </td>
           <td>${escapeHtml(player.org ?? "-")}</td>
-          <td>${escapeHtml(player.position ?? "-")}</td>
-          <td>${escapeHtml(player.level ?? "-")}</td>
-          <td><span class="score-pill ${scoreClass(player.callup_score)}">${player.callup_score}%</span></td>
-          <td><span class="grade-pill ${marketGradeClass(player)}">${escapeHtml(marketGrade(player))}</span></td>
-          <td><span class="market-status ${marketStatusClass(player)}">${escapeHtml(marketStatus(player))}</span></td>
-          <td>${escapeHtml(buyZone(player) === "-" ? "Pending" : buyZone(player))}</td>
+          <td><span class="source-badge ${sourceBadgeClass(sourceBadge(player))}">${escapeHtml(sourceBadge(player))}</span></td>
+          <td><span class="score-pill ${scoreClass(boardMoveScore(player))}">${escapeHtml(boardMoveScore(player))}</span></td>
+          <td><span class="market-status ${marketToneClass(boardMarketRead(player))}">${escapeHtml(boardMarketRead(player))}</span></td>
+          <td>${escapeHtml(boardBuyZone(player))}</td>
           <td><button class="button ghost row-profile-button" type="button">View</button></td>
         </tr>
       `;
@@ -1185,7 +1336,8 @@ function renderRows(rows) {
   elements.rows.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
       event.stopPropagation();
-      openPlayerProfile(row.dataset.playerId, { type: "on-deck" });
+      const player = rows.find((candidate) => String(candidate.player_id) === String(row.dataset.playerId));
+      openPlayerProfile(row.dataset.playerId, { type: profileTypeForSource(player || {}) });
     });
   });
 }
@@ -1207,17 +1359,17 @@ function renderTop100Rows() {
     const selected = String(player.player_id) === String(state.selectedId) ? "selected" : "";
     return `
       <tr class="${selected}" data-player-id="${escapeHtml(player.player_id)}">
-        <td><strong>${escapeHtml(player.prospect_rank ?? "-")}</strong></td>
         <td>
           <span class="player-name">
             <strong>${escapeHtml(player.player_name)}</strong>
-            <span>${escapeHtml(playerTypeBadge(player))} · Age ${escapeHtml(player.age ?? "-")}</span>
+            <span>#${escapeHtml(player.prospect_rank ?? "-")} · ${escapeHtml(playerTypeBadge(player))} · Age ${escapeHtml(player.age ?? "-")}</span>
           </span>
         </td>
         <td>${escapeHtml(player.org ?? "-")}</td>
-        <td>${escapeHtml(top100BenchmarkLabel(player))}</td>
-        <td>${rankTrend(player)}</td>
-        <td>${escapeHtml(top100ComparisonReason(player))}</td>
+        <td>${rankTrend(player) || "—"}</td>
+        <td><span class="score-pill ${scoreClass(boardMoveScore(player))}">${escapeHtml(boardMoveScore(player))}</span></td>
+        <td><span class="market-status ${marketToneClass(boardMarketRead(player))}">${escapeHtml(boardMarketRead(player))}</span></td>
+        <td>${escapeHtml(boardBuyZone(player))}</td>
       </tr>
     `;
   }).join("");

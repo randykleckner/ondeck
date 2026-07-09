@@ -65,9 +65,11 @@ async function loadTop100Profile(id) {
   const cachedMarkets = await loadCachedMarkets();
   const player = scored.find((candidate) => String(candidate.player_id) === String(id));
   if (!player) return null;
+  const savedInsight = await loadSavedInsight(player.player_id);
   return {
     ...player,
     ...(cachedMarkets.get(String(player.player_id)) || {}),
+    ...savedInsight,
     source_type: profileType,
     on_deck_rank: onDeckRank(scored, player),
   };
@@ -96,6 +98,17 @@ async function loadCachedMarkets() {
       .map((snapshot) => [String(snapshot.player_id), snapshot]));
   } catch {
     return new Map();
+  }
+}
+
+async function loadSavedInsight(id) {
+  try {
+    const response = await fetch(`/api/player-insight?player_id=${encodeURIComponent(String(id))}`, { headers: { Accept: "application/json" } });
+    if (!response.ok) return {};
+    const data = await response.json();
+    return data.insight || {};
+  } catch {
+    return {};
   }
 }
 
@@ -243,7 +256,7 @@ function normalizeScore(row, boardType) {
       ? firstValue(row.opportunity_score, rankPlaceholderScore(row), "")
       : firstValue(row.opportunity_score, row.move_score, row.callup_score, "");
   const opportunityScore = numberLabel(rawScore);
-  let action = cleanValue(firstValue(row.action, row.recommendation, row.market_action, ""));
+  let action = cleanValue(firstValue(row.final_action, row.action, row.recommendation, row.market_action, ""));
   if (!action) {
     if (boardType === "emerging") action = hasValidSoldData(row) ? getMarketStatus(row) : "Market Review Pending";
     else action = getMarketStatus(row) === "Pending" ? "Pending" : getMarketStatus(row);
@@ -369,7 +382,7 @@ function briefingTitleText(boardType) {
 }
 
 function resumeText(raw, player, score) {
-  const loaded = firstValue(raw.resume_summary, raw.thesis, raw.recommendation_thesis, raw.pre_score_notes, "");
+  const loaded = firstValue(raw.thesis, raw.resume, raw.resume_summary, raw.recommendation_thesis, raw.pre_score_notes, "");
   if (loaded) return loaded;
   const scoreText = score.opportunityScore !== "—" ? `${score.opportunityScore} opportunity score` : "opportunity score pending";
   const rank = player.rank ? ` ranked #${player.rank}` : "";
@@ -378,6 +391,8 @@ function resumeText(raw, player, score) {
 }
 
 function signalsText(raw, player) {
+  if (raw.why_now) return raw.why_now;
+  if (raw.signals) return raw.signals;
   const signals = [];
   signals.push(onDeckCatalyst(raw));
   const movement = rankTrendText(raw);
@@ -392,6 +407,7 @@ function signalsText(raw, player) {
 }
 
 function whyMatters(raw, player, boardType) {
+  if (raw.edge) return raw.edge;
   if (boardType === "emerging") {
     return `${player.name} is being monitored before the broader Top 100 attention cycle catches up.`;
   }
@@ -405,6 +421,8 @@ function whyMatters(raw, player, boardType) {
 }
 
 function mainRisk(raw) {
+  if (raw.do_not_buy_if) return raw.do_not_buy_if;
+  if (raw.risk) return raw.risk;
   if (getMarketStatus(raw) === "Avoid Chase") return "The market may already be ahead of the baseball catalyst.";
   if (rankMovement(raw) < 0) return "Top 100 movement is negative, so demand may need a stronger performance catalyst.";
   if (!hasValidSoldData(raw)) return "Card-market data is not loaded yet, so the entry read needs confirmation.";
@@ -545,7 +563,7 @@ function getMarketStatus(row) {
   const source = String(firstValue(row.source, row.data_source, row.market_source, "")).toLowerCase();
   const targetOnly = String(firstValue(row.targetOnly, row.target_only, "")).toLowerCase() === "true";
   if (targetOnly || source.includes("card target")) return "Needs Market";
-  const loaded = firstValue(row.market_status, row.market_signal, row.recommendation, "");
+  const loaded = firstValue(row.final_action, row.market_status, row.market_signal, row.recommendation, "");
   const lower = String(loaded).toLowerCase();
   if (lower.includes("avoid") || lower.includes("spiked") || lower.includes("priced")) return "Avoid Chase";
   if (lower.includes("strong")) return "Strong Buy";
@@ -624,6 +642,10 @@ function cardDetailRows(row, player) {
     ["30D Sales", countValue(firstValue(row.sales_30, row.salesCount30d, row.sales_count_30d, row.market_sales_count_30d, ""))],
     ["90D Sales", countValue(firstValue(row.sales_90, row.salesCount90d, row.sales_count_90d, row.market_sales_count_90d, ""))],
   ];
+  const marketMemo = firstValue(row.market_read, row.card_market_take, "");
+  if (marketMemo) {
+    rows.push(["Card Market Take", marketMemo]);
+  }
   if (hasValidSoldData(row)) {
     rows.push(["30D Sell-Through", percentStat(firstValue(row.sell_through_30, row.sellThruRate30d, row.sell_through_30d, row.market_sell_through_30d, ""))]);
   } else {
@@ -633,15 +655,21 @@ function cardDetailRows(row, player) {
 }
 
 function movementDetailRows(row, player, score) {
-  return [
+  const rows = [
     ["Current Rank", player.rank ? `#${player.rank}` : "Pending"],
     ["Previous Rank", row.previous_rank ? `#${row.previous_rank}` : "Pending"],
     ["Trend", rankTrendText(row)],
-    ["Next Catalyst", onDeckCatalyst(row)],
+    ["Next Catalyst", firstValue(row.next_trigger, onDeckCatalyst(row))],
     ["Opportunity Score", score.opportunityScore || "Pending"],
     ["Status", score.status],
     ["Action", score.action],
+    ["Confidence", row.confidence || "Pending"],
   ];
+  const doNotBuyIf = firstValue(row.do_not_buy_if, row.what_would_change_my_mind, "");
+  if (doNotBuyIf) {
+    rows.push(["Do Not Buy If", doNotBuyIf]);
+  }
+  return rows;
 }
 
 function compactStatLine(player) {

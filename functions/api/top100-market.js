@@ -104,13 +104,18 @@ export async function onRefreshTop100MarketRequest(context) {
 
   const url = new URL(context.request.url);
   const force = url.searchParams.get("force") === "true";
-  const limit = Math.max(1, Math.min(100, Number(url.searchParams.get("limit")) || 100));
+  const limit = Math.max(1, Math.min(500, Number(url.searchParams.get("limit")) || 100));
+  const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0);
+  const missingOnly = url.searchParams.get("missing_only") === "true";
   const playerFilter = String(url.searchParams.get("player") || "").trim();
   const now = new Date();
   const summary = {
     playerFilter,
+    missingOnly,
+    offset,
     playersProcessed: 0,
     playersSelected: 0,
+    playersAvailable: 0,
     playersRefreshed: 0,
     playersSkippedCacheFresh: 0,
     playersMissingBenchmarkCardCodes: 0,
@@ -132,7 +137,13 @@ export async function onRefreshTop100MarketRequest(context) {
   const enabledCardTargets = cardTargets.filter(isEnabledCardTarget);
   const cardByPlayerId = new Map(enabledCardTargets.map((row) => [String(row.player_id), row]));
   const cardByName = new Map(enabledCardTargets.map((row) => [normalizeName(row.player_name), row]));
-  const selectedPlayers = filterRefreshPlayers(players, enabledCardTargets, playerFilter).slice(0, limit);
+  const snapshotsByPlayerId = missingOnly
+    ? new Map((await readMarketSnapshots(db)).map((row) => [String(row.player_id), row]))
+    : new Map();
+  const refreshPool = filterRefreshPlayers(players, enabledCardTargets, playerFilter)
+    .filter((player) => !missingOnly || snapshotNeedsRefresh(snapshotsByPlayerId.get(String(player.player_id || ""))));
+  const selectedPlayers = refreshPool.slice(offset, offset + limit);
+  summary.playersAvailable = refreshPool.length;
   summary.playersSelected = selectedPlayers.length;
 
   if (playerFilter && !selectedPlayers.length) {
@@ -256,6 +267,14 @@ function filterRefreshPlayers(players, cardTargets, playerFilter) {
       || normalizedFilter.includes(playerName)
       || cardCode === normalizedFilter;
   });
+}
+
+function snapshotNeedsRefresh(row) {
+  if (!row) return true;
+  if (!row.sold_refreshed_at) return true;
+  if (row.last_sold_price == null || row.last_sold_price === "") return true;
+  if (Number(row.sales_count_90d || 0) <= 0) return true;
+  return false;
 }
 
 async function fetchSoldComps(apiKey, keyword) {

@@ -4,6 +4,7 @@ import { onRequest as onRankTrendsRequest, runTop100TrendUpdate } from "../funct
 import { onMarketDataRequest, onRefreshTop100MarketRequest } from "../functions/api/top100-market.js";
 import { onEmergingRequest } from "../functions/api/emerging.js";
 import { onOnDeckRequest } from "../functions/api/on-deck.js";
+import { onPlayerInsightRequest, onTop100InsightsRequest, runTop100InsightPipeline } from "../functions/api/top100-insights.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -28,6 +29,14 @@ export default {
       return onOnDeckRequest({ request, env, ctx });
     }
 
+    if (url.pathname === "/api/top100-insights") {
+      return onTop100InsightsRequest({ request, env, ctx });
+    }
+
+    if (url.pathname === "/api/player-insight") {
+      return onPlayerInsightRequest({ request, env, ctx });
+    }
+
     if (url.pathname === "/api/emerging" || url.pathname === "/api/emerging/summary" || url.pathname.startsWith("/api/emerging/")) {
       return onEmergingRequest({ request, env, ctx });
     }
@@ -44,12 +53,21 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    const marketRefreshRequest = new Request("https://ondeckprospect.com/api/top100-market-data?limit=25", {
+    const marketRefreshRequest = new Request("https://ondeckprospect.com/api/top100-market-data?limit=500", {
       method: "POST",
     });
-    ctx.waitUntil(Promise.allSettled([
-      runTop100TrendUpdate(env),
-      onRefreshTop100MarketRequest({ request: marketRefreshRequest, env, ctx }),
-    ]));
+    ctx.waitUntil((async () => {
+      await runTop100TrendUpdate(env);
+      const marketResponse = await onRefreshTop100MarketRequest({ request: marketRefreshRequest, env, ctx });
+      const marketSummary = await marketResponse.clone().json().catch(() => ({}));
+      await runTop100InsightPipeline({
+        request: new Request("https://ondeckprospect.com/api/top100-insights"),
+        env,
+        ctx,
+      }, {
+        limit: 500,
+        marketQueriesUsed: Number(marketSummary.soldDataApiCallsUsed) || 0,
+      });
+    })());
   },
 };

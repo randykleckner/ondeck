@@ -1,5 +1,6 @@
 import { parseCsv } from "../../src/lib/csv.js";
 import { mergeProspectData } from "../../src/lib/scoring.js";
+import { readCurrentOnDeckInsights } from "./top100-insights.js";
 
 export async function onOnDeckRequest(context) {
   if (context.request.method !== "GET") {
@@ -7,6 +8,18 @@ export async function onOnDeckRequest(context) {
   }
 
   try {
+    const url = new URL(context.request.url);
+    const limit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit")) || 10));
+    const d1Insights = await readCurrentOnDeckInsights(context.env?.MARKET_DB, { limit });
+    if (d1Insights.items?.length) {
+      return jsonResponse({
+        ...d1Insights,
+        message: "Current On Deck board loaded from saved Top 100 and Emerging insight snapshots.",
+      }, 200, {
+        "Cache-Control": "public, max-age=300",
+      });
+    }
+
     const [top100, stats, savantStats, depthCharts, news, cardTargets] = await Promise.all([
       readCsvAsset(context, "/data/mlb-top100-2026.csv").catch(() => []),
       readCsvAsset(context, "/data/current-stats.csv").catch(() => []),
@@ -36,9 +49,10 @@ export async function onOnDeckRequest(context) {
       items,
       players: items,
       count: items.length,
+      generated_at: new Date().toISOString(),
       status: "ok",
-      source: "cached_static_profile_data",
-      message: "Cached On Deck board response. Recommendation snapshots are not required for this fallback route.",
+      source: "csv-fallback",
+      message: "CSV fallback On Deck board response. No current D1 insight snapshots were available.",
     }, 200, {
       "Cache-Control": "public, max-age=300",
     });
@@ -49,21 +63,60 @@ export async function onOnDeckRequest(context) {
 }
 
 function onDeckApiRow(player) {
+  const marketRead = normalizeMarketRead(player.market_signal || player.market_status);
+  const buyZone = normalizeBuyZone(player.recommendation || player.market_signal, marketRead, player.opportunity_score);
   return {
+    player_id: player.player_id,
+    player_name: player.player_name,
     playerId: player.player_id,
     playerName: player.player_name,
     team: player.org,
+    board_type: "top100",
+    trend: player.rank_movement || "",
+    move_score: player.opportunity_score || player.callup_score,
+    market_read: marketRead,
+    buy_zone: buyZone,
+    profile_url: `./player.html?type=on-deck&id=${encodeURIComponent(String(player.player_id))}`,
     position: player.position,
     level: player.level,
     age: player.age,
     eta: player.eta,
     rank: player.prospect_rank,
+    opportunityScore: player.opportunity_score,
+    opportunity_score: player.opportunity_score,
     moveScore: player.callup_score,
+    callup_score: player.callup_score,
     onDeckGrade: player.recommendation_grade || "",
     marketRead: player.market_signal || "",
     benchmarkCardCode: player.card_code || "",
+    card_code: player.card_code || "",
     canonicalQuery: player.card_query || "",
+    source_type: "csv-fallback",
   };
+}
+
+function normalizeMarketRead(value) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("avoid")) return "Avoid Chase";
+  if (text.includes("no liquidity")) return "No Liquidity";
+  if (text.includes("need")) return "Needs Market";
+  if (text.includes("thin")) return "Thin";
+  if (text.includes("confirmed") || text.includes("buy") || text.includes("watch") || text.includes("liquid")) return "Confirmed";
+  return "Needs Market";
+}
+
+function normalizeBuyZone(value, marketRead, score) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("strong")) return "Strong Buy";
+  if (text.includes("avoid")) return "Avoid Chase";
+  if (text.includes("no liquidity")) return "No Liquidity";
+  if (text.includes("need")) return "Needs Market";
+  if (text.includes("buy")) return "Buy Zone";
+  if (text.includes("watch")) return "Watch";
+  if (text.includes("research")) return "Research";
+  if (marketRead === "No Liquidity") return "No Liquidity";
+  if (marketRead === "Needs Market") return "Needs Market";
+  return Number(score) >= 60 ? "Research" : "Needs Market";
 }
 
 function applyCardTargets(players, cardTargets) {
@@ -125,6 +178,7 @@ function emptyResponse(message) {
     players: [],
     count: 0,
     status: "empty",
+    source: "csv-fallback",
     message,
   }, 200, {
     "Cache-Control": "public, max-age=120",

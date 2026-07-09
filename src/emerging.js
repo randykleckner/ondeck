@@ -10,11 +10,12 @@ const filters = {
 };
 
 const state = { prospects: [], selectedId: "" };
-const groups = [
-  ["card_api_candidate", "Card Candidates"],
-  ["emerging_a", "Emerging A"],
-  ["emerging_bplus", "Emerging B+"],
-  ["emerging_b", "Emerging B"],
+const levelGroups = [
+  ["levelA", "A"],
+  ["levelHighA", "A+ / High-A"],
+  ["levelAA", "AA"],
+  ["levelAAA", "AAA"],
+  ["levelROK", "ROK / Rookie"],
 ];
 
 loadEmergingProspects();
@@ -48,23 +49,39 @@ async function loadEmergingProspects() {
 function renderSummary(summary) {
   const computed = computedSummary();
   const cells = [
-    ["Active", computed.active || summary.active_emerging],
-    ["Card Candidates", computed.cardCandidates || summary.card_api_candidates],
-    ["Emerging A", computed.emergingA || summary.emerging_a],
-    ["Emerging B+", computed.emergingBPlus || summary.emerging_bplus],
-    ["Emerging B", computed.emergingB || summary.emerging_b],
+    ["A", computed.levelA],
+    ["A+ / High-A", computed.levelHighA],
+    ["AA", computed.levelAA],
+    ["AAA", computed.levelAAA],
+    ["ROK", computed.levelROK],
   ];
   summaryElement.innerHTML = cells.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${count(value)}</strong></article>`).join("");
 }
 
 function computedSummary() {
+  const levels = state.prospects.reduce((totals, row) => {
+    const key = levelGroup(row.level || row.stat_level || row.stats_level);
+    if (key) totals[key] += 1;
+    return totals;
+  }, { levelA: 0, levelHighA: 0, levelAA: 0, levelAAA: 0, levelROK: 0 });
   return {
     active: state.prospects.length,
     cardCandidates: state.prospects.filter((row) => row.priority_tier === "card_api_candidate").length,
     emergingA: state.prospects.filter((row) => normalizeTier(row.pre_tier) === "emerging_a").length,
     emergingBPlus: state.prospects.filter((row) => normalizeTier(row.pre_tier) === "emerging_bplus").length,
     emergingB: state.prospects.filter((row) => normalizeTier(row.pre_tier) === "emerging_b").length,
+    ...levels,
   };
+}
+
+function levelGroup(value) {
+  const level = String(value || "").trim().toUpperCase().replaceAll(/\s+/g, "");
+  if (level === "A" || level === "LOWA" || level === "LOW-A" || level === "SINGLEA" || level === "SINGLE-A") return "levelA";
+  if (level === "A+" || level === "HIGH-A" || level === "HIGHA" || level === "ADVANCEDA" || level === "ADVANCED-A") return "levelHighA";
+  if (level === "AA" || level === "DOUBLEA" || level === "DOUBLE-A") return "levelAA";
+  if (level === "AAA" || level === "TRIPLEA" || level === "TRIPLE-A") return "levelAAA";
+  if (level === "ROK" || level === "ROOKIE" || level === "RK" || level === "R") return "levelROK";
+  return "";
 }
 
 function hydrateFilters() {
@@ -80,10 +97,10 @@ function setOptions(select, values, firstLabel) {
 function render() {
   const rows = filteredRows();
   countElement.textContent = `${rows.length} ${rows.length === 1 ? "prospect" : "prospects"}`;
-  groupsElement.innerHTML = groups.map(([key, label], index) => {
-    const groupRows = key === "card_api_candidate"
-      ? rows.filter((row) => row.priority_tier === key)
-      : rows.filter((row) => normalizeTier(row.pre_tier) === key);
+  groupsElement.innerHTML = levelGroups.map(([key, label], index) => {
+    const groupRows = rows
+      .filter((row) => levelGroup(row.level || row.stat_level || row.stats_level) === key)
+      .sort((a, b) => Number(moveScore(b)) - Number(moveScore(a)) || String(a.player_name || "").localeCompare(String(b.player_name || "")));
     return `
       <details class="emerging-section" ${index === 0 ? "open" : ""}>
         <summary><span>${escapeHtml(label)}</span><strong>${groupRows.length}</strong></summary>
@@ -102,31 +119,86 @@ function renderTable(rows) {
       <table class="emerging-table">
         <thead>
           <tr>
-            <th>Player</th><th>Year</th><th>Product</th><th>Auto Code</th><th>Role</th><th>Level</th>
-            <th>Team</th><th>Age</th><th>Pre-Score</th><th>Key Stat</th><th>Card Query Seed</th><th>Status</th>
+            <th>Name</th><th>Team</th><th>Move Score</th><th>Market Read</th><th>Buy Zone</th>
           </tr>
         </thead>
         <tbody>
           ${rows.map((row) => `
             <tr data-player-id="${escapeHtml(row.player_id)}" class="${String(row.player_id) === state.selectedId ? "selected" : ""}">
-              <td><strong>${escapeHtml(row.player_name)}</strong><span>${escapeHtml(row.team_on_card || row.current_org || "Org pending")}</span></td>
-              <td>${escapeHtml(row.year || "-")}</td>
-              <td>${escapeHtml(row.product || "-")}</td>
-              <td>${escapeHtml(row.auto_code || "-")}</td>
-              <td>${escapeHtml(row.stats_role || "-")}</td>
-              <td>${escapeHtml(row.level || "-")}</td>
-              <td>${escapeHtml(row.team || "-")}</td>
-              <td>${escapeHtml(row.age || "-")}</td>
-              <td><span class="score-pill ${scoreClass(row.emerging_pre_score)}">${score(row.emerging_pre_score)}</span></td>
-              <td>${escapeHtml(keyStat(row))}</td>
-              <td class="query-cell">${escapeHtml(row.card_query_seed || "-")}</td>
-              <td>${escapeHtml(row.tier_label || row.status || "-")}</td>
+              <td><strong>${escapeHtml(row.player_name)}</strong><span>${escapeHtml([row.level, row.position || row.stats_role].filter(Boolean).join(" · ") || row.tier_label || "Emerging")}</span></td>
+              <td>${escapeHtml(row.team || row.current_team || row.current_org || row.team_on_card || "-")}</td>
+              <td><span class="score-pill ${scoreClass(moveScore(row))}">${score(moveScore(row))}</span></td>
+              <td><span class="market-status ${marketToneClass(marketRead(row))}">${escapeHtml(marketRead(row))}</span></td>
+              <td>${escapeHtml(buyZone(row))}</td>
             </tr>
           `).join("")}
         </tbody>
       </table>
     </div>
   `;
+}
+
+function moveScore(row) {
+  return row.move_score || row.emerging_pre_score || row.pre_score || row.opportunity_score || row.recommendation_total_score || "";
+}
+
+function marketRead(row) {
+  const value = row.market_read || row.market_status || row.market_signal || row.latest_market_snapshot?.market_signal || "";
+  if (String(value).includes(" · ")) return value;
+  const sales30 = numberFrom(row.market_sales_count_30d ?? row.latest_market_snapshot?.sales_count_30d);
+  const sales90 = numberFrom(row.market_sales_count_90d ?? row.latest_market_snapshot?.sales_count_90d);
+  const avg30 = numberFrom(row.market_avg_price_30d ?? row.latest_market_snapshot?.avg_price_30d);
+  const avg90 = numberFrom(row.market_avg_price_90d ?? row.latest_market_snapshot?.avg_price_90d);
+  const text = String(value || "").toLowerCase();
+  if (text.includes("avoid")) return "Avoid Chase";
+  if (text.includes("no liquidity")) return "No Liquidity";
+  if (text.includes("need")) return "Needs Market";
+  if ((!Number.isFinite(sales30) || sales30 <= 0) && (!Number.isFinite(sales90) || sales90 <= 0)) {
+    if (text.includes("thin")) return "Thin";
+    return "Needs Market";
+  }
+  let volume = "Confirmed";
+  if (text.includes("thin") || (Number.isFinite(sales90) && sales90 > 0 && sales90 < 4)) volume = "Thin";
+  else if (text.includes("liquid") || sales30 >= 12 || sales90 >= 20) volume = "Liquid";
+  let trend = "";
+  if (text.includes("heating") || text.includes("up")) trend = "Up";
+  else if (text.includes("priced")) trend = "Priced In";
+  else if (text.includes("cooling") || text.includes("down")) trend = "Down";
+  else if (Number.isFinite(avg30) && Number.isFinite(avg90) && avg90 > 0) {
+    const movement = ((avg30 - avg90) / avg90) * 100;
+    if (movement >= 12) trend = "Up";
+    else if (movement <= -12) trend = "Down";
+    else trend = "Stable";
+  }
+  if (!trend) trend = Number.isFinite(sales30) && Number.isFinite(sales90) && sales30 >= Math.max(3, sales90 * 0.4) ? "Active" : "Watch";
+  return `${volume} · ${trend}`;
+}
+
+function numberFrom(value) {
+  if (value === "" || value == null) return NaN;
+  const numeric = Number(String(value).replaceAll(/[$,%]/g, ""));
+  return Number.isFinite(numeric) ? numeric : NaN;
+}
+
+function marketToneClass(value) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("no liquidity") || text.includes("avoid") || text.includes("down") || text.includes("priced")) return "negative";
+  if (text.includes("up") || text.includes("heating") || text.includes("strong")) return "positive";
+  if (text.includes("stable") || text.includes("thin") || text.includes("need") || text.includes("pending") || text.includes("watch")) return "caution";
+  return "neutral";
+}
+
+function buyZone(row) {
+  const value = row.buy_zone || row.final_action || row.recommendation || row.latest_recommendation?.recommendation || "";
+  const text = String(value || "").toLowerCase();
+  if (text.includes("strong")) return "Strong Buy";
+  if (text.includes("avoid")) return "Avoid Chase";
+  if (text.includes("no liquidity")) return "No Liquidity";
+  if (text.includes("need")) return "Needs Market";
+  if (text.includes("buy")) return "Buy Zone";
+  if (text.includes("watch")) return "Watch";
+  if (text.includes("research")) return "Research";
+  return Number(moveScore(row)) >= 60 ? "Research" : "Needs Market";
 }
 
 function filteredRows() {

@@ -339,12 +339,68 @@ function listFilters(url) {
 function apiRow(row) {
   const normalized = normalizeRow(row);
   const priorityTier = normalized.priority_tier || normalized.pre_tier;
+  const moveScore = normalized.emerging_pre_score || normalized.pre_score || normalized.recommendation_total_score || "";
+  const marketRead = normalizeMarketRead(normalized.market_signal, normalized);
+  const buyZone = normalizeBuyZone(normalized.recommendation, marketRead, moveScore);
   return {
     ...normalized,
+    team: normalized.team || normalized.current_team || normalized.current_org || normalized.team_on_card,
+    board_type: "emerging",
+    trend: "",
+    move_score: moveScore,
+    market_read: marketRead,
+    buy_zone: buyZone,
+    profile_url: `./player.html?type=emerging&id=${encodeURIComponent(String(normalized.player_id))}`,
     tier_label: TIER_LABELS.get(priorityTier) || labelize(priorityTier),
     latest_market_snapshot: marketSnapshot(normalized),
     latest_recommendation: recommendationSnapshot(normalized),
   };
+}
+
+function normalizeMarketRead(value, row = {}) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("avoid")) return "Avoid Chase";
+  if (text.includes("no liquidity")) return "No Liquidity";
+  if (text.includes("need")) return "Needs Market";
+  const sales30 = Number(row.market_sales_count_30d);
+  const sales90 = Number(row.market_sales_count_90d);
+  const avg30 = Number(row.market_avg_price_30d);
+  const avg90 = Number(row.market_avg_price_90d);
+  if ((!Number.isFinite(sales30) || sales30 <= 0) && (!Number.isFinite(sales90) || sales90 <= 0)) {
+    if (text.includes("thin")) return "Thin";
+    return "Needs Market";
+  }
+
+  let volume = "Confirmed";
+  if (text.includes("thin") || (Number.isFinite(sales90) && sales90 > 0 && sales90 < 4)) volume = "Thin";
+  else if (text.includes("liquid") || sales30 >= 12 || sales90 >= 20) volume = "Liquid";
+
+  let trend = "";
+  if (text.includes("heating") || text.includes("up")) trend = "Up";
+  else if (text.includes("priced")) trend = "Priced In";
+  else if (text.includes("cooling") || text.includes("down")) trend = "Down";
+  else if (Number.isFinite(avg30) && Number.isFinite(avg90) && avg90 > 0) {
+    const movement = ((avg30 - avg90) / avg90) * 100;
+    if (movement >= 12) trend = "Up";
+    else if (movement <= -12) trend = "Down";
+    else trend = "Stable";
+  }
+  if (!trend) trend = Number.isFinite(sales30) && Number.isFinite(sales90) && sales30 >= Math.max(3, sales90 * 0.4) ? "Active" : "Watch";
+  return `${volume} · ${trend}`;
+}
+
+function normalizeBuyZone(value, marketRead, moveScore) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("strong")) return "Strong Buy";
+  if (text.includes("avoid")) return "Avoid Chase";
+  if (text.includes("no liquidity")) return "No Liquidity";
+  if (text.includes("need")) return "Needs Market";
+  if (text.includes("buy")) return "Buy Zone";
+  if (text.includes("watch")) return "Watch";
+  if (text.includes("research")) return "Research";
+  if (marketRead === "No Liquidity") return "No Liquidity";
+  if (marketRead === "Needs Market") return "Needs Market";
+  return Number(moveScore) >= 60 ? "Research" : "Needs Market";
 }
 
 function marketSnapshot(row) {
