@@ -1140,8 +1140,8 @@ function summaryInsightCards(players) {
     bestValue && {
       label: "Best Value",
       player: bestValue.player,
-      value: entryLabel(bestValue.player),
-      note: `${boardMoveScore(bestValue.player)} score with discount and liquidity working together.`,
+      value: currency(bestValue.price),
+      note: `${boardMoveScore(bestValue.player)} score with price and volume working together.`,
     },
     cheapest && {
       label: "Cheapest Target",
@@ -1312,7 +1312,7 @@ function callupCardMarkup(player) {
   return `
       <article class="market-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}" data-profile-type="${escapeHtml(profileTypeForSource(player))}">
         <div>
-          <span class="market-label">#${escapeHtml(rank)} · ${escapeHtml(playerTypeBadge(player))}</span>
+          <span class="market-label">#${escapeHtml(rank)}</span>
           <h3>${escapeHtml(player.player_name)}</h3>
           <p>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))}</p>
         </div>
@@ -1466,7 +1466,7 @@ function renderRows(rows) {
           <td>
             <span class="player-name">
               <strong>${escapeHtml(player.player_name)}</strong>
-              <span>${escapeHtml(playerTypeBadge(player))} · Age ${escapeHtml(player.age ?? "-")}</span>
+              <span>${escapeHtml([player.org, player.level, player.position, player.age ? `Age ${player.age}` : ""].filter(Boolean).join(" · "))}</span>
             </span>
           </td>
           <td><span class="score-pill ${scoreClass(boardMoveScore(player))}">${escapeHtml(boardMoveScore(player))}</span></td>
@@ -2580,6 +2580,11 @@ function cardBaselineLabel(player) {
 }
 
 function entryLabel(player) {
+  const target = targetEntryPrice(player);
+  return Number.isFinite(target) ? currency(target) : "-";
+}
+
+function actionableEntryLabel(player) {
   const current = currentCardPrice(player);
   if (!Number.isFinite(current)) return "Need comps";
   if (lowPriceConfidence(player)) return "Watch only";
@@ -2683,9 +2688,9 @@ function isActionableOnDeckTarget(player) {
   if (!hasPositiveBaseballSignal(player)) return false;
   const score = Number(boardMoveScore(player));
   if (!Number.isFinite(score) || score < 80) return false;
-  const entry = entryLabel(player).toLowerCase();
-  const thesis = onDeckQuickThesis(player).toLowerCase();
-  if (!/^(buy|target|accumulate|auction target|buy dips)\s+</i.test(entryLabel(player))) return false;
+  const entry = actionableEntryLabel(player).toLowerCase();
+  const thesis = marketSetupLabel(player).toLowerCase();
+  if (!/^(buy|target|accumulate|auction target|buy dips)\s+</i.test(actionableEntryLabel(player))) return false;
   if (/(wait|research|need comps|too hot|watch only)/i.test(entry)) return false;
   if (/(market warning|illiquid risk|fully valued|cooling|no comps)/i.test(thesis)) return false;
   return true;
@@ -3206,6 +3211,18 @@ function onDeckThesis(player) {
 }
 
 function onDeckQuickThesis(player) {
+  const label = marketSetupLabel(player);
+  const facts = marketFactParts(player);
+  const factText = facts.length ? facts.join("; ") : "market data supports a current actionable read";
+  if (label === "Undervalued") return `${factText}; price has room versus recent comps.`;
+  if (label === "Breakout Watch") return `${factText}; baseball signal is improving before the next attention spike.`;
+  if (label === "Early Sleeper") return `${factText}; good opportunity to accumulate before a wider breakout.`;
+  if (label === "Market Chasing") return `${factText}; demand is already moving, keep buys disciplined.`;
+  if (label === "Fair Value") return `${factText}; price looks aligned with current demand.`;
+  return `${factText}.`;
+}
+
+function marketSetupLabel(player) {
   const market = boardMarketRead(player).toLowerCase();
   const action = boardBuyZone(player).toLowerCase();
   const source = String(fieldValue(player, ["source_board", "sourceBoard", "board_type"], "")).toLowerCase();
@@ -3232,6 +3249,34 @@ function onDeckQuickThesis(player) {
   if (Number.isFinite(movement) && movement > 0) return "Breakout Watch";
   if (Number.isFinite(score) && score >= 88 && Number.isFinite(sales30) && sales30 >= 8) return "Undervalued";
   return "Fair Value";
+}
+
+function marketFactParts(player) {
+  const parts = [];
+  const current = currentCardPrice(player);
+  const avg30 = positiveMoneyField(player, ["market_avg_price_30d", "avg_sold_price_30d", "avgSoldPrice30d", "avg_30", "thirty_day_avg"]);
+  const avg90 = positiveMoneyField(player, ["market_avg_price_90d", "avg_sold_price_90d", "avgSoldPrice90d", "avg_90", "ninety_day_avg"]);
+  const sales30 = numericField(player, ["market_sales_count_30d", "sales_count_30d", "salesCount30d", "sales_30"]);
+  const sales90 = numericField(player, ["market_sales_count_90d", "sales_count_90d", "salesCount90d", "sales_90"]);
+  const movement = boardMovementValue(player);
+  const ops = Number(player.hitter_ops || player.ops);
+  const era = Number(player.pitcher_era || player.era);
+
+  if (Number.isFinite(current)) parts.push(`${currency(current)} current comp`);
+  if (Number.isFinite(sales30) && sales30 > 0) parts.push(`${Math.round(sales30)} sales in 30D`);
+  else if (Number.isFinite(sales90) && sales90 > 0) parts.push(`${Math.round(sales90)} sales in 90D`);
+
+  if (Number.isFinite(avg30) && Number.isFinite(avg90) && avg90 > 0) {
+    const priceMove = ((avg30 - avg90) / avg90) * 100;
+    if (priceMove >= 8) parts.push(`price up ${Math.round(priceMove)}% vs 90D`);
+    else if (priceMove <= -8) parts.push(`price down ${Math.abs(Math.round(priceMove))}% vs 90D`);
+    else parts.push("price steady vs 90D");
+  }
+
+  if (movement > 0) parts.push(`movement signal +${Math.round(movement)}`);
+  if (Number.isFinite(ops) && ops >= 0.9) parts.push(`${formatStatDecimal(ops)} OPS`);
+  if (Number.isFinite(era) && era <= 3.25) parts.push(`${formatEraValue(era)} ERA`);
+  return parts.slice(0, 3);
 }
 
 function onDeckStatMemo(player) {
