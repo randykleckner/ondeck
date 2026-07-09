@@ -338,6 +338,7 @@ function normalizeOnDeckApiRow(row) {
     ...row,
     player_id: row.player_id ?? row.playerId ?? "",
     player_name: row.player_name ?? row.playerName ?? "",
+    mlbam_id: row.mlbam_id ?? row.mlbamId ?? row.mlbam ?? "",
     org: row.org ?? row.team ?? "",
     position: row.position ?? "",
     level: row.level ?? "",
@@ -1219,8 +1220,13 @@ function summaryInsightCardMarkup(card) {
   const player = card.player;
   return `
       <article class="market-card insight-card" role="button" tabindex="0" data-player-id="${escapeHtml(player.player_id)}" data-profile-type="${escapeHtml(profileTypeForSource(player))}">
-        <span class="market-label">${escapeHtml(card.label)}</span>
-        <h3>${escapeHtml(player.player_name)}</h3>
+        <div class="insight-card-top">
+          ${headshotMarkup(player, "tile")}
+          <div>
+            <span class="market-label">${escapeHtml(card.label)}</span>
+            <h3>${escapeHtml(player.player_name)}</h3>
+          </div>
+        </div>
         <div class="market-price">
           <strong>${escapeHtml(card.value)}</strong>
           <span>${escapeHtml([player.org, player.level, player.position].filter(Boolean).join(" · "))}</span>
@@ -1520,6 +1526,29 @@ function ebaySearchUrl(player) {
   return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}`;
 }
 
+function headshotMarkup(player, variant = "table") {
+  const url = playerHeadshotUrl(player);
+  const initials = playerInitials(player.player_name);
+  const classes = `player-headshot player-headshot-${variant}`;
+  if (!url) return `<span class="${classes} player-headshot-fallback" aria-hidden="true">${escapeHtml(initials)}</span>`;
+  return `<img class="${classes}" src="${escapeHtml(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'${classes} player-headshot-fallback',textContent:'${escapeHtml(initials)}'}))" />`;
+}
+
+function playerHeadshotUrl(player) {
+  const id = fieldValue(player, ["mlbam_id", "mlbamId", "mlbam"], "");
+  if (!id || !/^\d+$/.test(String(id))) return "";
+  return `https://img.mlbstatic.com/mlb-photos/image/upload/w_160,q_auto:best/v1/people/${encodeURIComponent(String(id))}/headshot/67/current`;
+}
+
+function playerInitials(name) {
+  return String(name || "OP")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "OP";
+}
+
 function clampScore(value) {
   return Math.max(0, Math.min(100, Number(value) || 0));
 }
@@ -1654,8 +1683,11 @@ function renderRows(rows) {
         <tr class="${selected}" data-player-id="${escapeHtml(player.player_id)}">
           <td>
             <span class="player-name">
-              <strong>${escapeHtml(player.player_name)}</strong>
-              <span>${escapeHtml([player.org, player.level, player.position, player.age ? `Age ${player.age}` : ""].filter(Boolean).join(" · "))}</span>
+              ${headshotMarkup(player, "table")}
+              <span>
+                <strong>${escapeHtml(player.player_name)}</strong>
+                <span>${escapeHtml([player.org, player.level, player.position, player.age ? `Age ${player.age}` : ""].filter(Boolean).join(" · "))}</span>
+              </span>
             </span>
           </td>
           <td><span class="score-pill ${scoreClass(boardMoveScore(player))}">${escapeHtml(boardMoveScore(player))}</span></td>

@@ -19,6 +19,349 @@
     sans-serif;
 }
 
+/* Patriotic redesign branch theme tokens and overrides. */
+:root {
+  color-scheme: light;
+  --page: #f7f9fd;
+  --panel: rgba(255, 255, 255, 0.92);
+  --panel-strong: #ffffff;
+  --ink: #071a3a;
+  --muted: #5f6b7d;
+  --line: rgba(7, 26, 58, 0.14);
+  --navy: #071f4a;
+  --navy-2: #0d3472;
+  --royal: #1c5fb8;
+  --patriot-red: #d51025;
+  --red: #d51025;
+  --blue: #0b3a78;
+  --cyan: #1c5fb8;
+  --violet: #d51025;
+  --green: #07883b;
+  --yellow: #e7a900;
+  --shadow: 0 18px 44px rgba(7, 26, 58, 0.12);
+}
+
+body {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 7% 18%, rgba(213, 16, 37, 0.10), transparent 18rem),
+    radial-gradient(circle at 91% 12%, rgba(7, 31, 74, 0.12), transparent 22rem),
+    linear-gradient(180deg, #ffffff 0%, #f7f9fd 38%, #edf2f8 100%);
+}
+
+body::before {
+  background:
+    linear-gradient(rgba(7, 31, 74, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(7, 31, 74, 0.03) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 70%);
+}
+
+.app-header {
+  grid-template-columns: 170px minmax(0, 1fr) auto;
+  padding-block: 10px;
+  border-bottom: 1px solid rgba(7, 31, 74, 0.16);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 24px rgba(7, 31, 74, 0.08);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  width: 154px;
+}
+
+.brand-mark img {
+  display: block;
+  width: 154px;
+  height: auto;
+  max-height: 82px;
+  object-fit: contain;
+}
+
+.main-nav a {
+  position: relative;
+  color: var(--navy);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.main-nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -15px;
+  height: 3px;
+  background: transparent;
+}
+
+.main-nav a:hover,
+.main-nav a.active {
+  color: var(--patriot-red);
+}
+
+.main-nav a.active::after {
+  background: var(--patriot-red);
+}
+
+.button,
+.icon-button {
+  color: var(--navy);
+  border-color: rgba(7, 31, 74, 0.24);
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(7, 31, 74, 0.08);
+}
+
+.button.primary {
+  color: #ffffff;
+  background: linear-gradient(90deg, var(--navy), var(--navy-2));
+  box-shadow: 0 12px 26px rgba(7, 31, 74, 0.22);
+}
+
+.button.ghost {
+  color: var(--patriot-red);
+  border-color: rgba(213, 16, 37, 0.45);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.hero-panel {
+  min-height: clamp(430px, 58vh, 620px);
+  border-color: rgba(7, 31, 74, 0.14);
+  border-radius: 0;
+  background:
+    linear-gradient(103deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 48%, rgba(244, 248, 253, 0.64) 70%),
+    radial-gradient(circle at 88% 18%, rgba(213, 16, 37, 0.16), transparent 11rem),
+    linear-gradient(135deg, rgba(7, 31, 74, 0.10), rgba(255, 255, 255, 0));
+  box-shadow: 0 12px 34px rgba(7, 31, 74, 0.12);
+}
+
+.hero-panel::after {
+  background:
+    linear-gradient(115deg, transparent 0 68%, var(--navy) 68% 84%, transparent 84%),
+    radial-gradient(circle at 4% 74%, rgba(213, 16, 37, 0.14), transparent 12rem);
+  opacity: 0.96;
+}
+
+.hero-copy {
+  max-width: 760px;
+}
+
+.eyebrow {
+  color: var(--patriot-red);
+}
+
+h1 {
+  color: var(--navy);
+  font-style: italic;
+}
+
+h1 span:nth-child(2) {
+  background: none;
+  color: var(--patriot-red);
+}
+
+.hero-copy p:not(.eyebrow),
+.page-hero p:not(.eyebrow) {
+  color: #25344d;
+}
+
+.market-board,
+.table-panel,
+.card-panel,
+.home-cta,
+.team-card,
+.news-panel article,
+.card-market-panel,
+.graduated-grid article,
+.scorebook-section,
+.emerging-board,
+.emerging-note,
+.emerging-summary-grid article {
+  color: var(--ink);
+  border-color: rgba(7, 31, 74, 0.14);
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: var(--shadow);
+}
+
+.panel-heading {
+  border-color: rgba(7, 31, 74, 0.12);
+}
+
+.panel-heading h2 {
+  color: var(--navy);
+}
+
+.panel-heading span,
+.market-label,
+.market-badge {
+  color: var(--patriot-red);
+}
+
+.market-grid::before {
+  background: linear-gradient(90deg, #f7f9fd, transparent);
+}
+
+.market-grid::after {
+  background: linear-gradient(270deg, #f7f9fd, transparent);
+}
+
+.market-card {
+  border-color: rgba(7, 31, 74, 0.16);
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(7, 31, 74, 0.10);
+}
+
+.market-card:hover,
+.market-card:focus-visible {
+  border-color: rgba(213, 16, 37, 0.48);
+  background: #ffffff;
+}
+
+.market-card h3,
+.player-name strong {
+  color: var(--navy);
+}
+
+.market-card p,
+.market-price span,
+.market-card dt,
+.player-name span,
+.muted {
+  color: var(--muted);
+}
+
+.market-price strong {
+  background: none;
+  color: var(--green);
+}
+
+.insight-card-top,
+.player-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-headshot {
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 2px solid rgba(7, 31, 74, 0.12);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, #ffffff, #e9eef5);
+  object-fit: cover;
+  object-position: center top;
+  box-shadow: 0 5px 12px rgba(7, 31, 74, 0.12);
+}
+
+.player-headshot-table {
+  width: 40px;
+  height: 40px;
+}
+
+.player-headshot-tile {
+  width: 62px;
+  height: 62px;
+}
+
+.player-headshot-profile {
+  width: clamp(86px, 10vw, 128px);
+  height: clamp(86px, 10vw, 128px);
+  align-self: center;
+}
+
+.player-headshot-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--navy), var(--royal));
+  font-weight: 950;
+}
+
+table {
+  color: var(--ink);
+}
+
+th {
+  color: #ffffff;
+  background: var(--navy);
+}
+
+td {
+  border-bottom-color: rgba(7, 31, 74, 0.12);
+}
+
+tbody tr:hover,
+tbody tr.selected {
+  background: rgba(213, 16, 37, 0.06);
+}
+
+.score-pill.score-high {
+  color: #ffffff;
+  background: var(--green);
+}
+
+.score-pill.score-medium {
+  color: var(--navy);
+  background: #ffd84d;
+}
+
+.score-pill.score-low {
+  color: #ffffff;
+  background: var(--patriot-red);
+}
+
+.moonshot-stars {
+  color: var(--patriot-red);
+}
+
+.ebay-button {
+  color: #ffffff;
+  background: var(--green);
+  border-color: transparent;
+}
+
+.odp-card-shell {
+  color: var(--ink);
+}
+
+.odp-card-frame {
+  border-color: rgba(7, 31, 74, 0.28);
+  background: #ffffff;
+}
+
+.odp-card-header {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+@media (max-width: 860px) {
+  .app-header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .brand-mark,
+  .brand-mark img {
+    width: 132px;
+  }
+
+  .hero-panel {
+    min-height: auto;
+  }
+
+  .hero-panel::after {
+    opacity: 0.34;
+  }
+
+  .odp-card-header {
+    grid-template-columns: 1fr;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -4465,5 +4808,108 @@ tbody tr {
 
   .card-market-panel {
     padding: 12px;
+  }
+}
+
+/* Final patriotic branch cascade pass: keep these after legacy responsive rules. */
+.app-header {
+  grid-template-columns: 170px minmax(0, 1fr) auto;
+  padding-block: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom-color: rgba(7, 31, 74, 0.16);
+  box-shadow: 0 6px 24px rgba(7, 31, 74, 0.08);
+}
+
+.brand-mark,
+.brand-mark img {
+  width: 154px;
+}
+
+.hero-panel {
+  min-height: clamp(430px, 58vh, 620px);
+  border-color: rgba(7, 31, 74, 0.14);
+  border-radius: 0;
+  background:
+    linear-gradient(103deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 48%, rgba(244, 248, 253, 0.64) 70%),
+    radial-gradient(circle at 88% 18%, rgba(213, 16, 37, 0.16), transparent 11rem),
+    linear-gradient(135deg, rgba(7, 31, 74, 0.10), rgba(255, 255, 255, 0));
+}
+
+.hero-panel::after {
+  background:
+    linear-gradient(115deg, transparent 0 68%, var(--navy) 68% 84%, transparent 84%),
+    radial-gradient(circle at 4% 74%, rgba(213, 16, 37, 0.14), transparent 12rem);
+}
+
+.market-board,
+.table-panel,
+.card-panel,
+.home-cta,
+.market-card {
+  color: var(--ink);
+  border-color: rgba(7, 31, 74, 0.14);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.insight-card-top,
+.player-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-headshot {
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 2px solid rgba(7, 31, 74, 0.12);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #e9eef5);
+  object-fit: cover;
+  object-position: center top;
+}
+
+.player-headshot-table {
+  width: 40px;
+  height: 40px;
+}
+
+.player-headshot-tile {
+  width: 62px;
+  height: 62px;
+}
+
+.player-headshot-profile {
+  width: clamp(86px, 10vw, 128px);
+  height: clamp(86px, 10vw, 128px);
+  align-self: center;
+}
+
+.player-headshot-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--navy), var(--royal));
+  font-weight: 950;
+}
+
+@media (max-width: 860px) {
+  .app-header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .brand-mark,
+  .brand-mark img {
+    width: 132px;
+  }
+
+  .hero-panel {
+    min-height: auto;
+  }
+
+  .odp-card-header {
+    grid-template-columns: 1fr;
   }
 }

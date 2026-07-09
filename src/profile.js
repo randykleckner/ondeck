@@ -205,6 +205,7 @@ function normalizePlayerProfile(row, boardType) {
   const cardCode = cleanValue(validCardCode(row, boardType));
   const player = {
     id: cleanValue(firstValue(row.player_id, row.playerId, row.id, "")),
+    mlbamId: cleanValue(firstValue(row.mlbam_id, row.mlbamId, row.mlbam, "")),
     name,
     organization: cleanValue(firstValue(row.org, row.current_org, row.team_on_card, row.team, "Org pending")),
     position: cleanValue(firstValue(row.position, row.pos, row.stats_role, "Position pending")),
@@ -381,6 +382,7 @@ function profileHeader(profile) {
   const player = profile.player;
   return `
     <header class="odp-card-header">
+      ${profileHeadshotMarkup(player)}
       <div class="odp-nameplate">
         <h1>${escapeHtml(player.name)}</h1>
         <p>${escapeHtml(player.organization)} · ${escapeHtml(player.position)} · ${escapeHtml(player.level)}</p>
@@ -393,6 +395,28 @@ function profileHeader(profile) {
       ${bioSegments(profile).map(([label, value]) => `<span><b>${escapeHtml(label)}:</b> ${escapeHtml(value)}</span>`).join("")}
     </div>
   `;
+}
+
+function profileHeadshotMarkup(player) {
+  const url = playerHeadshotUrl(player);
+  const initials = playerInitials(player.name);
+  if (!url) return `<span class="player-headshot player-headshot-profile player-headshot-fallback" aria-hidden="true">${escapeHtml(initials)}</span>`;
+  return `<img class="player-headshot player-headshot-profile" src="${escapeHtml(url)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'player-headshot player-headshot-profile player-headshot-fallback',textContent:'${escapeHtml(initials)}'}))" />`;
+}
+
+function playerHeadshotUrl(player) {
+  const id = player.mlbamId;
+  if (!id || !/^\d+$/.test(String(id))) return "";
+  return `https://img.mlbstatic.com/mlb-photos/image/upload/w_220,q_auto:best/v1/people/${encodeURIComponent(String(id))}/headshot/67/current`;
+}
+
+function playerInitials(name) {
+  return String(name || "OP")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "OP";
 }
 
 function bioSegments(profile) {
