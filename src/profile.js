@@ -202,7 +202,7 @@ function normalizePlayerProfile(row, boardType) {
   const physical = splitHeightWeight(row.height_weight || "");
   const name = cleanValue(firstValue(row.player_name, row.name, "Player"));
   const rank = cleanValue(firstValue(row.prospect_rank, row.rank, ""));
-  const cardCode = cleanValue(firstValue(row.benchmarkCardCode, row.benchmark_card_code, row.card_code, row.auto_code, fallbackCardCode(name)));
+  const cardCode = cleanValue(validCardCode(row, boardType));
   const player = {
     id: cleanValue(firstValue(row.player_id, row.playerId, row.id, "")),
     name,
@@ -383,7 +383,8 @@ function briefingTitleText(boardType) {
 
 function resumeText(raw, player, score) {
   const loaded = firstValue(raw.thesis, raw.resume, raw.resume_summary, raw.recommendation_thesis, raw.pre_score_notes, "");
-  if (loaded) return loaded;
+  if (loaded && !isGenericEmergingCopy(loaded)) return loaded;
+  if (raw.source_type === "emerging" || raw.board_type === "emerging") return emergingResumeText(raw, player, score);
   const scoreText = score.opportunityScore !== "—" ? `${score.opportunityScore} opportunity score` : "opportunity score pending";
   const rank = player.rank ? ` ranked #${player.rank}` : "";
   const stat = compactStatLine(raw);
@@ -391,8 +392,9 @@ function resumeText(raw, player, score) {
 }
 
 function signalsText(raw, player) {
-  if (raw.why_now) return raw.why_now;
-  if (raw.signals) return raw.signals;
+  if (raw.why_now && !isGenericEmergingCopy(raw.why_now)) return raw.why_now;
+  if (raw.signals && !isGenericEmergingCopy(raw.signals)) return raw.signals;
+  if (raw.source_type === "emerging" || raw.board_type === "emerging") return emergingSignalsText(raw, player);
   const signals = [];
   signals.push(onDeckCatalyst(raw));
   const movement = rankTrendText(raw);
@@ -407,9 +409,9 @@ function signalsText(raw, player) {
 }
 
 function whyMatters(raw, player, boardType) {
-  if (raw.edge) return raw.edge;
+  if (raw.edge && !isGenericEmergingCopy(raw.edge)) return raw.edge;
   if (boardType === "emerging") {
-    return `${player.name} is being monitored before the broader Top 100 attention cycle catches up.`;
+    return emergingEdgeText(raw, player);
   }
   if (rankMovement(raw) > 0) {
     return `${player.name} is gaining Top 100 momentum while the next baseball catalyst is still ahead.`;
@@ -422,12 +424,76 @@ function whyMatters(raw, player, boardType) {
 
 function mainRisk(raw) {
   if (raw.do_not_buy_if) return raw.do_not_buy_if;
-  if (raw.risk) return raw.risk;
+  if (raw.risk && !isGenericEmergingCopy(raw.risk)) return raw.risk;
+  if (raw.source_type === "emerging" || raw.board_type === "emerging") return emergingRiskText(raw);
   if (getMarketStatus(raw) === "Avoid Chase") return "The market may already be ahead of the baseball catalyst.";
   if (rankMovement(raw) < 0) return "Top 100 movement is negative, so demand may need a stronger performance catalyst.";
   if (!hasValidSoldData(raw)) return "Card-market data is not loaded yet, so the entry read needs confirmation.";
   if (!compactStatLine(raw)) return "Current stat detail is thin until the next stats refresh.";
   return "Timing remains the key risk: the player path can be right while the market window moves first.";
+}
+
+function emergingResumeText(raw, player, score) {
+  const stat = compactStatLine(raw);
+  const level = player.level && player.level !== "Level pending" ? player.level : "current level";
+  const scoreText = score.opportunityScore !== "—" ? `${score.opportunityScore} move score` : "move score pending";
+  const market = marketReadSentence(raw);
+  if (isPitcher(player.position || raw.stats_role)) {
+    return `${player.name} is an Emerging arm at ${level} with ${stat || "a loaded 2026 pitching line"} and a ${scoreText}. ${market}`;
+  }
+  return `${player.name} is an Emerging bat at ${level} with ${stat || "a loaded 2026 hitting line"} and a ${scoreText}. ${market}`;
+}
+
+function emergingSignalsText(raw, player) {
+  const parts = [];
+  const level = player.level && player.level !== "Level pending" ? player.level : "";
+  if (level) parts.push(`${level} assignment`);
+  const stat = compactStatLine(raw);
+  if (stat) parts.push(stat);
+  const sales30 = countValue(firstValue(raw.sales_count_30d, raw.market_sales_count_30d, ""));
+  const sales90 = countValue(firstValue(raw.sales_count_90d, raw.market_sales_count_90d, ""));
+  if (sales30 !== "-") parts.push(`${sales30} sales in 30D`);
+  else if (sales90 !== "-") parts.push(`${sales90} sales in 90D`);
+  const avg30 = currency(firstValue(raw.avg_price_30d, raw.market_avg_price_30d, ""));
+  if (avg30 !== "Pending") parts.push(`${avg30} 30D avg`);
+  const trend = getTrend(raw);
+  if (trend && trend !== "Pending") parts.push(`market ${trend.toLowerCase()}`);
+  return parts.length ? parts.join(" ... ") : "Stats and benchmark-card market are loaded for review.";
+}
+
+function emergingEdgeText(raw, player) {
+  const score = numberLabel(firstValue(raw.opportunity_score, raw.move_score, raw.emerging_pre_score, ""));
+  const trend = getTrend(raw);
+  const liquidity = getLiquidity(raw);
+  if (trend === "Up" && liquidity !== "Pending") {
+    return `${player.name} has early market activity with improving price direction before Top 100 attention is the main driver.`;
+  }
+  if (liquidity === "Strong" || liquidity === "Moderate") {
+    return `${player.name} has enough sold volume to monitor without waiting for a ranking-list catalyst.`;
+  }
+  return `${player.name} is on the feeder board because the stats/market blend grades out at ${score}, but the catalyst still needs to sharpen.`;
+}
+
+function emergingRiskText(raw) {
+  const levelScore = Number(firstValue(raw.level_score, ""));
+  const performanceScore = Number(firstValue(raw.performance_score, ""));
+  const sales30 = Number(firstValue(raw.sales_count_30d, raw.market_sales_count_30d, ""));
+  if (Number.isFinite(levelScore) && levelScore < 12) return "The baseball timeline is still early, so the next assignment matters more than the current card activity.";
+  if (Number.isFinite(performanceScore) && performanceScore < 45) return "The market has activity, but the performance score needs to climb before this becomes a stronger On Deck case.";
+  if (!Number.isFinite(sales30) || sales30 < 6) return "Sold volume is still thin enough that one comp can distort the card read.";
+  return "The risk is paying for early attention before the player earns a clearer promotion or ranking catalyst.";
+}
+
+function marketReadSentence(raw) {
+  const avg30 = currency(firstValue(raw.avg_price_30d, raw.market_avg_price_30d, ""));
+  const sales30 = countValue(firstValue(raw.sales_count_30d, raw.market_sales_count_30d, ""));
+  if (avg30 !== "Pending" && sales30 !== "-") return `Benchmark card is trading around ${avg30} over 30D with ${sales30} sales.`;
+  if (sales30 !== "-") return `Benchmark card has ${sales30} sales in the last 30D.`;
+  return "Benchmark card market is loaded but still needs a cleaner read.";
+}
+
+function isGenericEmergingCopy(value) {
+  return /current stats and benchmark card market data are available|combined baseball and market profile|needs continued stats and market confirmation|tracked player with stats and card-market data|hitter score from|pitcher score from/i.test(String(value || ""));
 }
 
 function recordTable(profile) {
@@ -763,6 +829,13 @@ function fallbackCardCode(name) {
     .toUpperCase()
     .slice(0, 3);
   return `CPA-${initials || "ODP"}`;
+}
+
+function validCardCode(row, boardType) {
+  const code = firstValue(row.benchmarkCardCode, row.benchmark_card_code, row.card_code, row.auto_code, row.card_number, "");
+  const cleaned = cleanValue(code);
+  if (/^(0|o|-|pending)$/i.test(cleaned) || cleaned.length < 3) return boardType === "emerging" ? "Card Pending" : fallbackCardCode(firstValue(row.player_name, row.name, ""));
+  return cleaned;
 }
 
 function backHref(type) {
