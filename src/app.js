@@ -1116,7 +1116,7 @@ function summaryInsightCards(players) {
   const priced = players
     .map((player) => ({
       player,
-      price: currentCardPrice(player),
+      price: boardCardPrice(player),
       investment: investmentScore(player),
       move: Number(boardMoveScore(player)),
       moonshot: moonshotRating(player),
@@ -1367,17 +1367,64 @@ function onDeckInvestmentSort(a, b) {
 }
 
 function moonshotRating(player) {
-  const score = ceilingScore(player);
-  if (score >= 125) return 5;
-  if (score >= 110) return 4;
-  if (score >= 95) return 3;
-  if (score >= 80) return 2;
+  const price = boardCardPrice(player);
+  const multiple = moonshotUpsideMultiple(player);
+  if (Number.isFinite(price) && price > 150) {
+    return multiple >= 2 ? 2 : 1;
+  }
+  if (multiple >= 5) return 5;
+  if (multiple >= 3) return 4;
+  if (multiple >= 2) return 3;
+  if (multiple >= 1.35) return 2;
   return 1;
 }
 
 function moonshotStars(player) {
   const rating = moonshotRating(player);
-  return `${"★".repeat(rating)}${"☆".repeat(5 - rating)}`;
+  return "★".repeat(rating);
+}
+
+function moonshotUpsideMultiple(player) {
+  const price = boardCardPrice(player);
+  const rawCeiling = ceilingScore(player);
+  const ceiling = clampScore((rawCeiling - 74) * 1.25);
+  const investment = investmentScore(player);
+  const performance = performanceTrendScore(player);
+  const catalyst = catalystScore(player);
+  const trajectory = Math.max(0, boardMovementValue(player));
+  const demand = hobbyDemandScore(player);
+  const upside = clampScore(
+    ceiling * 0.32
+    + investment * 0.22
+    + performance * 0.14
+    + catalyst * 0.12
+    + demand * 0.12
+    + Math.min(100, trajectory * 8) * 0.08,
+  );
+
+  if (!Number.isFinite(price) || price <= 0) return 1;
+  const maxMultiple = price <= 20
+    ? 6.5
+    : price <= 60
+      ? 4.25
+      : price <= 150
+        ? 3.1
+        : price <= 300
+          ? 2
+          : 1.45;
+  return 1 + (maxMultiple - 1) * (upside / 100);
+}
+
+function hobbyDemandScore(player) {
+  const rank = Number(fieldValue(player, ["prospect_rank", "rank"], ""));
+  const position = String(player.position || "").toUpperCase();
+  const org = String(player.org || player.team || "");
+  let score = 45;
+  if (Number.isFinite(rank) && rank > 0) score += Math.max(0, 101 - rank) * 0.35;
+  if (/(SS|OF|CF|3B)/.test(position)) score += 10;
+  if (/(Yankees|Dodgers|Cubs|Mets|Red Sox|Phillies|Rangers|Mariners|Brewers)/i.test(org)) score += 8;
+  if (boardMovementValue(player) > 0) score += Math.min(15, boardMovementValue(player) * 2);
+  return clampScore(score);
 }
 
 function cardMarketConfidence(player) {
@@ -2697,7 +2744,7 @@ function cardBaselineLabel(player) {
   const playerId = String(player.player_id ?? "");
   if (state.liveMarketRequests.has(playerId)) return "Loading...";
   if (state.liveMarketErrors.has(playerId)) return "Market data unavailable";
-  const current = currentCardPrice(player);
+  const current = boardCardPrice(player);
   if (Number.isFinite(current)) return currency(current);
   const baseline = positiveMoneyField(player, ["baseline_value", "latest_value"]);
   if (Number.isFinite(baseline)) return currency(baseline);
@@ -2738,6 +2785,18 @@ function currentCardPrice(player) {
     "avg_90",
     "ninety_day_avg",
   ]);
+}
+
+function boardCardPrice(player) {
+  const avg30 = positiveMoneyField(player, [
+    "market_avg_price_30d",
+    "avg_sold_price_30d",
+    "avgSoldPrice30d",
+    "avg_30",
+    "thirty_day_avg",
+  ]);
+  if (Number.isFinite(avg30)) return avg30;
+  return currentCardPrice(player);
 }
 
 function targetEntryPrice(player) {

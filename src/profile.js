@@ -295,17 +295,41 @@ function profileInvestmentScore(row, rawMoveScore) {
 
 function profileMoonshotRating(row, rawMoveScore) {
   const direct = Number(firstValue(row.moonshot_rating, row.moonshot, ""));
-  if (Number.isFinite(direct) && direct > 0) return `${"★".repeat(Math.min(5, Math.round(direct)))}${"☆".repeat(Math.max(0, 5 - Math.round(direct)))}`;
+  if (Number.isFinite(direct) && direct > 0) return "★".repeat(Math.min(5, Math.round(direct)));
   const move = Number(rawMoveScore);
   const age = Number(firstValue(row.age, ""));
   const rank = Number(firstValue(row.prospect_rank, row.rank, ""));
   const level = String(firstValue(row.level, row.current_level, "")).toUpperCase();
+  const price = numericMoney(firstValue(row.avg_30, row.avgSoldPrice30d, row.avg_sold_price_30d, row.avg_price_30d, row.market_avg_price_30d, row.last_sale, row.market_last_sold_price, ""));
   const levelBoost = { AAA: 12, AA: 14, "A+": 10, A: 8, ROK: 7, RK: 7 }[level] || 5;
   const ageBoost = Number.isFinite(age) ? Math.max(0, 24 - age) * 3 : 6;
   const rankBoost = Number.isFinite(rank) && rank > 0 ? Math.max(0, 105 - rank) / 4 : 8;
   const ceiling = (Number.isFinite(move) ? move : 50) + levelBoost + ageBoost + rankBoost;
-  const rating = ceiling >= 125 ? 5 : ceiling >= 110 ? 4 : ceiling >= 95 ? 3 : ceiling >= 80 ? 2 : 1;
-  return `${"★".repeat(rating)}${"☆".repeat(5 - rating)}`;
+  const maxMultiple = !Number.isFinite(price) || price <= 0
+    ? 1
+    : price <= 20
+      ? 6.5
+      : price <= 60
+        ? 4.25
+        : price <= 150
+          ? 3.1
+          : price <= 300
+            ? 2
+            : 1.45;
+  const upside = clampScore((ceiling - 74) * 1.25);
+  const multiple = 1 + (maxMultiple - 1) * (upside / 100);
+  const rating = Number.isFinite(price) && price > 150
+    ? (multiple >= 2 ? 2 : 1)
+    : multiple >= 5
+      ? 5
+      : multiple >= 3
+        ? 4
+        : multiple >= 2
+          ? 3
+          : multiple >= 1.35
+            ? 2
+            : 1;
+  return "★".repeat(rating);
 }
 
 function rankPlaceholderScore(row) {
