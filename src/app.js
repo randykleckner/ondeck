@@ -1247,6 +1247,16 @@ function numericField(player, fields) {
   return NaN;
 }
 
+function positiveMoneyField(player, fields) {
+  for (const field of fields) {
+    const raw = player[field];
+    if (raw === "" || raw == null) continue;
+    const value = numericMoney(raw);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return NaN;
+}
+
 function marketToneClass(value) {
   const text = String(value || "").toLowerCase();
   if (text.includes("no liquidity") || text.includes("avoid") || text.includes("down") || text.includes("priced")) return "negative";
@@ -2405,11 +2415,16 @@ function cardBaselineLabel(player) {
   const playerId = String(player.player_id ?? "");
   if (state.liveMarketRequests.has(playerId)) return "Loading...";
   if (state.liveMarketErrors.has(playerId)) return "Market data unavailable";
-  const avg30 = numericMoney(player.avg_30);
-  if (Number.isFinite(avg30)) return currency(avg30);
-  const baseline = numericMoney(player.baseline_value);
+  const avg30 = positiveMoneyField(player, ["market_avg_price_30d", "avg_sold_price_30d", "avgSoldPrice30d", "avg_30", "thirty_day_avg"]);
+  if (Number.isFinite(avg30)) return `${currency(avg30)} 30D`;
+  const lastSale = positiveMoneyField(player, ["market_last_sold_price", "last_sold_price", "lastSoldPrice", "last_sale"]);
+  if (Number.isFinite(lastSale)) return `${currency(lastSale)} last`;
+  const avg90 = positiveMoneyField(player, ["market_avg_price_90d", "avg_sold_price_90d", "avgSoldPrice90d", "avg_90", "ninety_day_avg"]);
+  if (Number.isFinite(avg90)) return `${currency(avg90)} 90D`;
+  const baseline = positiveMoneyField(player, ["baseline_value", "latest_value"]);
   if (Number.isFinite(baseline)) return currency(baseline);
-  if (player.card_code) return player.card_code;
+  const code = fieldValue(player, ["card_code", "benchmarkCardCode", "benchmark_card_code"], "");
+  if (code) return code;
   return player.market_signal ? "Market pending" : "Pending";
 }
 
@@ -2900,17 +2915,72 @@ function onDeckCatalyst(player) {
 
 function onDeckThesis(player) {
   const catalyst = onDeckCatalyst(player);
-  const trend = rankTrendText(player);
+  const market = onDeckMarketMemo(player);
+  const stat = onDeckStatMemo(player);
+  const level = fieldValue(player, ["level", "stat_level"], "");
+  const position = fieldValue(player, ["position"], "");
+  const source = String(fieldValue(player, ["source_board", "sourceBoard", "board_type"], "")).toLowerCase();
+  const movement = rankMovement(player);
+  const role = isPitcherPosition(position) ? "arm" : "bat";
+  const levelLabel = level ? `${level} ${role}` : role;
+
+  if (source.includes("emerging") || source.includes("watch")) {
+    const pieces = [stat, market].filter(Boolean);
+    if (pieces.length) return `${player.player_name} is an ${levelLabel} with ${pieces.join("; ")}. ${catalyst} is the next proof point.`;
+    return `${player.player_name} is on the feeder board because the move score is separating before the wider prospect market has a full read.`;
+  }
+
   if (catalyst === "MLB Debut") {
-    return `${player.player_name} is close enough to force a major-league roster decision if current form and organizational need keep aligning.`;
+    return `${player.player_name} is close enough to force a major-league roster decision${stat ? ` while carrying ${stat}` : ""}${market ? `; ${market}` : ""}.`;
   }
-  if (catalyst.includes("Promotion")) {
-    return `${player.player_name}'s next assignment is the catalyst that could reset the market's view of the timeline.`;
+  if (market || stat) {
+    return `${player.player_name}'s ${catalyst.toLowerCase()} case is built on ${[stat, market].filter(Boolean).join(" and ")}.`;
   }
-  if (trend.startsWith("Up")) {
-    return `${player.player_name} already has ranking momentum; the next performance spike could pull more attention forward.`;
+  if (movement != null && movement > 0) {
+    return `${player.player_name} has moved up ${movement} spots in the rankings, keeping the next baseball catalyst on the board.`;
   }
-  return `${player.player_name}'s next meaningful baseball event is the reason to monitor the profile this week.`;
+  return `${player.player_name}'s current profile still needs either a cleaner market read or a sharper performance signal before the case gets louder.`;
+}
+
+function onDeckStatMemo(player) {
+  if (isPitcherPosition(player.position)) {
+    const era = statValue(player.pitcher_era || player.era);
+    const whip = statValue(player.pitcher_whip || player.whip);
+    const strikeouts = countValue(player.pitcher_so || player.so || player.k);
+    if (era !== "-" && whip !== "-") return `${era} ERA and ${whip} WHIP`;
+    if (era !== "-") return `${era} ERA`;
+    if (strikeouts !== "-") return `${strikeouts} strikeouts`;
+    return "";
+  }
+
+  const avg = statValue(player.hitter_avg || player.avg);
+  const ops = statValue(player.hitter_ops || player.ops);
+  const hr = countValue(player.hitter_hr || player.hr);
+  if (ops !== "-" && avg !== "-") return `${avg} AVG / ${ops} OPS`;
+  if (ops !== "-") return `${ops} OPS`;
+  if (avg !== "-") return `${avg} AVG`;
+  if (hr !== "-") return `${hr} HR power signal`;
+  return "";
+}
+
+function onDeckMarketMemo(player) {
+  const sales30 = numericField(player, ["market_sales_count_30d", "sales_count_30d", "salesCount30d", "sales_30"]);
+  const avg30 = positiveMoneyField(player, ["market_avg_price_30d", "avg_sold_price_30d", "avgSoldPrice30d", "avg_30", "thirty_day_avg"]);
+  const avg90 = positiveMoneyField(player, ["market_avg_price_90d", "avg_sold_price_90d", "avgSoldPrice90d", "avg_90", "ninety_day_avg"]);
+  const marketRead = boardMarketRead(player);
+
+  const volume = Number.isFinite(sales30) && sales30 > 0 ? `${Math.round(sales30)} clean 30D sales` : "";
+  const price = Number.isFinite(avg30) ? `${currency(avg30)} 30D avg` : "";
+  const trend = Number.isFinite(avg30) && Number.isFinite(avg90) && avg90 > 0
+    ? ((avg30 - avg90) / avg90) * 100
+    : NaN;
+
+  if (Number.isFinite(trend) && Math.abs(trend) >= 8) {
+    const direction = trend > 0 ? "up" : "down";
+    return [volume, price, `market ${direction} ${Math.abs(trend).toFixed(0)}% vs 90D`].filter(Boolean).join(", ");
+  }
+  if (volume || price) return [volume, price, marketRead && !/need|pending/i.test(marketRead) ? marketRead.toLowerCase() : ""].filter(Boolean).join(", ");
+  return "";
 }
 
 function watchThesis(player) {
