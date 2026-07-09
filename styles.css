@@ -2281,6 +2281,46 @@ body[data-view="graduated"] #graduated {
   min-width: 760px;
 }
 
+.diagnostics-panel {
+  overflow: hidden;
+}
+
+.diagnostics-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.diagnostics-table-wrap {
+  max-height: 72vh;
+}
+
+.diagnostics-table {
+  min-width: 2280px;
+}
+
+.diagnostics-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(5, 7, 17, 0.96);
+}
+
+.diagnostics-table td {
+  vertical-align: top;
+  font-size: 0.78rem;
+}
+
+.diagnostic-eligible {
+  background: rgba(56, 245, 166, 0.035);
+}
+
+.diagnostic-excluded {
+  background: rgba(255, 255, 255, 0.01);
+}
+
 .table-panel {
   overflow: hidden;
 }

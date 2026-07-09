@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OnDeck Prospect | Rankings Diagnostics</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260626-31" />
+    <link rel="stylesheet" href="./styles.css?v=20260709-diagnostics-1" />
+  </head>
+  <body>
+    <header class="app-header">
+      <a class="brand-mark" href="./index.html" aria-label="OnDeck Prospect home">
+        <strong>OnDeck</strong>
+        <span>Prospect</span>
+      </a>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="./index.html">On Deck</a>
+        <a href="./top100.html">Top 100</a>
+        <a href="./emerging.html">Emerging</a>
+        <a href="./graduated.html">Graduated</a>
+        <a href="./about.html">About</a>
+      </nav>
+      <div class="header-actions">
+        <a class="button primary" href="./index.html#on-deck">On Deck Board</a>
+      </div>
+    </header>
+
+    <main class="app-shell page-shell diagnostics-shell">
+      <section class="page-hero" aria-label="Rankings diagnostics">
+        <p class="eyebrow">Internal Diagnostics</p>
+        <h1>Rankings Diagnostics</h1>
+        <p>Full candidate-pool audit showing why every tracked player is eligible for On Deck or excluded.</p>
+      </section>
+
+      <section class="table-panel diagnostics-panel" aria-label="Rankings diagnostics table">
+        <div class="panel-heading">
+          <div>
+            <h2>Candidate Pool</h2>
+            <p>Sorted by On Deck eligibility, Market Opportunity Score, then Move Score.</p>
+          </div>
+          <span id="diagnostics-count">Loading diagnostics...</span>
+        </div>
+        <div class="diagnostics-filter-bar" aria-label="Diagnostics filters">
+          <button class="button primary" type="button" data-diagnostics-filter="all">All players</button>
+          <button class="button ghost" type="button" data-diagnostics-filter="eligible">Eligible only</button>
+          <button class="button ghost" type="button" data-diagnostics-filter="excluded">Excluded only</button>
+          <button class="button ghost" type="button" data-diagnostics-filter="top100">Top 100</button>
+          <button class="button ghost" type="button" data-diagnostics-filter="emerging">Emerging</button>
+          <button class="button ghost" type="button" data-diagnostics-filter="under20">Under $20</button>
+          <button class="button ghost" type="button" data-diagnostics-filter="missing-market">Missing market data</button>
+          <button class="button ghost" type="button" data-diagnostics-filter="wait">Wait / Too hot</button>
+          <button class="button ghost" type="button" data-diagnostics-filter="need-comps">Need comps</button>
+        </div>
+        <div class="table-wrap diagnostics-table-wrap">
+          <table class="diagnostics-table">
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Source</th>
+                <th>Team</th>
+                <th>Age</th>
+                <th>Level</th>
+                <th>Move Score</th>
+                <th>Market Opportunity Score</th>
+                <th>Current Auto Price</th>
+                <th>Target Entry</th>
+                <th>Entry Label</th>
+                <th>Thesis</th>
+                <th>Liquidity</th>
+                <th>Sell-through</th>
+                <th>30D Trend</th>
+                <th>90D Trend</th>
+                <th>Catalyst Score</th>
+                <th>Ceiling Score</th>
+                <th>Eligible for On Deck?</th>
+                <th>Excluded Reason</th>
+                <th>Final Rank</th>
+              </tr>
+            </thead>
+            <tbody id="diagnostics-rows">
+              <tr><td colspan="20" class="muted">Loading diagnostics...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/rankings-diagnostics.js?v=20260709-diagnostics-1"></script>
+  </body>
+</html>
