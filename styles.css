@@ -75,27 +75,19 @@ a {
 }
 
 .brand-mark {
-  display: grid;
-  gap: 0;
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  width: clamp(64px, 7vw, 86px);
+  min-width: 64px;
 }
 
-.brand-mark strong {
-  font-size: clamp(1.4rem, 2.5vw, 2.1rem);
-  font-style: italic;
-  font-weight: 950;
-  line-height: 0.9;
-  background: linear-gradient(90deg, #fff, var(--cyan), var(--violet));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.brand-mark span {
-  color: #dce5ff;
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.42em;
+.brand-mark img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: clamp(54px, 6vw, 74px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px rgba(82, 240, 255, 0.28));
 }
 
 .main-nav,
@@ -3956,13 +3948,9 @@ tbody tr {
     padding: 16px;
   }
 
-  .brand-mark strong {
-    font-size: 1.45rem;
-  }
-
-  .brand-mark span {
-    font-size: 0.6rem;
-    letter-spacing: 0.34em;
+  .brand-mark {
+    width: 58px;
+    min-width: 58px;
   }
 
   .main-nav {
