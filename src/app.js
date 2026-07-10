@@ -283,7 +283,7 @@ async function loadTop100Prospects() {
       loadOptionalCsv("./data/rank-history.csv?v=20260702-current"),
       loadOptionalCsv("./data/card-targets.csv?v=20260706-1"),
       loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
-      loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260630-1"),
+      loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260710-pnl-1"),
     ]);
     const enrichmentRows = mergeRowsByPlayerId(enrichment, rankHistory);
     state.latestTop100Keys = buildPlayerKeySet(top100Prospects);
@@ -1761,6 +1761,7 @@ function renderScorebook() {
   const officialHits = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "hit");
   const historical = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "historical");
   const missed = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "missed");
+  const purchases = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "purchase ledger");
   const pending = onDeckPlayers().map((rowPlayer, index) => {
     const player = withLiveMarketData(rowPlayer);
     return {
@@ -1778,11 +1779,12 @@ function renderScorebook() {
 
   elements.scorebookBoard.innerHTML = `
     <div class="scorebook-summary">
-      ${scorebookMetric("Official hits", officialHits.length)}
-      ${scorebookMetric("Pending On Deck", pending.length)}
-      ${scorebookMetric("Historical examples", historical.length)}
-      ${scorebookMetric("Missed", missed.length)}
+      ${scorebookMetric("Open positions", purchases.filter((entry) => normalizeName(entry.position_status || "open") !== "closed").length)}
+      ${scorebookMetric("Capital in play", totalPurchaseCost(purchases))}
+      ${scorebookMetric("Realized P&L", realizedPnlLabel(purchases))}
+      ${scorebookMetric("On Deck hits", officialHits.length)}
     </div>
+    ${scorebookTable("Purchase Ledger", purchases, purchaseLedgerColumns())}
     ${scorebookTable("Official OnDeck Hits", officialHits, officialHitColumns())}
     ${pendingTable(pending)}
     ${scorebookTable("Historical Market Examples", historical, historicalColumns())}
@@ -1880,6 +1882,25 @@ function scorebookMetric(label, value) {
   return `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`;
 }
 
+function totalPurchaseCost(rows) {
+  const total = rows.reduce((sum, row) => {
+    const purchase = numericMoney(row.purchase_price);
+    return Number.isFinite(purchase) ? sum + purchase : sum;
+  }, 0);
+  return total > 0 ? currency(total) : "$0.00";
+}
+
+function realizedPnlLabel(rows) {
+  const closedRows = rows.filter((row) => Number.isFinite(numericMoney(row.sell_price)));
+  if (!closedRows.length) return "Open";
+  const pnl = closedRows.reduce((sum, row) => {
+    const purchase = numericMoney(row.purchase_price);
+    const sell = numericMoney(row.sell_price);
+    return Number.isFinite(purchase) && Number.isFinite(sell) ? sum + (sell - purchase) : sum;
+  }, 0);
+  return pnl >= 0 ? `+${currency(pnl)}` : `-${currency(Math.abs(pnl))}`;
+}
+
 function pendingTable(rows) {
   if (!rows.length) {
     return `<section class="scorebook-section"><h3>Pending On Deck</h3><p class="muted">No approved On Deck players found.</p></section>`;
@@ -1938,6 +1959,42 @@ function scorebookTable(title, rows, columns) {
       </div>
     </section>
   `;
+}
+
+function purchaseLedgerColumns() {
+  return [
+    { label: "Player", render: (row) => `<strong>${escapeHtml(scorebookPlayerName(row))}</strong>` },
+    { label: "Card", render: (row) => escapeHtml(row.card_name || "Bowman Chrome Auto") },
+    { label: "Purchase Date", render: (row) => escapeHtml(formatShortDate(row.purchase_date || row.mlb_debut_date) || row.purchase_date || "-") },
+    { label: "Buy Price", render: (row) => escapeHtml(currency(row.purchase_price)) },
+    { label: "Sell Price", render: (row) => escapeHtml(currency(row.sell_price)) },
+    { label: "P&L", render: (row) => `<span class="${escapeHtml(pnlClass(row))}">${escapeHtml(pnlLabel(row))}</span>` },
+    { label: "Status", render: (row) => `<span class="scorebook-result ${escapeHtml(scorebookStatusClass(row))}">${escapeHtml(row.position_status || "Open")}</span>` },
+    { label: "Notes", render: (row) => escapeHtml(row.result_note || "-") },
+  ];
+}
+
+function pnlLabel(row) {
+  const purchase = numericMoney(row.purchase_price);
+  const sell = numericMoney(row.sell_price);
+  if (!Number.isFinite(purchase) || !Number.isFinite(sell)) return "Open";
+  const change = sell - purchase;
+  const pct = purchase > 0 ? ` (${Math.round((change / purchase) * 100)}%)` : "";
+  return `${change >= 0 ? "+" : "-"}${currency(Math.abs(change))}${pct}`;
+}
+
+function pnlClass(row) {
+  const purchase = numericMoney(row.purchase_price);
+  const sell = numericMoney(row.sell_price);
+  if (!Number.isFinite(purchase) || !Number.isFinite(sell)) return "pnl-open";
+  return sell >= purchase ? "pnl-positive" : "pnl-negative";
+}
+
+function scorebookStatusClass(row) {
+  const status = normalizeName(row.position_status || "open");
+  if (status === "closed" || status === "sold") return "hit";
+  if (status === "open") return "open";
+  return "historical";
 }
 
 function officialHitColumns() {

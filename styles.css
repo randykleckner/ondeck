@@ -3455,6 +3455,26 @@ tbody tr {
   background: var(--yellow);
 }
 
+.scorebook-result.open {
+  color: #06101b;
+  background: var(--cyan);
+}
+
+.pnl-positive {
+  color: var(--green);
+  font-weight: 950;
+}
+
+.pnl-negative {
+  color: #ff6b6b;
+  font-weight: 950;
+}
+
+.pnl-open {
+  color: var(--muted);
+  font-weight: 950;
+}
+
 .market-status {
   color: var(--cyan);
   font-weight: 950;
