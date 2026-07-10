@@ -26,6 +26,7 @@ async function init() {
       onDeckData,
       emergingData,
       removedData,
+      registryData,
     ] = await Promise.all([
       csv("./data/mlb-top100-2026.csv?v=20260702-current"),
       csv("./data/current-stats.csv"),
@@ -38,7 +39,17 @@ async function init() {
       json("/api/on-deck?limit=50").catch(() => ({ items: [] })),
       json("/api/emerging?limit=500&include_watch=true&include_low_priority=true").catch(() => ({ items: [] })),
       json("/api/emerging?tier=top100_removed&limit=500").catch(() => ({ items: [] })),
+      json("/api/diagnostics?limit=2000").catch(() => ({ items: [] })),
     ]);
+
+    if (Array.isArray(registryData.items) && registryData.items.length) {
+      state.rows = registryData.items
+        .map(normalizeRegistryDiagnostic)
+        .sort(defaultSort)
+        .map((row, index) => ({ ...row, finalRank: index + 1 }));
+      render();
+      return;
+    }
 
     const enrichedTop100 = applyOverlay(top100, mergeRowsByPlayerId(enrichment, rankHistory));
     const scoredTop100 = mergeProspectData(
@@ -160,6 +171,76 @@ function normalizeEmerging(row, onDeck = {}, forcedSource = "") {
     era: cleanNumber(row.pitcher_era),
     kMinusBb: cleanNumber(row.pitcher_k_minus_bb_pct),
   };
+}
+
+function normalizeRegistryDiagnostic(row) {
+  const current = money(row.current_auto_price);
+  const investment = cleanNumber(row.investment_score ?? row.move_score);
+  const move = cleanNumber(row.move_score);
+  const target = Number.isFinite(current) ? targetEntry({ ...row, avg30: current, avg90: money(row.avg_price_90d) }, current) : NaN;
+  const missingFields = String(row.missing_fields || "")
+    .split(",")
+    .map((field) => field.trim())
+    .filter(Boolean);
+  const excludedReason = row.excluded_reason || (missingFields[0] || "");
+  const eligible = Number(row.eligible_ondeck) === 1 || excludedReason === "Fully scorable";
+  return {
+    ...row,
+    key: `registry:${row.player_id}`,
+    playerId: row.player_id,
+    playerName: row.player_name || row.full_name || "Player",
+    source: sourceLabel(row),
+    team: row.org || row.team || "",
+    age: cleanNumber(row.age),
+    level: row.level || "",
+    moveScore: move,
+    marketOpportunityScore: investment,
+    currentPrice: current,
+    avg30: current,
+    avg90: money(row.avg_price_90d),
+    sales30: cleanNumber(row.sales_count_30d),
+    sales90: cleanNumber(row.sales_count_90d),
+    sellThrough30: cleanNumber(row.sell_through_30d),
+    sellThrough90: cleanNumber(row.sell_through_90d),
+    catalystScore: cleanNumber(row.catalyst_score),
+    ceilingScore: cleanNumber(row.ceiling_score ?? row.moonshot_rating),
+    targetEntry: target,
+    entryLabel: Number.isFinite(target) ? currency(target) : "-",
+    thesis: registryThesis(row, current),
+    liquidity: liquidityLabel({
+      sales30: cleanNumber(row.sales_count_30d),
+      sales90: cleanNumber(row.sales_count_90d),
+    }),
+    sellThrough: sellThroughLabel({
+      sellThrough30: cleanNumber(row.sell_through_30d),
+      sellThrough90: cleanNumber(row.sell_through_90d),
+    }),
+    trend30: "-",
+    trend90: Number.isFinite(money(row.current_auto_price)) ? currency(money(row.current_auto_price)) : "-",
+    eligible,
+    excludedReason: eligible ? "" : excludedReason,
+    missingFields,
+    sameNameCollision: Number(row.same_name_collision) === 1 || row.same_name_collision === true,
+    cardReviewStatus: row.card_review_status || "",
+  };
+}
+
+function sourceLabel(row) {
+  const source = String(row.source_type || row.tracking_group || "Registry");
+  if (source.toLowerCase().includes("top")) return "Top 100";
+  if (source.toLowerCase().includes("emerging")) return "Emerging";
+  if (source.toLowerCase().includes("watch")) return "Watchlist";
+  return source;
+}
+
+function registryThesis(row, current) {
+  const parts = [];
+  if (row.verified_card_code) parts.push(`card ${row.verified_card_code}`);
+  else if (row.generated_card_code) parts.push(`generated ${row.generated_card_code}`);
+  if (Number.isFinite(current)) parts.push(`${currency(current)} current comp`);
+  if (row.card_review_status && row.card_review_status !== "Verified") parts.push(row.card_review_status);
+  if (row.missing_fields) parts.push(String(row.missing_fields).split(",")[0]);
+  return parts.filter(Boolean).slice(0, 3).join("; ") || "Registry row pending data";
 }
 
 function marketFields(market) {
@@ -392,15 +473,28 @@ function matchesFilter(row) {
   if (state.filter === "emerging") return row.source === "Emerging";
   if (state.filter === "under20") return Number(row.currentPrice) < 20;
   if (state.filter === "missing-market") return !Number.isFinite(row.currentPrice);
+  if (state.filter === "missing-stats") return hasMissingField(row, "Missing stats");
+  if (state.filter === "missing-card") return hasMissingField(row, "Missing card target") || row.excludedReason === "Missing card target";
+  if (state.filter === "needs-card-review") return hasMissingField(row, "Needs card review") || String(row.cardReviewStatus || "").toLowerCase().includes("review");
+  if (state.filter === "same-name") return row.sameNameCollision;
   if (state.filter === "wait") return row.excludedReason === "Entry above target" || row.excludedReason === "Market trend cooling";
   if (state.filter === "need-comps") return row.excludedReason === "Missing card price" || row.excludedReason === "No Bowman auto target";
   return true;
 }
 
+function hasMissingField(row, field) {
+  return Array.isArray(row.missingFields)
+    ? row.missingFields.includes(field)
+    : String(row.missing_fields || "").includes(field);
+}
+
 function rowMarkup(row) {
   return `
     <tr class="${row.eligible ? "diagnostic-eligible" : "diagnostic-excluded"}">
-      <td><strong>${escapeHtml(row.playerName)}</strong></td>
+      <td>
+        <strong>${escapeHtml(row.playerName)}</strong>
+        ${diagnosticIdentityMarkup(row)}
+      </td>
       <td>${escapeHtml(row.source)}</td>
       <td>${escapeHtml(row.team || "-")}</td>
       <td>${display(row.age)}</td>
@@ -422,6 +516,15 @@ function rowMarkup(row) {
       <td>${row.finalRank}</td>
     </tr>
   `;
+}
+
+function diagnosticIdentityMarkup(row) {
+  const ids = [
+    row.mlb_player_id ? `MLB ${row.mlb_player_id}` : "",
+    row.milb_player_id ? `MiLB ${row.milb_player_id}` : "",
+    row.sameNameCollision ? "same-name" : "",
+  ].filter(Boolean).join(" · ");
+  return ids ? `<span class="diagnostic-subtext">${escapeHtml(ids)}</span>` : "";
 }
 
 function isGraduated(row) {

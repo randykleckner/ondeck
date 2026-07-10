@@ -612,6 +612,7 @@ function getTop100Rows() {
   return state.allScored
     .filter(isTop100Prospect)
     .filter((player) => !isGraduated(player))
+    .filter(hasPublicBowmanTarget)
     .filter((player) => {
       const searchBlob = normalizeName(`${player.player_name ?? ""} ${player.org ?? ""} ${player.position ?? ""}`);
       const matchesSearch = state.top100Filters.search === "" || searchBlob.includes(state.top100Filters.search);
@@ -622,6 +623,12 @@ function getTop100Rows() {
       return matchesSearch && matchesOrg && matchesBoard;
     })
     .sort((a, b) => Number(a.prospect_rank) - Number(b.prospect_rank));
+}
+
+function hasPublicBowmanTarget(player) {
+  const code = fieldValue(player, ["card_code", "benchmarkCardCode", "benchmark_card_code"], "");
+  const query = fieldValue(player, ["card_query", "canonicalQuery", "canonical_query"], "");
+  return isValidCardCode(code) || /bowman/i.test(query);
 }
 
 function onDeckPlayers() {

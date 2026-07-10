@@ -4,6 +4,7 @@ import { onRequest as onRankTrendsRequest, runTop100TrendUpdate } from "../funct
 import { onMarketDataRequest, onRefreshTop100MarketRequest } from "../functions/api/top100-market.js";
 import { onEmergingRequest } from "../functions/api/emerging.js";
 import { onOnDeckRequest } from "../functions/api/on-deck.js";
+import { onDiagnosticsRequest } from "../functions/api/diagnostics.js";
 import { onPlayerInsightRequest, onTop100InsightsRequest, runTop100InsightPipeline } from "../functions/api/top100-insights.js";
 
 export default {
@@ -27,6 +28,10 @@ export default {
 
     if (url.pathname === "/api/on-deck") {
       return onOnDeckRequest({ request, env, ctx });
+    }
+
+    if (url.pathname === "/api/diagnostics") {
+      return onDiagnosticsRequest({ request, env, ctx });
     }
 
     if (url.pathname === "/api/top100-insights") {

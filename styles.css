@@ -3480,6 +3480,14 @@ tbody tr {
   font-weight: 950;
 }
 
+.diagnostic-subtext {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .market-status.positive {
   color: var(--green);
 }
