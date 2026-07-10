@@ -126,13 +126,26 @@ INSERT INTO players (
   active_status, first_seen_source, last_seen_date, draft_year, height, weight, raw_identity_json
 )
 SELECT
-  ${sql(player.playerName)}, ${sql(player.normalizedName)}, ${integer(player.mlbamId)}, ${sql(`mlbam:${player.mlbamId}`)},
+  ${sql(player.playerName)}, ${insertNormalizedNameExpression(player)}, ${integer(player.mlbamId)}, ${sql(`mlbam:${player.mlbamId}`)},
   ${sql(player.fullName)}, ${sql(player.middleName)}, ${sql(player.currentTeam)}, ${sql(player.currentOrg)},
   ${sql(player.currentLevel)}, ${sql(player.position)}, ${sql(player.bats)}, ${sql(player.throws)},
   ${sql(player.birthDate)}, ${number(player.age)}, 'active', 'MiLB Roster Refresh', ${sql(snapshotDate)},
   ${integer(player.draftYear)}, ${sql(player.height)}, ${integer(player.weight)}, ${sql(player.raw)}
-WHERE NOT EXISTS (SELECT 1 FROM players WHERE mlbam_id = ${integer(player.mlbamId)})
-  AND NOT EXISTS (SELECT 1 FROM players WHERE normalized_name = ${sql(player.normalizedName)});`;
+WHERE NOT EXISTS (SELECT 1 FROM players WHERE mlbam_id = ${integer(player.mlbamId)});`;
+}
+
+function insertNormalizedNameExpression(player) {
+  const baseName = sql(player.normalizedName);
+  const collisionName = sql(`${player.normalizedName} mlbam ${player.mlbamId}`);
+  return `CASE
+    WHEN EXISTS (
+      SELECT 1 FROM players
+      WHERE normalized_name = ${baseName}
+        AND COALESCE(mlbam_id, -1) != ${integer(player.mlbamId)}
+    )
+    THEN ${collisionName}
+    ELSE ${baseName}
+  END`;
 }
 
 function playerSourceStatement(player, sourceType, sourceName, notes) {
