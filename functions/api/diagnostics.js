@@ -136,7 +136,6 @@ export async function onDiagnosticsRequest(context) {
           CASE WHEN ct.checklist_card_id IS NOT NULL THEN 1 ELSE 0 END AS has_checklist_card
         FROM card_targets ct
         JOIN players p ON p.id = ct.player_registry_id
-          OR CAST(p.id AS TEXT) = ct.player_id
           OR lower(p.player_name) = lower(ct.player_name)
         WHERE COALESCE(ct.enabled, 1) = 1
           AND COALESCE(ct.verified_card_code, ct.card_code, '') LIKE 'CPA%'
@@ -159,7 +158,7 @@ export async function onDiagnosticsRequest(context) {
           NULL AS checklist_source_url,
           0 AS has_checklist_card
         FROM market_player_snapshots tm
-        JOIN players p ON tm.player_id = CAST(p.id AS TEXT) OR lower(tm.player_name) = lower(p.player_name)
+        JOIN players p ON lower(tm.player_name) = lower(p.player_name)
         WHERE COALESCE(tm.benchmark_card_code, '') LIKE 'CPA%'
       ),
       ranked_targets AS (
@@ -278,7 +277,6 @@ export async function onDiagnosticsRequest(context) {
           )
         )
       LEFT JOIN top100_market tm ON tm.player_id = bt.top100_player_id
-        OR tm.player_id = CAST(p.id AS TEXT)
         OR (
           lower(tm.player_name) = lower(p.player_name)
           AND COALESCE(tm.benchmark_card_code, '') = COALESCE(bt.target_card_code, '')
