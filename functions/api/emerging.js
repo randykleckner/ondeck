@@ -84,6 +84,8 @@ async function emergingList(db, url) {
       ct.product,
       ct.auto_set,
       ct.auto_code,
+      ct.verified_card_code,
+      COALESCE(ct.verified_card_code, ct.auto_code) AS card_code,
       ct.card_number,
       ct.team_on_card,
       ct.card_query_seed,
@@ -133,7 +135,10 @@ async function emergingList(db, url) {
       rec.risk_notes AS recommendation_risk_notes
     FROM player_tracking_status pts
     JOIN players p ON p.id = pts.player_id
-    LEFT JOIN emerging_card_targets ct ON ct.player_id = p.id AND ct.active = 1
+    LEFT JOIN emerging_card_targets ct
+      ON ct.player_id = p.id
+      AND ct.active = 1
+      AND COALESCE(ct.verified_card_code, ct.auto_code, '') LIKE 'CPA%'
     LEFT JOIN latest_stats s ON s.player_id = p.id
     LEFT JOIN latest_pre pre ON pre.player_id = p.id AND (pre.card_target_id = ct.id OR pre.card_target_id IS NULL)
     LEFT JOIN latest_market m ON m.player_id = p.id AND (m.card_target_id = ct.id OR m.card_target_id IS NULL)
@@ -168,6 +173,8 @@ async function emergingDetail(db, playerId) {
       ct.product,
       ct.auto_set,
       ct.auto_code,
+      ct.verified_card_code,
+      COALESCE(ct.verified_card_code, ct.auto_code) AS card_code,
       ct.card_number,
       ct.player_name_on_card,
       ct.team_on_card,
@@ -208,7 +215,10 @@ async function emergingDetail(db, playerId) {
       rec.risk_notes AS recommendation_risk_notes
     FROM players p
     LEFT JOIN player_tracking_status pts ON pts.player_id = p.id
-    LEFT JOIN emerging_card_targets ct ON ct.player_id = p.id AND ct.active = 1
+    LEFT JOIN emerging_card_targets ct
+      ON ct.player_id = p.id
+      AND ct.active = 1
+      AND COALESCE(ct.verified_card_code, ct.auto_code, '') LIKE 'CPA%'
     LEFT JOIN latest_stats s ON s.player_id = p.id
     LEFT JOIN latest_pre pre ON pre.player_id = p.id AND (pre.card_target_id = ct.id OR pre.card_target_id IS NULL)
     LEFT JOIN latest_market m ON m.player_id = p.id AND (m.card_target_id = ct.id OR m.card_target_id IS NULL)
@@ -309,6 +319,8 @@ function listFilters(url) {
     "pts.tracking_group = 'emerging'",
     "pts.status IN ('active', 'watch')",
     `pts.priority_tier IN (${[...allowedTiers].map((value) => `'${value}'`).join(", ")})`,
+    "s.id IS NOT NULL",
+    "ct.id IS NOT NULL",
   ];
   const params = [];
 

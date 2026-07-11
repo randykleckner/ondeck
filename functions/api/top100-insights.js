@@ -727,7 +727,7 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
           p.birth_date AS dob,
           s.age AS player_age,
           NULL AS top100_rank,
-          COALESCE(ct.auto_code, ct.card_number) AS card_code,
+          COALESCE(ct.verified_card_code, ct.auto_code, ct.card_number) AS card_code,
           m.sales_count_30d AS market_sales_count_30d,
           m.sales_count_90d AS market_sales_count_90d,
           m.avg_price_30d AS market_avg_price_30d,
@@ -740,12 +740,17 @@ export async function readCurrentOnDeckInsights(db, options = {}) {
           m.market_signal
         FROM player_tracking_status pts
         JOIN players p ON p.id = pts.player_id
-        LEFT JOIN emerging_card_targets ct ON ct.player_id = p.id AND ct.active = 1
+        LEFT JOIN emerging_card_targets ct
+          ON ct.player_id = p.id
+          AND ct.active = 1
+          AND COALESCE(ct.verified_card_code, ct.auto_code, '') LIKE 'CPA%'
         LEFT JOIN latest_stats s ON s.player_id = p.id
         LEFT JOIN latest_pre pre ON pre.player_id = p.id AND (pre.card_target_id = ct.id OR pre.card_target_id IS NULL)
         LEFT JOIN latest_market m ON m.player_id = p.id AND (m.card_target_id = ct.id OR m.card_target_id IS NULL)
         LEFT JOIN latest_recommendation rec ON rec.player_id = p.id AND (rec.card_target_id = ct.id OR rec.card_target_id IS NULL)
         WHERE pts.status = 'active'
+          AND ct.id IS NOT NULL
+          AND s.player_id IS NOT NULL
           AND (
             pts.priority_tier IN ('card_api_candidate', 'emerging_a', 'emerging_bplus')
             OR (

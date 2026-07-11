@@ -56,6 +56,7 @@ for (const year of args.years) {
         summary.pagesFetched += 1;
         const cards = parseChecklistPage(html, { year, product, source });
         for (const card of cards) {
+          if (!isCpaCardCode(card.cardCode)) continue;
           const key = checklistKey(card);
           if (seenCards.has(key)) continue;
           seenCards.add(key);
@@ -106,6 +107,10 @@ console.log(JSON.stringify({ ...summary, outputPath }, null, 2));
 
 if (args.execute) {
   executeSql(outputPath);
+}
+
+function isCpaCardCode(value) {
+  return String(value || "").trim().toUpperCase().startsWith("CPA");
 }
 
 async function discoverUrls(year, product) {

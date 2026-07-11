@@ -117,7 +117,10 @@ function readCandidates() {
       m.last_sold_price
     FROM player_tracking_status pts
     JOIN players p ON p.id = pts.player_id
-    JOIN emerging_card_targets ct ON ct.player_id = p.id AND ct.active = 1
+    JOIN emerging_card_targets ct
+      ON ct.player_id = p.id
+      AND ct.active = 1
+      AND COALESCE(ct.verified_card_code, ct.auto_code, '') LIKE 'CPA%'
     LEFT JOIN latest_pre pre ON pre.player_id = p.id AND (pre.card_target_id = ct.id OR pre.card_target_id IS NULL)
     LEFT JOIN latest_market m ON m.player_id = p.id AND (m.card_target_id = ct.id OR m.card_target_id IS NULL)
     WHERE pts.tracking_group = 'emerging'

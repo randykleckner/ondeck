@@ -158,7 +158,7 @@ export async function onRefreshTop100MarketRequest(context) {
     const playerId = String(player.player_id || "");
     const playerName = String(player.player_name || "").trim();
     const card = cardByPlayerId.get(playerId) || cardByName.get(normalizeName(playerName));
-    const benchmarkCardCode = String(card?.card_code || player.card_code || "").trim();
+    const benchmarkCardCode = String(card?.verified_card_code || card?.card_code || player.card_code || "").trim();
     const result = {
       playerId,
       playerName,
@@ -602,6 +602,7 @@ async function readTop100CardTargets(db, tableName) {
       player_id,
       player_name,
       card_code,
+      verified_card_code,
       card_query,
       enabled,
       sell_through_30,
@@ -619,6 +620,7 @@ function cardTargetRowFromDb(row) {
     player_id: row.player_id,
     player_name: row.player_name,
     card_code: row.card_code || "",
+    verified_card_code: row.verified_card_code || "",
     card_query: row.card_query || "",
     enabled: Number(row.enabled) === 0 ? "false" : "true",
     sell_through_30: row.sell_through_30 ?? "",
@@ -654,11 +656,13 @@ function snapshotTargetIsDisplayable(row, cardByPlayerId, cardByName) {
 }
 
 function isEnabledCardTarget(row) {
-  return String(row?.enabled ?? "true").toLowerCase() !== "false" && String(row?.card_code || "").trim() !== "";
+  const enabled = String(row?.enabled ?? "true").toLowerCase() !== "false";
+  const code = String(row?.verified_card_code || row?.card_code || "").trim().toUpperCase();
+  return enabled && code.startsWith("CPA");
 }
 
 function targetRowToApi(player, target) {
-  const benchmarkCardCode = target.card_code || player.card_code || "";
+  const benchmarkCardCode = target.verified_card_code || target.card_code || player.card_code || "";
   return {
     playerId: player.player_id || target.player_id,
     playerName: player.player_name || target.player_name,

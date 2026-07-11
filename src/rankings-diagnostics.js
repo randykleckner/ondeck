@@ -545,11 +545,11 @@ function matchesFilter(row) {
   if (state.filter === "under20") return Number(row.currentPrice) < 20;
   if (state.filter === "missing-market") return !Number.isFinite(row.currentPrice);
   if (state.filter === "missing-stats") return hasMissingField(row, "Missing stats");
-  if (state.filter === "missing-card") return hasMissingField(row, "Missing card target") || row.excludedReason === "Missing card target";
+  if (state.filter === "missing-card") return hasMissingField(row, "Missing CPA Card Target") || row.excludedReason === "Missing CPA Card Target" || hasMissingField(row, "Missing card target") || row.excludedReason === "Missing card target";
   if (state.filter === "needs-card-review") return hasMissingField(row, "Needs card review") || hasMissingField(row, "Checklist Match Needs Review") || String(row.cardReviewStatus || "").toLowerCase().includes("review");
   if (state.filter === "same-name") return row.sameNameCollision;
   if (state.filter === "wait") return row.excludedReason === "Entry above target" || row.excludedReason === "Market trend cooling";
-  if (state.filter === "need-comps") return row.excludedReason === "Missing card price" || row.excludedReason === "No Bowman auto target" || hasMissingField(row, "Market Pull Failed") || hasMissingField(row, "Missing Market Price");
+  if (state.filter === "need-comps") return row.excludedReason === "Missing card price" || row.excludedReason === "Missing CPA Card Target" || row.excludedReason === "No Bowman auto target" || hasMissingField(row, "Market Pull Failed") || hasMissingField(row, "Missing Market Price");
   return true;
 }
 

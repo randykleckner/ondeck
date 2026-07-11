@@ -70,6 +70,7 @@ export async function onDiagnosticsRequest(context) {
         FROM emerging_card_targets ect
         JOIN players p ON p.id = ect.player_id
         WHERE ect.active = 1
+          AND COALESCE(ect.verified_card_code, ect.auto_code, '') LIKE 'CPA%'
 
         UNION ALL
 
@@ -93,6 +94,28 @@ export async function onDiagnosticsRequest(context) {
           OR CAST(p.id AS TEXT) = ct.player_id
           OR lower(p.player_name) = lower(ct.player_name)
         WHERE COALESCE(ct.enabled, 1) = 1
+          AND COALESCE(ct.verified_card_code, ct.card_code, '') LIKE 'CPA%'
+
+        UNION ALL
+
+        SELECT
+          p.id AS player_id,
+          NULL AS card_target_id,
+          tm.player_id AS top100_player_id,
+          'market' AS card_target_type,
+          tm.benchmark_card_code AS target_card_code,
+          NULL AS generated_card_code,
+          tm.benchmark_card_code AS verified_card_code,
+          'Card Target Found' AS card_status,
+          'Verified' AS card_review_status,
+          'soldcomps_market_cpa' AS card_code_confidence,
+          'high' AS checklist_match_confidence,
+          'SoldComps API' AS checklist_source_name,
+          NULL AS checklist_source_url,
+          0 AS has_checklist_card
+        FROM market_player_snapshots tm
+        JOIN players p ON tm.player_id = CAST(p.id AS TEXT) OR lower(tm.player_name) = lower(p.player_name)
+        WHERE COALESCE(tm.benchmark_card_code, '') LIKE 'CPA%'
       ),
       ranked_targets AS (
         SELECT
@@ -100,6 +123,8 @@ export async function onDiagnosticsRequest(context) {
           ROW_NUMBER() OVER (
             PARTITION BY tu.player_id
             ORDER BY
+              CASE WHEN COALESCE(tu.verified_card_code, tu.target_card_code, '') LIKE 'CPA%' THEN 0 ELSE 1 END,
+              CASE WHEN tu.card_target_type = 'market' THEN 0 ELSE 1 END,
               CASE WHEN tu.card_review_status = 'Verified' THEN 0 ELSE 1 END,
               CASE WHEN tu.has_checklist_card = 1 THEN 0 ELSE 1 END,
               CASE WHEN tu.card_target_type = 'emerging' THEN 0 ELSE 1 END
@@ -118,16 +143,16 @@ export async function onDiagnosticsRequest(context) {
       market_code_rollup AS (
         SELECT card_code, COUNT(DISTINCT player_ref) AS player_count
         FROM (
-          SELECT COALESCE(ect.auto_code, ect.verified_card_code) AS card_code, 'emerging:' || m.player_id AS player_ref
+          SELECT COALESCE(ect.verified_card_code, ect.auto_code) AS card_code, 'emerging:' || m.player_id AS player_ref
           FROM card_market_snapshots m
           JOIN emerging_card_targets ect ON ect.id = m.card_target_id
-          WHERE COALESCE(ect.auto_code, ect.verified_card_code, '') <> ''
+          WHERE COALESCE(ect.verified_card_code, ect.auto_code, '') LIKE 'CPA%'
 
           UNION ALL
 
           SELECT benchmark_card_code AS card_code, 'top100:' || player_id AS player_ref
           FROM market_player_snapshots
-          WHERE COALESCE(benchmark_card_code, '') <> ''
+          WHERE COALESCE(benchmark_card_code, '') LIKE 'CPA%'
         )
         GROUP BY card_code
       )
@@ -215,6 +240,9 @@ export async function onDiagnosticsRequest(context) {
         SELECT MAX(snapshot_date) FROM recommendation_snapshots WHERE player_id = p.id
       )
       LEFT JOIN name_counts nc ON nc.player_name = p.player_name
+      WHERE
+        pts.tracking_group IS NOT NULL
+        OR (s.id IS NOT NULL AND bt.player_id IS NOT NULL)
       ORDER BY
         CASE WHEN bt.player_id IS NULL THEN 1 ELSE 0 END,
         CASE WHEN COALESCE(em.current_auto_price, em.last_sold_price, em.avg_price_30d, em.avg_price_90d, tm.last_sold_price, tm.avg_sold_price_30d, tm.avg_sold_price_90d, 0) > 0 THEN 0 ELSE 1 END,
@@ -256,14 +284,18 @@ function diagnosticLabels(row) {
   const labels = [];
   if (!row.mlb_player_id && !row.milb_player_id) labels.push("Missing Player ID");
   if (!row.has_stats) labels.push("Missing Stats");
-  if (!row.has_card_target) labels.push("Missing Card Target");
+  if (!row.has_card_target) labels.push("Missing CPA Card Target");
   if (row.has_card_target && !row.verified_card_code && !row.target_card_code) labels.push("Missing Card Code");
+  if (row.has_card_target && !isCpaTarget(row)) labels.push("Non-CPA Card Target Ignored");
   if (row.has_card_target && checklistNeedsReview(row)) labels.push("Checklist Match Needs Review");
   if (Number(row.same_name_count || 0) > 1 || isCollisionTarget(row)) labels.push("Same-Name Collision");
   if (row.has_card_target && !row.has_market_snapshot) labels.push("Card Target Exists, Market Pull Failed");
   if (row.has_card_target && row.has_market_snapshot && !row.has_market_price) labels.push("Card Target Exists, Missing Market Price");
-  if (row.duplicate_market_elsewhere) labels.push("Duplicate Player / Market Attached Elsewhere");
   return labels;
+}
+
+function isCpaTarget(row) {
+  return String(row.verified_card_code || row.target_card_code || "").toUpperCase().startsWith("CPA");
 }
 
 function checklistNeedsReview(row) {
@@ -283,11 +315,11 @@ function isCollisionTarget(row) {
 function excludedReason(row, labels) {
   if (String(row.active_status || "").toLowerCase() === "inactive") return "Inactive";
   for (const label of [
-    "Missing Card Target",
+    "Missing CPA Card Target",
     "Missing Card Code",
+    "Non-CPA Card Target Ignored",
     "Checklist Match Needs Review",
     "Same-Name Collision",
-    "Duplicate Player / Market Attached Elsewhere",
     "Card Target Exists, Market Pull Failed",
     "Card Target Exists, Missing Market Price",
     "Missing Stats",
