@@ -13,13 +13,17 @@ export async function onDiagnosticsRequest(context) {
     const limit = Math.max(1, Math.min(5000, Number(url.searchParams.get("limit")) || 1000));
     const rows = await db.prepare(`
       WITH latest_stats AS (
-        SELECT s.*
-        FROM player_stats_snapshots s
-        JOIN (
-          SELECT player_id, MAX(snapshot_date) AS snapshot_date
-          FROM player_stats_snapshots
-          GROUP BY player_id
-        ) latest ON latest.player_id = s.player_id AND latest.snapshot_date = s.snapshot_date
+        SELECT *
+        FROM (
+          SELECT
+            s.*,
+            ROW_NUMBER() OVER (
+              PARTITION BY s.player_id
+              ORDER BY s.snapshot_date DESC, COALESCE(s.hitter_pa, 0) + COALESCE(s.pitcher_ip, 0) DESC, s.id DESC
+            ) AS stat_rank
+          FROM player_stats_snapshots s
+        )
+        WHERE stat_rank = 1
       ),
       latest_emerging_market AS (
         SELECT m.*
@@ -272,7 +276,7 @@ function toDiagnosticItem(row) {
   const missing = diagnosticLabels(row);
   return {
     ...normalizeRow(row),
-    source_type: row.tracking_group || "unassigned",
+    source_type: row.tracking_group && row.tracking_group !== "inactive" ? row.tracking_group : "unassigned",
     source_detail: row.source_types || row.first_seen_source || "",
     excluded_reason: excludedReason(row, missing),
     missing_fields: missing,
