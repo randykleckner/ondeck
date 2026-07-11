@@ -45,6 +45,32 @@ export async function onDiagnosticsRequest(context) {
           GROUP BY player_id
         ) latest ON latest.player_id = ps.player_id AND latest.score_date = ps.score_date
       ),
+      latest_pre AS (
+        SELECT *
+        FROM (
+          SELECT
+            pre.*,
+            ROW_NUMBER() OVER (
+              PARTITION BY pre.player_id
+              ORDER BY pre.snapshot_date DESC, COALESCE(pre.emerging_pre_score, 0) DESC, pre.id DESC
+            ) AS pre_rank
+          FROM emerging_prescore_snapshots pre
+        )
+        WHERE pre_rank = 1
+      ),
+      latest_recommendation AS (
+        SELECT *
+        FROM (
+          SELECT
+            rec.*,
+            ROW_NUMBER() OVER (
+              PARTITION BY rec.player_id
+              ORDER BY rec.snapshot_date DESC, COALESCE(rec.total_score, 0) DESC, rec.id DESC
+            ) AS recommendation_rank
+          FROM recommendation_snapshots rec
+        )
+        WHERE recommendation_rank = 1
+      ),
       source_rollup AS (
         SELECT player_id, GROUP_CONCAT(DISTINCT source_type) AS source_types
         FROM player_sources
@@ -237,12 +263,8 @@ export async function onDiagnosticsRequest(context) {
         )
       LEFT JOIN market_code_rollup mcr ON mcr.card_code = bt.target_card_code
       LEFT JOIN latest_score ps ON ps.player_id = p.id
-      LEFT JOIN emerging_prescore_snapshots pre ON pre.player_id = p.id AND pre.snapshot_date = (
-        SELECT MAX(snapshot_date) FROM emerging_prescore_snapshots WHERE player_id = p.id
-      )
-      LEFT JOIN recommendation_snapshots rec ON rec.player_id = p.id AND rec.snapshot_date = (
-        SELECT MAX(snapshot_date) FROM recommendation_snapshots WHERE player_id = p.id
-      )
+      LEFT JOIN latest_pre pre ON pre.player_id = p.id
+      LEFT JOIN latest_recommendation rec ON rec.player_id = p.id
       LEFT JOIN name_counts nc ON nc.player_name = p.player_name
       WHERE
         COALESCE(p.active_status, 'active') = 'active'
