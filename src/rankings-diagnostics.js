@@ -252,6 +252,7 @@ function sourceLabel(row) {
   if (source.toLowerCase().includes("top")) return "Top 100";
   if (source.toLowerCase().includes("emerging")) return "Emerging";
   if (source.toLowerCase().includes("watch")) return "Watchlist";
+  if (source.toLowerCase().includes("unassigned") || source.toLowerCase().includes("mlb api") || source.toLowerCase().includes("statsapi")) return "Unassigned";
   return source;
 }
 

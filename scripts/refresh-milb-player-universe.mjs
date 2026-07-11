@@ -46,7 +46,7 @@ for (const sportId of args.sportIds) {
         const person = await getJson(`${STATS_API}/people/${personId}?hydrate=currentTeam`).then((data) => data.people?.[0] || {});
         const player = normalizePerson(person, row, team, level);
         statements.push(upsertPlayerStatement(player));
-        statements.push(playerSourceStatement(player, "MiLB Roster Refresh", `${team.name} active roster`, `${level} roster refresh from MLB StatsAPI.`));
+        statements.push(playerSourceStatement(player, "MLB StatsAPI", `${team.name} active roster`, `${level} roster refresh from MLB StatsAPI.`));
         summary.playersInsertedOrUpdated += 1;
       }
     } catch (error) {
@@ -111,7 +111,7 @@ function upsertPlayerStatement(player) {
   birth_date = ${sql(player.birthDate)},
   age = ${number(player.age)},
   active_status = 'active',
-  first_seen_source = COALESCE(first_seen_source, 'MiLB Roster Refresh'),
+  first_seen_source = COALESCE(first_seen_source, 'MLB StatsAPI'),
   last_seen_date = ${sql(snapshotDate)},
   draft_year = ${integer(player.draftYear)},
   height = ${sql(player.height)},
@@ -129,7 +129,7 @@ SELECT
   ${sql(player.playerName)}, ${insertNormalizedNameExpression(player)}, ${integer(player.mlbamId)}, ${sql(`mlbam:${player.mlbamId}`)},
   ${sql(player.fullName)}, ${sql(player.middleName)}, ${sql(player.currentTeam)}, ${sql(player.currentOrg)},
   ${sql(player.currentLevel)}, ${sql(player.position)}, ${sql(player.bats)}, ${sql(player.throws)},
-  ${sql(player.birthDate)}, ${number(player.age)}, 'active', 'MiLB Roster Refresh', ${sql(snapshotDate)},
+  ${sql(player.birthDate)}, ${number(player.age)}, 'active', 'MLB StatsAPI', ${sql(snapshotDate)},
   ${integer(player.draftYear)}, ${sql(player.height)}, ${integer(player.weight)}, ${sql(player.raw)}
 WHERE NOT EXISTS (SELECT 1 FROM players WHERE mlbam_id = ${integer(player.mlbamId)});`;
 }

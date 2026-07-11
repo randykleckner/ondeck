@@ -241,8 +241,8 @@ export async function onDiagnosticsRequest(context) {
       )
       LEFT JOIN name_counts nc ON nc.player_name = p.player_name
       WHERE
-        pts.tracking_group IS NOT NULL
-        OR (s.id IS NOT NULL AND bt.player_id IS NOT NULL)
+        COALESCE(p.active_status, 'active') = 'active'
+        AND p.mlbam_id IS NOT NULL
       ORDER BY
         CASE WHEN bt.player_id IS NULL THEN 1 ELSE 0 END,
         CASE WHEN COALESCE(em.current_auto_price, em.last_sold_price, em.avg_price_30d, em.avg_price_90d, tm.last_sold_price, tm.avg_sold_price_30d, tm.avg_sold_price_90d, 0) > 0 THEN 0 ELSE 1 END,
@@ -272,7 +272,7 @@ function toDiagnosticItem(row) {
   const missing = diagnosticLabels(row);
   return {
     ...normalizeRow(row),
-    source_type: row.tracking_group || row.card_target_type || row.source_types || row.first_seen_source || "Registry",
+    source_type: row.tracking_group || "unassigned",
     source_detail: row.source_types || row.first_seen_source || "",
     excluded_reason: excludedReason(row, missing),
     missing_fields: missing,
