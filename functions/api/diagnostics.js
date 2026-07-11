@@ -94,6 +94,7 @@ export async function onDiagnosticsRequest(context) {
       name_counts AS (
         SELECT player_name, COUNT(*) AS same_name_count
         FROM players
+        WHERE COALESCE(active_status, 'active') = 'active'
         GROUP BY player_name
       ),
       target_union AS (
