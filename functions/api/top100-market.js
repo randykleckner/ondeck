@@ -652,7 +652,8 @@ function cardTargetKey(row) {
 
 function snapshotTargetIsDisplayable(row, cardByPlayerId, cardByName) {
   const target = cardByPlayerId.get(String(row.player_id)) || cardByName.get(normalizeName(row.player_name));
-  return !target || isEnabledCardTarget(target);
+  const code = String(row.benchmark_card_code || target?.verified_card_code || target?.card_code || "").trim().toUpperCase();
+  return code.startsWith("CPA") && (!target || isEnabledCardTarget(target));
 }
 
 function isEnabledCardTarget(row) {
