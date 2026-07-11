@@ -42,7 +42,7 @@ async function init() {
       json("/api/on-deck?limit=50").catch(() => ({ items: [] })),
       json("/api/emerging?limit=500&include_watch=true&include_low_priority=true").catch(() => ({ items: [] })),
       json("/api/emerging?tier=top100_removed&limit=500").catch(() => ({ items: [] })),
-      json("/api/diagnostics?limit=2000").catch(() => ({ items: [] })),
+      json("/api/diagnostics?limit=5000").catch(() => ({ items: [] })),
     ]);
 
     if (Array.isArray(registryData.items) && registryData.items.length) {
@@ -242,7 +242,13 @@ function normalizeRegistryDiagnostic(row) {
 }
 
 function sourceLabel(row) {
-  const source = String(row.source_type || row.tracking_group || "Registry");
+  const lifecycle = String(row.lifecycleStatus || row.lifecycle_status || "").toLowerCase();
+  const tracking = String(row.tracking_group || "").toLowerCase();
+  if (lifecycle === "graduated" || tracking === "called_up" || row.graduated) return "Graduated";
+  if (tracking === "top100") return "Top 100";
+  if (tracking === "emerging") return "Emerging";
+  if (tracking === "watchlist" || String(row.tracking_status || "").toLowerCase() === "watch") return "Watchlist";
+  const source = String(row.source_type || row.card_target_type || "Registry");
   if (source.toLowerCase().includes("top")) return "Top 100";
   if (source.toLowerCase().includes("emerging")) return "Emerging";
   if (source.toLowerCase().includes("watch")) return "Watchlist";

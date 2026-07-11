@@ -28,7 +28,7 @@ async function loadEmergingProspects() {
   try {
     const [summaryResponse, prospectsResponse] = await Promise.all([
       fetch("/api/emerging/summary", { headers: { Accept: "application/json" } }),
-      fetch("/api/emerging?limit=150", { headers: { Accept: "application/json" } }),
+      fetch("/api/emerging?limit=500&include_watch=true&include_low_priority=true", { headers: { Accept: "application/json" } }),
     ]);
     if (!summaryResponse.ok || !prospectsResponse.ok) {
       throw new Error(`Emerging API unavailable (${summaryResponse.status}/${prospectsResponse.status})`);

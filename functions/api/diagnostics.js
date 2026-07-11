@@ -244,7 +244,8 @@ function toDiagnosticItem(row) {
   const missing = diagnosticLabels(row);
   return {
     ...normalizeRow(row),
-    source_type: row.source_types || row.first_seen_source || row.tracking_group || row.card_target_type || "Registry",
+    source_type: row.tracking_group || row.card_target_type || row.source_types || row.first_seen_source || "Registry",
+    source_detail: row.source_types || row.first_seen_source || "",
     excluded_reason: excludedReason(row, missing),
     missing_fields: missing,
     same_name_collision: Number(row.same_name_count || 0) > 1 || isCollisionTarget(row),
