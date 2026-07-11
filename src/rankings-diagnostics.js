@@ -4,10 +4,13 @@ import { mergeProspectData } from "./lib/scoring.js";
 const rowsElement = document.querySelector("#diagnostics-rows");
 const countElement = document.querySelector("#diagnostics-count");
 const filterButtons = [...document.querySelectorAll("[data-diagnostics-filter]")];
+const sortButtons = [...document.querySelectorAll("[data-sort-key]")];
 
 const state = {
   rows: [],
   filter: "all",
+  sortKey: "default",
+  sortDirection: "desc",
 };
 
 init();
@@ -79,6 +82,19 @@ filterButtons.forEach((button) => {
     state.filter = button.dataset.diagnosticsFilter;
     filterButtons.forEach((candidate) => candidate.classList.toggle("primary", candidate === button));
     filterButtons.forEach((candidate) => candidate.classList.toggle("ghost", candidate !== button));
+    render();
+  });
+});
+
+sortButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const key = button.dataset.sortKey;
+    if (state.sortKey === key) {
+      state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+    } else {
+      state.sortKey = key;
+      state.sortDirection = defaultDirectionFor(key);
+    }
     render();
   });
 });
@@ -459,11 +475,60 @@ function defaultSort(a, b) {
 }
 
 function render() {
-  const rows = state.rows.filter(matchesFilter);
+  const rows = state.rows.filter(matchesFilter).sort(activeSort);
   countElement.textContent = `${rows.length} of ${state.rows.length} players`;
+  updateSortHeaders();
   rowsElement.innerHTML = rows.length
     ? rows.map(rowMarkup).join("")
     : `<tr><td colspan="20" class="muted">No players match this filter.</td></tr>`;
+}
+
+function activeSort(a, b) {
+  if (state.sortKey === "default") return defaultSort(a, b);
+  const direction = state.sortDirection === "asc" ? 1 : -1;
+  const result = compareValues(valueForSort(a, state.sortKey), valueForSort(b, state.sortKey));
+  return result * direction || defaultSort(a, b);
+}
+
+function valueForSort(row, key) {
+  if (key === "eligible") return row.eligible ? 1 : 0;
+  return row[key];
+}
+
+function compareValues(a, b) {
+  const aNumber = sortableNumber(a);
+  const bNumber = sortableNumber(b);
+  if (Number.isFinite(aNumber) || Number.isFinite(bNumber)) {
+    if (!Number.isFinite(aNumber)) return 1;
+    if (!Number.isFinite(bNumber)) return -1;
+    return aNumber - bNumber;
+  }
+  return String(a ?? "").localeCompare(String(b ?? ""), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+function sortableNumber(value) {
+  if (typeof value === "boolean") return value ? 1 : 0;
+  if (value === "" || value == null || value === "-") return NaN;
+  const numeric = Number(String(value).replaceAll(/[$,%]/g, ""));
+  return Number.isFinite(numeric) ? numeric : NaN;
+}
+
+function defaultDirectionFor(key) {
+  return ["playerName", "source", "team", "level", "entryLabel", "thesis", "liquidity", "sellThrough", "excludedReason"].includes(key)
+    ? "asc"
+    : "desc";
+}
+
+function updateSortHeaders() {
+  for (const button of sortButtons) {
+    const active = button.dataset.sortKey === state.sortKey;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-sort", active ? (state.sortDirection === "asc" ? "ascending" : "descending") : "none");
+    button.dataset.direction = active ? state.sortDirection : "";
+  }
 }
 
 function matchesFilter(row) {

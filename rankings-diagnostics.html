@@ -58,26 +58,26 @@
           <table class="diagnostics-table">
             <thead>
               <tr>
-                <th>Player</th>
-                <th>Source</th>
-                <th>Team</th>
-                <th>Age</th>
-                <th>Level</th>
-                <th>Move Score</th>
-                <th>Investment Score</th>
-                <th>Current Auto Price</th>
-                <th>Target Entry</th>
-                <th>Entry Label</th>
-                <th>Thesis</th>
-                <th>Liquidity</th>
-                <th>Sell-through</th>
-                <th>30D Trend</th>
-                <th>90D Trend</th>
-                <th>Catalyst Score</th>
-                <th>Moonshot / Ceiling Score</th>
-                <th>Eligible for On Deck?</th>
-                <th>Excluded Reason</th>
-                <th>Final Rank</th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="playerName">Player</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="source">Source</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="team">Team</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="age">Age</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="level">Level</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="moveScore">Move Score</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="marketOpportunityScore">Investment Score</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="currentPrice">Current Auto Price</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="targetEntry">Target Entry</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="entryLabel">Entry Label</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="thesis">Thesis</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="liquidity">Liquidity</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="sellThrough">Sell-through</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="trend30">30D Trend</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="trend90">90D Trend</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="catalystScore">Catalyst Score</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="ceilingScore">Moonshot / Ceiling Score</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="eligible">Eligible for On Deck?</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="excludedReason">Excluded Reason</button></th>
+                <th><button class="diagnostic-sort" type="button" data-sort-key="finalRank">Final Rank</button></th>
               </tr>
             </thead>
             <tbody id="diagnostics-rows">
@@ -88,6 +88,6 @@
       </section>
     </main>
 
-    <script type="module" src="./src/rankings-diagnostics.js?v=20260710-player-pipeline-1"></script>
+    <script type="module" src="./src/rankings-diagnostics.js?v=20260711-sortable-1"></script>
   </body>
 </html>

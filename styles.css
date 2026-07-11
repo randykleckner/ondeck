@@ -2300,6 +2300,39 @@ body[data-view="graduated"] #graduated {
   background: rgba(5, 7, 17, 0.96);
 }
 
+.diagnostic-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+}
+
+.diagnostic-sort::after {
+  content: "";
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.diagnostic-sort.active {
+  color: var(--accent);
+}
+
+.diagnostic-sort.active[data-direction="asc"]::after {
+  content: "ASC";
+}
+
+.diagnostic-sort.active[data-direction="desc"]::after {
+  content: "DESC";
+}
+
 .diagnostics-table td {
   vertical-align: top;
   font-size: 0.78rem;

@@ -200,8 +200,12 @@ export async function onDiagnosticsRequest(context) {
       LEFT JOIN latest_emerging_market em ON bt.card_target_type = 'emerging'
         AND em.player_id = p.id
         AND (em.card_target_id = bt.card_target_id OR em.card_target_id IS NULL)
-      LEFT JOIN top100_market tm ON bt.card_target_type = 'top100'
-        AND (tm.player_id = bt.top100_player_id OR tm.player_id = CAST(p.id AS TEXT))
+      LEFT JOIN top100_market tm ON tm.player_id = bt.top100_player_id
+        OR tm.player_id = CAST(p.id AS TEXT)
+        OR (
+          lower(tm.player_name) = lower(p.player_name)
+          AND COALESCE(tm.benchmark_card_code, '') = COALESCE(bt.target_card_code, '')
+        )
       LEFT JOIN market_code_rollup mcr ON mcr.card_code = bt.target_card_code
       LEFT JOIN latest_score ps ON ps.player_id = p.id
       LEFT JOIN emerging_prescore_snapshots pre ON pre.player_id = p.id AND pre.snapshot_date = (
