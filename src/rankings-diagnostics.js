@@ -475,17 +475,18 @@ function matchesFilter(row) {
   if (state.filter === "missing-market") return !Number.isFinite(row.currentPrice);
   if (state.filter === "missing-stats") return hasMissingField(row, "Missing stats");
   if (state.filter === "missing-card") return hasMissingField(row, "Missing card target") || row.excludedReason === "Missing card target";
-  if (state.filter === "needs-card-review") return hasMissingField(row, "Needs card review") || String(row.cardReviewStatus || "").toLowerCase().includes("review");
+  if (state.filter === "needs-card-review") return hasMissingField(row, "Needs card review") || hasMissingField(row, "Checklist Match Needs Review") || String(row.cardReviewStatus || "").toLowerCase().includes("review");
   if (state.filter === "same-name") return row.sameNameCollision;
   if (state.filter === "wait") return row.excludedReason === "Entry above target" || row.excludedReason === "Market trend cooling";
-  if (state.filter === "need-comps") return row.excludedReason === "Missing card price" || row.excludedReason === "No Bowman auto target";
+  if (state.filter === "need-comps") return row.excludedReason === "Missing card price" || row.excludedReason === "No Bowman auto target" || hasMissingField(row, "Market Pull Failed") || hasMissingField(row, "Missing Market Price");
   return true;
 }
 
 function hasMissingField(row, field) {
+  const needle = String(field || "").toLowerCase();
   return Array.isArray(row.missingFields)
-    ? row.missingFields.includes(field)
-    : String(row.missing_fields || "").includes(field);
+    ? row.missingFields.some((candidate) => String(candidate || "").toLowerCase().includes(needle))
+    : String(row.missing_fields || "").toLowerCase().includes(needle);
 }
 
 function rowMarkup(row) {

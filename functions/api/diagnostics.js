@@ -10,7 +10,7 @@ export async function onDiagnosticsRequest(context) {
 
   try {
     const url = new URL(context.request.url);
-    const limit = Math.max(1, Math.min(2000, Number(url.searchParams.get("limit")) || 1000));
+    const limit = Math.max(1, Math.min(5000, Number(url.searchParams.get("limit")) || 1000));
     const rows = await db.prepare(`
       WITH latest_stats AS (
         SELECT s.*
@@ -21,7 +21,7 @@ export async function onDiagnosticsRequest(context) {
           GROUP BY player_id
         ) latest ON latest.player_id = s.player_id AND latest.snapshot_date = s.snapshot_date
       ),
-      latest_market AS (
+      latest_emerging_market AS (
         SELECT m.*
         FROM card_market_snapshots m
         JOIN (
@@ -50,6 +50,86 @@ export async function onDiagnosticsRequest(context) {
         SELECT player_name, COUNT(*) AS same_name_count
         FROM players
         GROUP BY player_name
+      ),
+      target_union AS (
+        SELECT
+          p.id AS player_id,
+          ect.id AS card_target_id,
+          NULL AS top100_player_id,
+          'emerging' AS card_target_type,
+          ect.auto_code AS target_card_code,
+          ect.generated_card_code,
+          COALESCE(ect.verified_card_code, ect.auto_code) AS verified_card_code,
+          ect.card_status,
+          ect.review_status AS card_review_status,
+          ect.card_code_confidence,
+          ect.checklist_match_confidence,
+          ect.checklist_source_name,
+          ect.checklist_source_url,
+          CASE WHEN ect.checklist_card_id IS NOT NULL THEN 1 ELSE 0 END AS has_checklist_card
+        FROM emerging_card_targets ect
+        JOIN players p ON p.id = ect.player_id
+        WHERE ect.active = 1
+
+        UNION ALL
+
+        SELECT
+          p.id AS player_id,
+          NULL AS card_target_id,
+          ct.player_id AS top100_player_id,
+          'top100' AS card_target_type,
+          ct.card_code AS target_card_code,
+          ct.generated_card_code,
+          COALESCE(ct.verified_card_code, ct.card_code) AS verified_card_code,
+          ct.card_status,
+          ct.review_status AS card_review_status,
+          ct.card_code_confidence,
+          ct.checklist_match_confidence,
+          ct.checklist_source_name,
+          ct.checklist_source_url,
+          CASE WHEN ct.checklist_card_id IS NOT NULL THEN 1 ELSE 0 END AS has_checklist_card
+        FROM card_targets ct
+        JOIN players p ON p.id = ct.player_registry_id
+          OR CAST(p.id AS TEXT) = ct.player_id
+          OR lower(p.player_name) = lower(ct.player_name)
+        WHERE COALESCE(ct.enabled, 1) = 1
+      ),
+      ranked_targets AS (
+        SELECT
+          tu.*,
+          ROW_NUMBER() OVER (
+            PARTITION BY tu.player_id
+            ORDER BY
+              CASE WHEN tu.card_review_status = 'Verified' THEN 0 ELSE 1 END,
+              CASE WHEN tu.has_checklist_card = 1 THEN 0 ELSE 1 END,
+              CASE WHEN tu.card_target_type = 'emerging' THEN 0 ELSE 1 END
+          ) AS target_rank
+        FROM target_union tu
+      ),
+      best_target AS (
+        SELECT *
+        FROM ranked_targets
+        WHERE target_rank = 1
+      ),
+      top100_market AS (
+        SELECT *
+        FROM market_player_snapshots
+      ),
+      market_code_rollup AS (
+        SELECT card_code, COUNT(DISTINCT player_ref) AS player_count
+        FROM (
+          SELECT COALESCE(ect.auto_code, ect.verified_card_code) AS card_code, 'emerging:' || m.player_id AS player_ref
+          FROM card_market_snapshots m
+          JOIN emerging_card_targets ect ON ect.id = m.card_target_id
+          WHERE COALESCE(ect.auto_code, ect.verified_card_code, '') <> ''
+
+          UNION ALL
+
+          SELECT benchmark_card_code AS card_code, 'top100:' || player_id AS player_ref
+          FROM market_player_snapshots
+          WHERE COALESCE(benchmark_card_code, '') <> ''
+        )
+        GROUP BY card_code
       )
       SELECT
         p.id AS player_id,
@@ -76,27 +156,36 @@ export async function onDiagnosticsRequest(context) {
         sr.source_types,
         CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END AS has_stats,
         s.snapshot_date AS latest_stats_date,
-        CASE WHEN ect.id IS NOT NULL THEN 1 ELSE 0 END AS has_card_target,
-        ect.id AS card_target_id,
-        ect.generated_card_code,
-        COALESCE(ect.verified_card_code, ect.auto_code) AS verified_card_code,
-        ect.card_status,
-        ect.review_status AS card_review_status,
-        ect.card_code_confidence,
-        CASE WHEN COALESCE(m.current_auto_price, m.last_sold_price, m.avg_price_30d, m.avg_price_90d, 0) > 0 THEN 1 ELSE 0 END AS has_market_price,
-        COALESCE(m.current_auto_price, m.last_sold_price, m.avg_price_30d, m.avg_price_90d) AS current_auto_price,
-        m.sales_count_30d,
-        m.sales_count_90d,
-        m.sell_through_30d,
-        m.sell_through_90d,
-        m.market_signal,
+        CASE WHEN bt.player_id IS NOT NULL THEN 1 ELSE 0 END AS has_card_target,
+        bt.card_target_id,
+        bt.top100_player_id,
+        bt.card_target_type,
+        bt.target_card_code,
+        bt.generated_card_code,
+        bt.verified_card_code,
+        bt.card_status,
+        bt.card_review_status,
+        bt.card_code_confidence,
+        bt.checklist_match_confidence,
+        bt.checklist_source_name,
+        bt.checklist_source_url,
+        bt.has_checklist_card,
+        CASE WHEN em.id IS NOT NULL OR tm.player_id IS NOT NULL THEN 1 ELSE 0 END AS has_market_snapshot,
+        CASE WHEN COALESCE(em.current_auto_price, em.last_sold_price, em.avg_price_30d, em.avg_price_90d, tm.last_sold_price, tm.avg_sold_price_30d, tm.avg_sold_price_90d, 0) > 0 THEN 1 ELSE 0 END AS has_market_price,
+        COALESCE(em.current_auto_price, em.last_sold_price, em.avg_price_30d, em.avg_price_90d, tm.last_sold_price, tm.avg_sold_price_30d, tm.avg_sold_price_90d) AS current_auto_price,
+        COALESCE(em.sales_count_30d, tm.sales_count_30d) AS sales_count_30d,
+        COALESCE(em.sales_count_90d, tm.sales_count_90d) AS sales_count_90d,
+        COALESCE(em.sell_through_30d, tm.sell_thru_rate_30d) AS sell_through_30d,
+        COALESCE(em.sell_through_90d, tm.sell_thru_rate_90d) AS sell_through_90d,
+        COALESCE(em.market_signal, tm.source) AS market_signal,
+        CASE WHEN COALESCE(mcr.player_count, 0) > 1 THEN 1 ELSE 0 END AS duplicate_market_elsewhere,
         COALESCE(ps.move_score, rec.total_score, pre.emerging_pre_score) AS move_score,
         ps.investment_score,
         ps.moonshot_rating,
         ps.catalyst_score,
         ps.ceiling_score,
         COALESCE(ps.eligible_for_top100, 0) AS eligible_top100,
-        COALESCE(ps.eligible_for_emerging, CASE WHEN ect.id IS NOT NULL AND pts.tracking_group = 'emerging' THEN 1 ELSE 0 END) AS eligible_emerging,
+        COALESCE(ps.eligible_for_emerging, CASE WHEN bt.player_id IS NOT NULL AND pts.tracking_group = 'emerging' THEN 1 ELSE 0 END) AS eligible_emerging,
         COALESCE(ps.eligible_for_on_deck, 0) AS eligible_ondeck,
         ps.excluded_reason AS score_excluded_reason,
         pts.tracking_group,
@@ -107,8 +196,13 @@ export async function onDiagnosticsRequest(context) {
       LEFT JOIN player_tracking_status pts ON pts.player_id = p.id
       LEFT JOIN source_rollup sr ON sr.player_id = p.id
       LEFT JOIN latest_stats s ON s.player_id = p.id
-      LEFT JOIN emerging_card_targets ect ON ect.player_id = p.id AND ect.active = 1
-      LEFT JOIN latest_market m ON m.player_id = p.id AND (m.card_target_id = ect.id OR m.card_target_id IS NULL)
+      LEFT JOIN best_target bt ON bt.player_id = p.id
+      LEFT JOIN latest_emerging_market em ON bt.card_target_type = 'emerging'
+        AND em.player_id = p.id
+        AND (em.card_target_id = bt.card_target_id OR em.card_target_id IS NULL)
+      LEFT JOIN top100_market tm ON bt.card_target_type = 'top100'
+        AND (tm.player_id = bt.top100_player_id OR tm.player_id = CAST(p.id AS TEXT))
+      LEFT JOIN market_code_rollup mcr ON mcr.card_code = bt.target_card_code
       LEFT JOIN latest_score ps ON ps.player_id = p.id
       LEFT JOIN emerging_prescore_snapshots pre ON pre.player_id = p.id AND pre.snapshot_date = (
         SELECT MAX(snapshot_date) FROM emerging_prescore_snapshots WHERE player_id = p.id
@@ -118,8 +212,8 @@ export async function onDiagnosticsRequest(context) {
       )
       LEFT JOIN name_counts nc ON nc.player_name = p.player_name
       ORDER BY
-        CASE WHEN ect.id IS NULL THEN 1 ELSE 0 END,
-        CASE WHEN COALESCE(m.current_auto_price, m.last_sold_price, m.avg_price_30d, m.avg_price_90d, 0) > 0 THEN 0 ELSE 1 END,
+        CASE WHEN bt.player_id IS NULL THEN 1 ELSE 0 END,
+        CASE WHEN COALESCE(em.current_auto_price, em.last_sold_price, em.avg_price_30d, em.avg_price_90d, tm.last_sold_price, tm.avg_sold_price_30d, tm.avg_sold_price_90d, 0) > 0 THEN 0 ELSE 1 END,
         COALESCE(ps.investment_score, rec.total_score, pre.emerging_pre_score, 0) DESC,
         p.player_name ASC
       LIMIT ?
@@ -143,34 +237,58 @@ export async function onDiagnosticsRequest(context) {
 }
 
 function toDiagnosticItem(row) {
-  const missing = missingFields(row);
+  const missing = diagnosticLabels(row);
   return {
     ...normalizeRow(row),
-    source_type: row.source_types || row.first_seen_source || row.tracking_group || "Registry",
+    source_type: row.source_types || row.first_seen_source || row.tracking_group || row.card_target_type || "Registry",
     excluded_reason: excludedReason(row, missing),
     missing_fields: missing,
-    same_name_collision: Number(row.same_name_count || 0) > 1,
+    same_name_collision: Number(row.same_name_count || 0) > 1 || isCollisionTarget(row),
   };
 }
 
-function missingFields(row) {
-  const fields = [];
-  if (!row.mlb_player_id && !row.milb_player_id) fields.push("Missing player ID");
-  if (!row.has_stats) fields.push("Missing stats");
-  if (!row.has_card_target) fields.push("Missing card target");
-  if (row.has_card_target && !row.verified_card_code) fields.push("Missing card code");
-  if (row.has_card_target && String(row.card_review_status || "").toLowerCase() !== "verified") fields.push("Needs card review");
-  if (row.has_card_target && !row.has_market_price) fields.push("Missing market price");
-  return fields;
+function diagnosticLabels(row) {
+  const labels = [];
+  if (!row.mlb_player_id && !row.milb_player_id) labels.push("Missing Player ID");
+  if (!row.has_stats) labels.push("Missing Stats");
+  if (!row.has_card_target) labels.push("Missing Card Target");
+  if (row.has_card_target && !row.verified_card_code && !row.target_card_code) labels.push("Missing Card Code");
+  if (row.has_card_target && checklistNeedsReview(row)) labels.push("Checklist Match Needs Review");
+  if (Number(row.same_name_count || 0) > 1 || isCollisionTarget(row)) labels.push("Same-Name Collision");
+  if (row.has_card_target && !row.has_market_snapshot) labels.push("Card Target Exists, Market Pull Failed");
+  if (row.has_card_target && row.has_market_snapshot && !row.has_market_price) labels.push("Card Target Exists, Missing Market Price");
+  if (row.duplicate_market_elsewhere) labels.push("Duplicate Player / Market Attached Elsewhere");
+  return labels;
 }
 
-function excludedReason(row, missing) {
+function checklistNeedsReview(row) {
+  const review = String(row.card_review_status || "").toLowerCase();
+  const confidence = String(row.checklist_match_confidence || row.card_code_confidence || "").toLowerCase();
+  return review && review !== "verified"
+    || confidence.includes("low")
+    || confidence.includes("medium")
+    || confidence.includes("collision");
+}
+
+function isCollisionTarget(row) {
+  const confidence = String(row.checklist_match_confidence || row.card_code_confidence || "").toLowerCase();
+  return confidence.includes("collision");
+}
+
+function excludedReason(row, labels) {
   if (String(row.active_status || "").toLowerCase() === "inactive") return "Inactive";
-  if (missing.includes("Missing card target")) return "Missing card target";
-  if (missing.includes("Missing card code")) return "Missing card code";
-  if (missing.includes("Needs card review")) return "Needs card review";
-  if (missing.includes("Missing market price")) return "Missing market price";
-  if (missing.includes("Missing stats")) return "Missing stats";
+  for (const label of [
+    "Missing Card Target",
+    "Missing Card Code",
+    "Checklist Match Needs Review",
+    "Same-Name Collision",
+    "Duplicate Player / Market Attached Elsewhere",
+    "Card Target Exists, Market Pull Failed",
+    "Card Target Exists, Missing Market Price",
+    "Missing Stats",
+  ]) {
+    if (labels.includes(label)) return label;
+  }
   if (row.score_excluded_reason) return row.score_excluded_reason;
   return "Fully scorable";
 }
