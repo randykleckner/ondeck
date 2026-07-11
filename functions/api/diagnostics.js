@@ -26,15 +26,30 @@ export async function onDiagnosticsRequest(context) {
         WHERE stat_rank = 1
       ),
       latest_emerging_market AS (
-        SELECT m.*
-        FROM card_market_snapshots m
-        JOIN (
-          SELECT player_id, card_target_id, MAX(snapshot_date) AS snapshot_date
-          FROM card_market_snapshots
-          GROUP BY player_id, card_target_id
-        ) latest ON latest.player_id = m.player_id
-          AND (latest.card_target_id = m.card_target_id OR (latest.card_target_id IS NULL AND m.card_target_id IS NULL))
-          AND latest.snapshot_date = m.snapshot_date
+        SELECT *
+        FROM (
+          SELECT
+            m.*,
+            COALESCE(ect.verified_card_code, ect.auto_code, '') AS market_card_code,
+            ROW_NUMBER() OVER (
+              PARTITION BY m.player_id, COALESCE(ect.verified_card_code, ect.auto_code, m.card_target_id, '')
+              ORDER BY
+                m.snapshot_date DESC,
+                CASE
+                  WHEN COALESCE(m.sales_count_30d, 0) > 0
+                    OR COALESCE(m.sales_count_90d, 0) > 0
+                    OR COALESCE(m.avg_price_30d, 0) > 0
+                    OR COALESCE(m.avg_price_90d, 0) > 0
+                    OR COALESCE(m.last_sold_price, 0) > 0
+                  THEN 0 ELSE 1
+                END,
+                COALESCE(m.sales_count_30d, 0) + COALESCE(m.sales_count_90d, 0) DESC,
+                m.id DESC
+            ) AS market_rank
+          FROM card_market_snapshots m
+          LEFT JOIN emerging_card_targets ect ON ect.id = m.card_target_id
+        )
+        WHERE market_rank = 1
       ),
       latest_score AS (
         SELECT ps.*
@@ -254,7 +269,14 @@ export async function onDiagnosticsRequest(context) {
       LEFT JOIN best_target bt ON bt.player_id = p.id
       LEFT JOIN latest_emerging_market em ON bt.card_target_type = 'emerging'
         AND em.player_id = p.id
-        AND (em.card_target_id = bt.card_target_id OR em.card_target_id IS NULL)
+        AND (
+          em.card_target_id = bt.card_target_id
+          OR em.card_target_id IS NULL
+          OR (
+            em.market_card_code <> ''
+            AND em.market_card_code = COALESCE(bt.verified_card_code, bt.target_card_code, '')
+          )
+        )
       LEFT JOIN top100_market tm ON tm.player_id = bt.top100_player_id
         OR tm.player_id = CAST(p.id AS TEXT)
         OR (
