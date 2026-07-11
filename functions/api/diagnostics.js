@@ -139,6 +139,13 @@ export async function onDiagnosticsRequest(context) {
           OR lower(p.player_name) = lower(ct.player_name)
         WHERE COALESCE(ct.enabled, 1) = 1
           AND COALESCE(ct.verified_card_code, ct.card_code, '') LIKE 'CPA%'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM emerging_card_targets ect2
+            WHERE ect2.player_id = p.id
+              AND ect2.active = 1
+              AND COALESCE(ect2.verified_card_code, ect2.auto_code, '') LIKE 'CPA%'
+          )
 
         UNION ALL
 
@@ -169,9 +176,9 @@ export async function onDiagnosticsRequest(context) {
             ORDER BY
               CASE WHEN COALESCE(tu.verified_card_code, tu.target_card_code, '') LIKE 'CPA%' THEN 0 ELSE 1 END,
               CASE WHEN tu.card_target_type = 'market' THEN 0 ELSE 1 END,
-              CASE WHEN tu.card_review_status = 'Verified' THEN 0 ELSE 1 END,
               CASE WHEN tu.has_checklist_card = 1 THEN 0 ELSE 1 END,
-              CASE WHEN tu.card_target_type = 'emerging' THEN 0 ELSE 1 END
+              CASE WHEN tu.card_target_type = 'emerging' THEN 0 ELSE 1 END,
+              CASE WHEN tu.card_review_status = 'Verified' THEN 0 ELSE 1 END
           ) AS target_rank
         FROM target_union tu
       ),
