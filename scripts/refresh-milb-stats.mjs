@@ -45,31 +45,56 @@ statements.push(refreshRunStatement());
 writeAndMaybeExecute();
 
 async function statsSnapshot(player, group) {
-  const split = await statsSplit(player, group);
-  if (!split) return null;
+  const statsInfo = await statsSplit(player, group);
+  if (!statsInfo) return null;
+  const { split, season, matchStatus } = statsInfo;
   const stat = split.stat || {};
-  if (group === "pitching") return pitchingSnapshot(player, split, stat);
-  return hittingSnapshot(player, split, stat);
+  if (group === "pitching") return pitchingSnapshot(player, split, stat, season, matchStatus);
+  return hittingSnapshot(player, split, stat, season, matchStatus);
 }
 
 async function statsSplit(player, group) {
   const seasonUrl = `${STATS_API}/people/${player.mlbam_id}/stats?stats=season&season=${args.season}&group=${group}&leagueListId=milb_all&gameType=R`;
   const seasonData = await getJson(seasonUrl);
   const seasonSplit = bestSplit(seasonData.stats?.[0]?.splits || []);
-  if (seasonSplit) return seasonSplit;
+  if (seasonSplit) {
+    return {
+      split: seasonSplit,
+      season: args.season,
+      matchStatus: "Matched via MLB StatsAPI weekly refresh",
+    };
+  }
 
   const yearByYearUrl = `${STATS_API}/people/${player.mlbam_id}/stats?stats=yearByYear&group=${group}&leagueListId=milb_all&gameType=R`;
   const yearByYearData = await getJson(yearByYearUrl);
-  return bestSplit((yearByYearData.stats?.[0]?.splits || []).filter((split) => String(split.season) === String(args.season)));
+  const splits = yearByYearData.stats?.[0]?.splits || [];
+  const requestedSeasonSplit = bestSplit(splits.filter((split) => String(split.season) === String(args.season)));
+  if (requestedSeasonSplit) {
+    return {
+      split: requestedSeasonSplit,
+      season: args.season,
+      matchStatus: "Matched via MLB StatsAPI year-by-year refresh",
+    };
+  }
+
+  const latestSeason = latestAvailableSeason(splits);
+  const latestSplit = latestSeason ? bestSplit(splits.filter((split) => String(split.season) === String(latestSeason))) : null;
+  if (!latestSplit) return null;
+  return {
+    split: latestSplit,
+    season: latestSeason,
+    matchStatus: `Latest available MiLB stats fallback; no ${args.season} season split from MLB StatsAPI`,
+  };
 }
 
-function hittingSnapshot(player, split, stat) {
+function hittingSnapshot(player, split, stat, season, matchStatus) {
   const pa = number(stat.plateAppearances);
   if (!(pa > 0)) return null;
   const bb = number(stat.baseOnBalls);
   const so = number(stat.strikeOuts);
   return {
     playerId: player.id,
+    season,
     role: "Hitter",
     level: player.current_level,
     team: split.team?.name || player.current_team,
@@ -87,11 +112,12 @@ function hittingSnapshot(player, split, stat) {
     hitterSo: integer(so),
     hitterBbPct: pa > 0 ? bb / pa : null,
     hitterKPct: pa > 0 ? so / pa : null,
-    raw: JSON.stringify({ source: "MLB StatsAPI", stat, team: split.team }),
+    statsMatchStatus: matchStatus,
+    raw: JSON.stringify({ source: "MLB StatsAPI", stat, team: split.team, season: split.season || season }),
   };
 }
 
-function pitchingSnapshot(player, split, stat) {
+function pitchingSnapshot(player, split, stat, season, matchStatus) {
   const ip = inningsToDecimal(stat.inningsPitched);
   if (!(ip > 0)) return null;
   const bf = number(stat.battersFaced);
@@ -99,6 +125,7 @@ function pitchingSnapshot(player, split, stat) {
   const bb = number(stat.baseOnBalls);
   return {
     playerId: player.id,
+    season,
     role: "Pitcher",
     level: player.current_level,
     team: split.team?.name || player.current_team,
@@ -113,7 +140,8 @@ function pitchingSnapshot(player, split, stat) {
     pitcherKPct: bf > 0 ? so / bf : null,
     pitcherBbPct: bf > 0 ? bb / bf : null,
     pitcherKMinusBbPct: bf > 0 ? (so - bb) / bf : null,
-    raw: JSON.stringify({ source: "MLB StatsAPI", stat, team: split.team }),
+    statsMatchStatus: matchStatus,
+    raw: JSON.stringify({ source: "MLB StatsAPI", stat, team: split.team, season: split.season || season }),
   };
 }
 
@@ -127,6 +155,13 @@ function bestSplit(splits) {
 
 function bestSnapshot(snapshots) {
   return [...snapshots].sort((a, b) => snapshotVolume(b) - snapshotVolume(a))[0] || null;
+}
+
+function latestAvailableSeason(splits) {
+  const seasons = splits
+    .map((split) => Number(split.season))
+    .filter(Number.isFinite);
+  return seasons.length ? Math.max(...seasons) : null;
 }
 
 function snapshotVolume(snapshot) {
@@ -164,12 +199,12 @@ function insertStatsStatement(row) {
   pitcher_k_pct, pitcher_bb_pct, pitcher_k_minus_bb_pct,
   stats_match_status, stats_source, snapshot_date, raw_payload_json
 ) VALUES (
-  ${integer(row.playerId)}, ${integer(args.season)}, ${sql(row.role)}, ${sql(row.level)}, ${sql(row.team)}, ${number(row.age)},
+  ${integer(row.playerId)}, ${integer(row.season || args.season)}, ${sql(row.role)}, ${sql(row.level)}, ${sql(row.team)}, ${number(row.age)},
   ${integer(row.hitterGames)}, ${integer(row.hitterPa)}, ${integer(row.hitterAb)}, ${number(row.hitterAvg)}, ${number(row.hitterObp)}, ${number(row.hitterSlg)}, ${number(row.hitterOps)},
   ${integer(row.hitterHr)}, ${integer(row.hitterSb)}, ${integer(row.hitterBb)}, ${integer(row.hitterSo)}, ${number(row.hitterBbPct)}, ${number(row.hitterKPct)},
   ${integer(row.pitcherGames)}, ${number(row.pitcherIp)}, ${number(row.pitcherEra)}, ${number(row.pitcherWhip)}, ${integer(row.pitcherSo)}, ${integer(row.pitcherBb)}, ${integer(row.pitcherBf)},
   ${number(row.pitcherKPct)}, ${number(row.pitcherBbPct)}, ${number(row.pitcherKMinusBbPct)},
-  'Matched via MLB StatsAPI weekly refresh', 'MLB StatsAPI', ${sql(snapshotDate)}, ${sql(row.raw)}
+  ${sql(row.statsMatchStatus || "Matched via MLB StatsAPI weekly refresh")}, 'MLB StatsAPI', ${sql(snapshotDate)}, ${sql(row.raw)}
 )
 ON CONFLICT(player_id, season, stats_role, level, team, snapshot_date) DO UPDATE SET
   age = excluded.age,
