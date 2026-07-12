@@ -27,15 +27,12 @@ const players = queryPlayers().slice(args.offset, args.offset + args.limit);
 for (const player of players) {
   summary.playersChecked += 1;
   try {
-    const group = isPitcher(player) ? "pitching" : "hitting";
-    const snapshot = await statsSnapshot(player, group);
-    if (!snapshot && group !== "hitting") {
-      const fallback = await statsSnapshot(player, "hitting");
-      if (fallback) {
-        statements.push(insertStatsStatement(fallback));
-        summary.snapshotsPrepared += 1;
-      }
-    } else if (snapshot) {
+    const snapshots = (await Promise.all([
+      statsSnapshot(player, "hitting"),
+      statsSnapshot(player, "pitching"),
+    ])).filter(Boolean);
+    const snapshot = bestSnapshot(snapshots);
+    if (snapshot) {
       statements.push(insertStatsStatement(snapshot));
       summary.snapshotsPrepared += 1;
     }
@@ -48,13 +45,22 @@ statements.push(refreshRunStatement());
 writeAndMaybeExecute();
 
 async function statsSnapshot(player, group) {
-  const url = `${STATS_API}/people/${player.mlbam_id}/stats?stats=season&season=${args.season}&group=${group}&leagueListId=milb_all&gameType=R`;
-  const data = await getJson(url);
-  const split = bestSplit(data.stats?.[0]?.splits || []);
+  const split = await statsSplit(player, group);
   if (!split) return null;
   const stat = split.stat || {};
   if (group === "pitching") return pitchingSnapshot(player, split, stat);
   return hittingSnapshot(player, split, stat);
+}
+
+async function statsSplit(player, group) {
+  const seasonUrl = `${STATS_API}/people/${player.mlbam_id}/stats?stats=season&season=${args.season}&group=${group}&leagueListId=milb_all&gameType=R`;
+  const seasonData = await getJson(seasonUrl);
+  const seasonSplit = bestSplit(seasonData.stats?.[0]?.splits || []);
+  if (seasonSplit) return seasonSplit;
+
+  const yearByYearUrl = `${STATS_API}/people/${player.mlbam_id}/stats?stats=yearByYear&group=${group}&leagueListId=milb_all&gameType=R`;
+  const yearByYearData = await getJson(yearByYearUrl);
+  return bestSplit((yearByYearData.stats?.[0]?.splits || []).filter((split) => String(split.season) === String(args.season)));
 }
 
 function hittingSnapshot(player, split, stat) {
@@ -113,19 +119,31 @@ function pitchingSnapshot(player, split, stat) {
 
 function bestSplit(splits) {
   return [...splits].sort((a, b) => {
-    const aVolume = number(a.stat?.plateAppearances) || inningsToDecimal(a.stat?.inningsPitched) || 0;
-    const bVolume = number(b.stat?.plateAppearances) || inningsToDecimal(b.stat?.inningsPitched) || 0;
+    const aVolume = numericValue(a.stat?.plateAppearances) || inningsToDecimal(a.stat?.inningsPitched) || 0;
+    const bVolume = numericValue(b.stat?.plateAppearances) || inningsToDecimal(b.stat?.inningsPitched) || 0;
     return bVolume - aVolume;
   })[0] || null;
 }
 
+function bestSnapshot(snapshots) {
+  return [...snapshots].sort((a, b) => snapshotVolume(b) - snapshotVolume(a))[0] || null;
+}
+
+function snapshotVolume(snapshot) {
+  return Number(snapshot?.hitterPa) || Number(snapshot?.pitcherIp) || 0;
+}
+
 function queryPlayers() {
+  const mlbamIds = args.mlbamIds.map((id) => integer(id)).filter((id) => id !== "NULL");
+  const targetClause = mlbamIds.length
+    ? `AND mlbam_id IN (${mlbamIds.join(", ")})`
+    : "AND COALESCE(current_level, '') IN ('AAA', 'AA', 'A+', 'A', 'ROK', 'RK', 'FCL', 'DSL')";
   const sql = `
     SELECT id, player_name, mlbam_id, current_team, current_level, position, age
     FROM players
     WHERE mlbam_id IS NOT NULL
       AND COALESCE(active_status, 'active') = 'active'
-      AND COALESCE(current_level, '') IN ('AAA', 'AA', 'A+', 'A')
+      ${targetClause}
     ORDER BY player_name ASC
     LIMIT ${integer(args.offset + args.limit)}
   `;
@@ -218,6 +236,7 @@ function parseArgs(argv) {
     database: "ondeck-market",
     out: "",
     snapshotDate: "",
+    mlbamIds: [],
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -229,12 +248,15 @@ function parseArgs(argv) {
     else if (arg === "--database") result.database = argv[++index] || result.database;
     else if (arg === "--out") result.out = argv[++index] || "";
     else if (arg === "--snapshot-date") result.snapshotDate = argv[++index] || "";
+    else if (arg === "--mlbam-ids") {
+      result.mlbamIds = String(argv[++index] || "")
+        .split(",")
+        .map((value) => Number(value.trim()))
+        .filter(Number.isFinite);
+      result.limit = Math.max(result.limit, result.mlbamIds.length || result.limit);
+    }
   }
   return result;
-}
-
-function isPitcher(player) {
-  return String(player.position || "").toUpperCase().includes("P");
 }
 
 function inningsToDecimal(value) {
@@ -250,6 +272,13 @@ function clean(value) {
   return String(value ?? "").replaceAll(/\s+/g, " ").trim();
 }
 
+function numericValue(value) {
+  const text = String(value ?? "").replaceAll(/[^0-9.-]/g, "");
+  if (!text) return NaN;
+  const numeric = Number(text);
+  return Number.isFinite(numeric) ? numeric : NaN;
+}
+
 function sql(value) {
   const text = clean(value);
   return text ? `'${text.replaceAll("'", "''")}'` : "NULL";
@@ -261,6 +290,8 @@ function integer(value) {
 }
 
 function number(value) {
-  const numeric = Number(String(value ?? "").replaceAll(/[^0-9.-]/g, ""));
+  const text = String(value ?? "").replaceAll(/[^0-9.-]/g, "");
+  if (!text) return "NULL";
+  const numeric = Number(text);
   return Number.isFinite(numeric) ? String(numeric) : "NULL";
 }
