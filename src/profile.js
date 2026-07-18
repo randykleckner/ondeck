@@ -62,13 +62,25 @@ async function loadTop100Profile(id) {
   const enrichmentRows = mergeRowsByPlayerId(enrichment, rankHistory);
   const prospects = applyProspectEnrichment(mergeProspectUniverse(top100Prospects, orgProspects, enrichmentRows), enrichmentRows);
   const scored = applyCardTargets(mergeProspectData(prospects, mergeRowsByPlayerId(stats, savantStats), mergeRowsByPlayerId(depthCharts, news)), cardTargets);
-  const cachedMarkets = await loadCachedMarkets();
+  const [cachedMarkets, diagnostics] = await Promise.all([
+    loadCachedMarkets(),
+    loadDiagnosticsRows(),
+  ]);
   const player = scored.find((candidate) => String(candidate.player_id) === String(id));
   if (!player) return null;
   const savedInsight = await loadSavedInsight(player.player_id);
+  const diagnosticsOverlay = diagnostics.get(`mlbam:${player.mlbam_id}`)
+    || diagnostics.get(`name:${normalizeName(player.player_name)}`)
+    || {};
+  const cachedMarket = cachedMarkets.get(`id:${player.player_id}`)
+    || cachedMarkets.get(`name:${normalizeName(player.player_name)}`)
+    || cachedMarkets.get(`card:${normalizeCardCode(player.card_code)}`)
+    || cachedMarkets.get(String(player.player_id))
+    || {};
   return {
     ...player,
-    ...(cachedMarkets.get(String(player.player_id)) || {}),
+    ...compactDiagnosticsOverlay(diagnosticsOverlay),
+    ...cachedMarket,
     ...savedInsight,
     source_type: profileType,
     on_deck_rank: onDeckRank(scored, player),
@@ -92,10 +104,32 @@ async function loadCachedMarkets() {
     const response = await fetch("/api/top100-market-data", { headers: { Accept: "application/json" } });
     if (!response.ok) return new Map();
     const data = await response.json();
-    return new Map((data.snapshots || [])
-      .map(normalizeMarketSnapshot)
-      .filter((snapshot) => snapshot.player_id)
-      .map((snapshot) => [String(snapshot.player_id), snapshot]));
+    const map = new Map();
+    for (const snapshot of (data.snapshots || []).map(normalizeMarketSnapshot).filter((row) => row.player_id || row.player_name || row.card_code)) {
+      if (snapshot.player_id) {
+        map.set(String(snapshot.player_id), snapshot);
+        map.set(`id:${snapshot.player_id}`, snapshot);
+      }
+      if (snapshot.player_name) map.set(`name:${normalizeName(snapshot.player_name)}`, snapshot);
+      if (snapshot.card_code) map.set(`card:${normalizeCardCode(snapshot.card_code)}`, snapshot);
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+async function loadDiagnosticsRows() {
+  try {
+    const response = await fetch(`/api/diagnostics?limit=5000&t=${Date.now()}`, { headers: { Accept: "application/json" } });
+    if (!response.ok) return new Map();
+    const data = await response.json();
+    const map = new Map();
+    for (const row of data.items || []) {
+      if (row.mlb_player_id) map.set(`mlbam:${row.mlb_player_id}`, row);
+      if (row.player_name) map.set(`name:${normalizeName(row.player_name)}`, row);
+    }
+    return map;
   } catch {
     return new Map();
   }
@@ -342,7 +376,8 @@ function rankPlaceholderScore(row) {
 
 function normalizeStats(row, position) {
   const pitcher = isPitcher(position);
-  const recordTitle = pitcher ? "2026 Minor League Pitching Record" : "2026 Minor League Batting Record";
+  const year = statYear(row);
+  const recordTitle = pitcher ? `${year} Minor League Pitching Record` : `${year} Minor League Batting Record`;
   const cells = pitcher ? pitchingColumns(row) : hittingColumns(row);
   const columns = cells.map((cell) => cell.label);
   const values = Object.fromEntries(cells.map((cell) => [cell.label, safeDisplay(cell.value)]));
@@ -579,8 +614,9 @@ function recordTable(profile) {
 }
 
 function hittingColumns(player) {
+  const year = statYear(player);
   return [
-    { key: "yr", label: "YR", value: "2026" },
+    { key: "yr", label: "YR", value: year },
     { key: "g", label: "G", value: countValue(firstValue(player.hitter_games, player.games, "")) },
     { key: "ab", label: "AB", value: countValue(firstValue(player.hitter_ab, player.ab, player.pa, "")) },
     { key: "hr", label: "HR", value: countValue(firstValue(player.hitter_hr, player.hr, "")) },
@@ -592,8 +628,9 @@ function hittingColumns(player) {
 }
 
 function pitchingColumns(player) {
+  const year = statYear(player);
   return [
-    { key: "yr", label: "YR", value: "2026" },
+    { key: "yr", label: "YR", value: year },
     { key: "g", label: "G", value: countValue(firstValue(player.pitcher_games, player.games, "")) },
     { key: "ip", label: "IP", value: statValue(firstValue(player.pitcher_ip, player.ip, "")) },
     { key: "era", label: "ERA", value: eraValue(firstValue(player.pitcher_era, player.era, "")) },
@@ -658,6 +695,7 @@ function normalizeMarketSnapshot(snapshot) {
   const sellThrough90 = snapshotSellThroughPercent(snapshot.sellThruRate90d ?? snapshot.sell_thru_rate_90d);
   return compactRow({
     player_id: snapshot.playerId ?? snapshot.player_id ?? "",
+    player_name: snapshot.playerName ?? snapshot.player_name ?? "",
     card_code: snapshot.benchmarkCardCode ?? snapshot.benchmark_card_code ?? "",
     benchmark_card_code: snapshot.benchmarkCardCode ?? snapshot.benchmark_card_code ?? "",
     card_name: "Bowman Chrome Auto",
@@ -675,6 +713,60 @@ function normalizeMarketSnapshot(snapshot) {
     source: snapshot.source ?? "",
     targetOnly: snapshot.targetOnly ?? snapshot.target_only ?? "",
   });
+}
+
+function compactDiagnosticsOverlay(row) {
+  if (!row || typeof row !== "object") return {};
+  return compactRow({
+    mlbam_id: row.mlb_player_id ?? row.mlbam_id ?? "",
+    player_name: row.player_name ?? "",
+    org: row.org ?? row.current_org ?? "",
+    team: row.team ?? row.stats_team ?? "",
+    level: row.level ?? "",
+    position: row.position ?? "",
+    age: row.age ?? "",
+    stats_season: row.stats_season ?? "",
+    stats_role: row.stats_role ?? "",
+    stat_team: row.stats_team ?? "",
+    hitter_games: row.hitter_games ?? "",
+    hitter_pa: row.hitter_pa ?? "",
+    hitter_ab: row.hitter_ab ?? "",
+    hitter_avg: row.hitter_avg ?? "",
+    hitter_obp: row.hitter_obp ?? "",
+    hitter_slg: row.hitter_slg ?? "",
+    hitter_ops: row.hitter_ops ?? "",
+    hitter_hr: row.hitter_hr ?? "",
+    hitter_sb: row.hitter_sb ?? "",
+    hitter_bb: row.hitter_bb ?? "",
+    hitter_so: row.hitter_so ?? "",
+    hitter_bb_pct: row.hitter_bb_pct ?? "",
+    hitter_k_pct: row.hitter_k_pct ?? "",
+    pitcher_games: row.pitcher_games ?? "",
+    pitcher_ip: row.pitcher_ip ?? "",
+    pitcher_era: row.pitcher_era ?? "",
+    pitcher_whip: row.pitcher_whip ?? "",
+    pitcher_so: row.pitcher_so ?? "",
+    pitcher_bb: row.pitcher_bb ?? "",
+    pitcher_bf: row.pitcher_bf ?? "",
+    pitcher_k_pct: row.pitcher_k_pct ?? "",
+    pitcher_bb_pct: row.pitcher_bb_pct ?? "",
+    pitcher_k_minus_bb_pct: row.pitcher_k_minus_bb_pct ?? "",
+    stats_match_status: row.stats_match_status ?? "",
+    stats_source: row.stats_source ?? "",
+    latest_stats_date: row.latest_stats_date ?? "",
+    card_code: row.verified_card_code ?? row.target_card_code ?? "",
+    benchmark_card_code: row.verified_card_code ?? row.target_card_code ?? "",
+    last_sale: row.current_auto_price ?? "",
+    sales_30: row.sales_count_30d ?? "",
+    sales_90: row.sales_count_90d ?? "",
+    sell_through_30: row.sell_through_30d ?? "",
+    sell_through_90: row.sell_through_90d ?? "",
+    market_signal: row.market_signal ?? "",
+  });
+}
+
+function statYear(row) {
+  return cleanValue(firstValue(row.stats_season, row.season, "2026"));
 }
 
 function benchmarkCard(player) {
@@ -1034,6 +1126,10 @@ function normalizeName(value) {
     .toLowerCase()
     .replaceAll(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function normalizeCardCode(value) {
+  return String(value ?? "").toUpperCase().replaceAll(/[^A-Z0-9]+/g, "");
 }
 
 function compactRow(row) {
