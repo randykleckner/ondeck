@@ -1,5 +1,11 @@
 player_id,player_name,team,mlb_debut_date,verdict,added_to_top10_date,top10_rank,pre_callup_score,card_before,card_after,result_note,purchase_date,purchase_price,sell_date,sell_price,position_status,card_name
-mlb-top100-61,Cooper Pratt,Milwaukee Brewers,2026-06-16,Hit,Backfill needed,Top 10,Backfill needed,,,Cooper Pratt is the first seeded Scorebook example; fill board-entry date and card comps once our saved history is available.,,,,,,
+mlb-top100-61,Cooper Pratt,Milwaukee Brewers,2026-06-16,Hit,Backfill needed,Top 10,Backfill needed,,,Cooper Pratt is the first seeded Scoreboard example; fill board-entry date and card comps once our saved history is available.,,,,,,
+demo-cooper-pratt-pnl,Cooper Pratt,Milwaukee Brewers,2026-06-16,Purchase Ledger,2026-05-28,Top 10,84,58,92,Design sample call-up winner for Scoreboard layout.,2026-05-29,58,2026-06-18,92,Closed,Bowman Chrome 1st Auto
+demo-jacob-misiorowski-pnl,Jacob Misiorowski,Milwaukee Brewers,2025-06-12,Purchase Ledger,2025-05-21,Top 10,87,34,81,Design sample velocity catalyst winner for Scoreboard layout.,2025-05-24,36,2025-06-14,81,Closed,Bowman Chrome 1st Auto
+demo-cade-horton-pnl,Cade Horton,Chicago Cubs,2025-05-10,Purchase Ledger,2025-04-18,Top 10,82,28,64,Design sample call-up winner for Scoreboard layout.,2025-04-21,29,2025-05-13,64,Closed,Bowman Chrome 1st Auto
+demo-junior-caminero-pnl,Junior Caminero,Tampa Bay Rays,2024-08-13,Purchase Ledger,2024-07-22,Top 10,79,95,142,Design sample promotion bounce for Scoreboard layout.,2024-07-24,98,2024-08-15,142,Closed,Bowman Chrome 1st Auto
+demo-colton-cowser-pnl,Colton Cowser,Baltimore Orioles,2024-03-28,Purchase Ledger,2024-03-08,Watchlist,71,42,34,Design sample loser where market cooled after debut.,2024-03-10,42,2024-04-05,34,Closed,Bowman Chrome 1st Auto
+demo-kyle-manzardo-pnl,Kyle Manzardo,Cleveland Guardians,2024-05-06,Purchase Ledger,2024-04-16,Watchlist,73,31,24,Design sample loser where entry was too early.,2024-04-18,31,2024-05-10,24,Closed,Bowman Chrome 1st Auto
 manual-wyatt-sanford,Wyatt Sanford,,,Purchase Ledger,,,,,,Week of July 6 buy added to track entry price and eventual sale outcome.,2026-07-06,22,,,Open,Bowman Chrome Auto
 manual-braylon-payne,Braylon Payne,,,Purchase Ledger,,,,,,Week of July 6 buy added to track entry price and eventual sale outcome.,2026-07-06,46.95,,,Open,Bowman Chrome Auto
 manual-raudi-rodriguez,Raudi Rodriguez,,,Purchase Ledger,,,,,,Week of July 6 buy added to track entry price and eventual sale outcome.,2026-07-06,20,,,Open,Bowman Chrome Auto

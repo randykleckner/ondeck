@@ -3508,6 +3508,172 @@ tbody tr {
   font-weight: 950;
 }
 
+.scorebook-page {
+  min-height: calc(100vh - 98px);
+  background:
+    radial-gradient(circle at 16% 10%, rgba(245, 205, 86, 0.12), transparent 18rem),
+    radial-gradient(circle at 82% 0%, rgba(50, 216, 143, 0.16), transparent 22rem),
+    linear-gradient(180deg, #06160f 0%, #071b12 46%, #04100b 100%);
+}
+
+.scorebook-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 270px;
+  margin: 14px;
+  border: 3px solid rgba(229, 203, 125, 0.72);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.08),
+    inset 0 -42px 70px rgba(0, 0, 0, 0.28),
+    0 22px 44px rgba(0, 0, 0, 0.28);
+  background:
+    linear-gradient(90deg, rgba(5, 33, 21, 0.95) 0%, rgba(8, 58, 35, 0.88) 54%, rgba(9, 38, 25, 0.78) 100%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 7px);
+}
+
+.scorebook-hero::before {
+  content: "ONDECK PROSPECT     P&L     R     H     E";
+  position: absolute;
+  top: 22px;
+  right: clamp(18px, 4vw, 54px);
+  max-width: min(520px, 48vw);
+  border: 1px solid rgba(229, 203, 125, 0.48);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #f6d979;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.12)),
+    repeating-linear-gradient(90deg, transparent 0 66px, rgba(229, 203, 125, 0.28) 66px 67px);
+  font-family: "Courier New", monospace;
+  font-size: clamp(0.68rem, 1.25vw, 1rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.scorebook-hero::after {
+  content: "";
+  position: absolute;
+  right: -42px;
+  bottom: -68px;
+  width: clamp(160px, 24vw, 310px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid rgba(229, 203, 125, 0.36);
+  background:
+    radial-gradient(circle at 42% 44%, rgba(255, 255, 255, 0.9) 0 2px, transparent 2px),
+    repeating-linear-gradient(54deg, transparent 0 15px, rgba(210, 35, 35, 0.9) 15px 18px, transparent 18px 27px),
+    #efe2c1;
+  opacity: 0.16;
+}
+
+.scorebook-hero .eyebrow {
+  color: #f6d979;
+}
+
+.scorebook-hero h1 {
+  position: relative;
+  max-width: 660px;
+  color: #fff7d6;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
+}
+
+.scorebook-hero p:last-child {
+  position: relative;
+  max-width: 640px;
+  color: #d8f6df;
+}
+
+.scorebook-board {
+  padding: 0 14px 18px;
+}
+
+.scorebook-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 12px;
+  border: 2px solid rgba(229, 203, 125, 0.52);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(7, 33, 20, 0.96), rgba(3, 18, 11, 0.94)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 8px);
+}
+
+.scorebook-summary article {
+  border-color: rgba(246, 217, 121, 0.32);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 0 22px rgba(37, 184, 105, 0.08);
+}
+
+.scorebook-summary span {
+  color: #bfe9c8;
+}
+
+.scorebook-summary strong {
+  color: #f6d979;
+  font-family: "Courier New", monospace;
+  text-shadow: 0 0 14px rgba(246, 217, 121, 0.2);
+}
+
+.scorebook-section {
+  border: 2px solid rgba(229, 203, 125, 0.46);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(7, 39, 24, 0.94), rgba(3, 17, 11, 0.96)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 8px);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24);
+}
+
+.scorebook-section h3 {
+  color: #f6d979;
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scorebook-section table {
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid rgba(229, 203, 125, 0.28);
+  border-radius: 8px;
+}
+
+.scorebook-section th {
+  color: #06160f;
+  background: #e7d083;
+  font-family: "Courier New", monospace;
+}
+
+.scorebook-section td {
+  border-bottom-color: rgba(229, 203, 125, 0.14);
+  color: #ecfff0;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.scorebook-section tbody tr:hover td {
+  background: rgba(48, 184, 105, 0.12);
+}
+
+.scorebook-result {
+  border-radius: 6px;
+  font-family: "Courier New", monospace;
+}
+
+.scorebook-result.hit {
+  background: #72e072;
+}
+
+.scorebook-result.historical {
+  background: #f6d979;
+}
+
+.scorebook-result.open {
+  background: #76d7ff;
+}
+
 .market-status {
   color: var(--cyan);
   font-weight: 950;

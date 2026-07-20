@@ -283,7 +283,7 @@ async function loadTop100Prospects() {
       loadOptionalCsv("./data/rank-history.csv?v=20260702-current"),
       loadOptionalCsv("./data/card-targets.csv?v=20260706-1"),
       loadOptionalCsv("./data/mlb-player-flags.csv?v=20260629-2"),
-      loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260710-pnl-1"),
+      loadOptionalCsv("./data/archive/scorebook/scorebook.csv?v=20260720-scoreboard-1"),
     ]);
     const enrichmentRows = mergeRowsByPlayerId(enrichment, rankHistory);
     state.latestTop100Keys = buildPlayerKeySet(top100Prospects);
@@ -1776,25 +1776,25 @@ function renderScorebook() {
       player_name: player.player_name,
       team: player.org,
       date_added: player.date_added || player.last_updated || "Manual baseline needed",
-    current_rank: index + 1,
-    ondeck_score: player.callup_score,
-    card_baseline: cardBaselineLabel(player),
-    latest_value: latestCardValue(player),
-    market_status: marketStatus(player),
+      current_rank: index + 1,
+      ondeck_score: player.callup_score,
+      card_baseline: cardBaselineLabel(player),
+      latest_value: latestCardValue(player),
+      market_status: marketStatus(player),
     };
   });
 
   elements.scorebookBoard.innerHTML = `
     <div class="scorebook-summary">
-      ${scorebookMetric("Open positions", purchases.filter((entry) => normalizeName(entry.position_status || "open") !== "closed").length)}
-      ${scorebookMetric("Capital in play", totalPurchaseCost(purchases))}
+      ${scorebookMetric("Open bids", purchases.filter((entry) => normalizeName(entry.position_status || "open") !== "closed").length)}
+      ${scorebookMetric("Capital at bat", totalPurchaseCost(purchases))}
       ${scorebookMetric("Realized P&L", realizedPnlLabel(purchases))}
-      ${scorebookMetric("On Deck hits", officialHits.length)}
+      ${scorebookMetric("Call-up wins", purchases.filter((entry) => pnlClass(entry) === "pnl-positive").length)}
     </div>
-    ${scorebookTable("Purchase Ledger", purchases, purchaseLedgerColumns())}
-    ${scorebookTable("Official OnDeck Hits", officialHits, officialHitColumns())}
+    ${scorebookTable("Trade Ledger", purchases, purchaseLedgerColumns())}
+    ${scorebookTable("Call-Up Results", officialHits, officialHitColumns())}
     ${pendingTable(pending)}
-    ${scorebookTable("Historical Market Examples", historical, historicalColumns())}
+    ${scorebookTable("Historical Market Moves", historical, historicalColumns())}
   `;
   elements.scorebookBoard.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
@@ -1910,11 +1910,11 @@ function realizedPnlLabel(rows) {
 
 function pendingTable(rows) {
   if (!rows.length) {
-    return `<section class="scorebook-section"><h3>Pending On Deck</h3><p class="muted">No approved On Deck players found.</p></section>`;
+    return `<section class="scorebook-section"><h3>On Deck Now</h3><p class="muted">No approved On Deck players found.</p></section>`;
   }
   return `
     <section class="scorebook-section">
-      <h3>Pending On Deck</h3>
+      <h3>On Deck Now</h3>
       <div class="table-wrap">
         <table>
           <thead>
@@ -1974,6 +1974,7 @@ function purchaseLedgerColumns() {
     { label: "Card", render: (row) => escapeHtml(row.card_name || "Bowman Chrome Auto") },
     { label: "Purchase Date", render: (row) => escapeHtml(formatShortDate(row.purchase_date || row.mlb_debut_date) || row.purchase_date || "-") },
     { label: "Buy Price", render: (row) => escapeHtml(currency(row.purchase_price)) },
+    { label: "Sell Date", render: (row) => escapeHtml(formatShortDate(row.sell_date) || row.sell_date || "-") },
     { label: "Sell Price", render: (row) => escapeHtml(currency(row.sell_price)) },
     { label: "P&L", render: (row) => `<span class="${escapeHtml(pnlClass(row))}">${escapeHtml(pnlLabel(row))}</span>` },
     { label: "Status", render: (row) => `<span class="scorebook-result ${escapeHtml(scorebookStatusClass(row))}">${escapeHtml(row.position_status || "Open")}</span>` },
