@@ -1765,9 +1765,6 @@ function top100ComparisonReason(player) {
 
 function renderScorebook() {
   if (!elements.scorebookBoard) return;
-  const officialHits = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "hit");
-  const historical = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "historical");
-  const missed = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "missed");
   const purchases = state.scorebook.filter((entry) => normalizeName(entry.verdict) === "purchase ledger");
   const pending = onDeckPlayers().map((rowPlayer, index) => {
     const player = withLiveMarketData(rowPlayer);
@@ -1792,9 +1789,7 @@ function renderScorebook() {
       ${scorebookMetric("Call-up wins", purchases.filter((entry) => pnlClass(entry) === "pnl-positive").length)}
     </div>
     ${scorebookTable("Trade Ledger", purchases, purchaseLedgerColumns())}
-    ${scorebookTable("Call-Up Results", officialHits, officialHitColumns())}
     ${pendingTable(pending)}
-    ${scorebookTable("Historical Market Moves", historical, historicalColumns())}
   `;
   elements.scorebookBoard.querySelectorAll("tr[data-player-id]").forEach((row) => {
     row.addEventListener("click", (event) => {
